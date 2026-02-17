@@ -36,8 +36,7 @@ wheels/
 # Data (keep structure but ignore large files)
 data/bird_ringing.db
 data/processed/*.csv
-data/raw/*.txt
-data/raw/*/*.txt
+data/raw/*
 
 # Environment
 .env
