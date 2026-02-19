@@ -347,7 +347,7 @@ app.layout = dbc.Container([
                                                 html.Br(),
                                                 html.Small(
                                                     "Temperature, wind, humidity, cloud cover, gust wind: full archive 1980–present. "
-                                                    "Precipitation: 1980–2007. Pressure: 1980–1995.",
+                                                    "Precipitation: 1980–2007. Pressure: 1980–1995. Visibility: 1980–2007.",
                                                     className="text-muted"
                                                 ),
                                             ], md=6),
@@ -357,6 +357,7 @@ app.layout = dbc.Container([
                                                 html.Small(
                                                     "Precipitation: 2007–present (gap-fills Nidingen). "
                                                     "Pressure: 1996–present (gap-fills Nidingen). "
+                                                    "Visibility: 2007–present (gap-fills Nidingen). "
                                                     "Full Vinga archive stored separately in weather_data_vinga.",
                                                     className="text-muted"
                                                 ),
@@ -385,6 +386,7 @@ app.layout = dbc.Container([
                                         {"label": "☁️ Cloud cover — Nidingen A",                       "value": "cloud"},
                                         {"label": "💧 Humidity — Nidingen A",                           "value": "humidity"},
                                         {"label": "🔵 Pressure — Nidingen A (≤1995) + Vinga A (1996→)", "value": "pressure"},
+                                        {"label": "👁️ Visibility (m) — Nidingen A (≤2007) + Vinga A (2007→)", "value": "visibility"},
                                     ],
                                     value=["temperature", "wind", "precipitation"],
                                     inline=False,
@@ -1507,6 +1509,7 @@ def update_weather_timeseries(start_date, end_date, selected_vars):
         "cloud":         {"title": "Cloud cover (%)  ·  Nidingen A",    "color_idx": 6},
         "humidity":      {"title": "Humidity (%)  ·  Nidingen A",       "color_idx": 3},
         "pressure":      {"title": "Pressure (hPa)  ·  Nidingen A + Vinga A", "color_idx": 4},
+        "visibility":    {"title": "Visibility (m)  ·  Nidingen A + Vinga A",  "color_idx": 7},
     }
 
     # Vinga accent colour (pastel tan, distinct from the primary colours used above)
@@ -1514,7 +1517,7 @@ def update_weather_timeseries(start_date, end_date, selected_vars):
     rv, gv, bv = int(VINGA_COLOR[1:3], 16), int(VINGA_COLOR[3:5], 16), int(VINGA_COLOR[5:7], 16)
 
     # Keep order stable regardless of checklist order
-    var_order = ["temperature", "wind", "precipitation", "cloud", "humidity", "pressure"]
+    var_order = ["temperature", "wind", "precipitation", "cloud", "humidity", "pressure", "visibility"]
     active_vars = [v for v in var_order if v in selected_vars]
     n_rows = len(active_vars)
 
@@ -1681,6 +1684,34 @@ def update_weather_timeseries(start_date, end_date, selected_vars):
                         line=dict(color=VINGA_COLOR, width=2),
                         name="Pressure · Vinga A (gap-fill)",
                         hovertemplate="%{x|%Y-%m-%d}<br>Pressure: %{y:.1f} hPa  [Vinga A]<extra></extra>",
+                    ),
+                    row=row_idx, col=1,
+                )
+
+        elif var == "visibility":
+            df_nid  = df[~df["vinga_gap_fill_used"]]
+            df_ving = df[df["vinga_gap_fill_used"]]
+            if not df_nid.empty:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_nid["date"],
+                        y=df_nid["mean_visibility"],
+                        mode="lines",
+                        line=dict(color=color, width=2),
+                        name="Visibility · Nidingen A",
+                        hovertemplate="%{x|%Y-%m-%d}<br>Visibility: %{y:.0f} m  [Nidingen A]<extra></extra>",
+                    ),
+                    row=row_idx, col=1,
+                )
+            if not df_ving.empty:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_ving["date"],
+                        y=df_ving["mean_visibility"],
+                        mode="lines",
+                        line=dict(color=VINGA_COLOR, width=2),
+                        name="Visibility · Vinga A (gap-fill)",
+                        hovertemplate="%{x|%Y-%m-%d}<br>Visibility: %{y:.0f} m  [Vinga A]<extra></extra>",
                     ),
                     row=row_idx, col=1,
                 )
