@@ -134,6 +134,7 @@ class BirdRingingDB:
                 humidity          DOUBLE,          -- %   (param 6)
                 precipitation     DOUBLE,          -- mm  (param 7)
                 pressure          DOUBLE,          -- hPa (param 9)
+                visibility        DOUBLE,          -- m   (param 12)
                 cloud_cover       DOUBLE,          -- %   (param 16)
                 gust_wind         DOUBLE,          -- m/s (param 21)
                 temperature_quality    VARCHAR(2),
@@ -142,6 +143,7 @@ class BirdRingingDB:
                 humidity_quality       VARCHAR(2),
                 precipitation_quality  VARCHAR(2),
                 pressure_quality       VARCHAR(2),
+                visibility_quality     VARCHAR(2),
                 cloud_cover_quality    VARCHAR(2),
                 gust_wind_quality      VARCHAR(2),
                 station_id        INTEGER,
@@ -195,6 +197,7 @@ class BirdRingingDB:
         if needs_recreate:
             print("  Dropping old weather_data table (schema migration) …")
             self.conn.execute("DROP TABLE IF EXISTS weather_data")
+            existing_cols = set()
 
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS weather_data (
@@ -205,6 +208,7 @@ class BirdRingingDB:
                 humidity          DOUBLE,
                 precipitation     DOUBLE,
                 pressure          DOUBLE,
+                visibility        DOUBLE,
                 cloud_cover       DOUBLE,
                 gust_wind         DOUBLE,
                 temperature_quality    VARCHAR(2),
@@ -213,6 +217,7 @@ class BirdRingingDB:
                 humidity_quality       VARCHAR(2),
                 precipitation_quality  VARCHAR(2),
                 pressure_quality       VARCHAR(2),
+                visibility_quality     VARCHAR(2),
                 cloud_cover_quality    VARCHAR(2),
                 gust_wind_quality      VARCHAR(2),
                 station_id        INTEGER,
@@ -229,6 +234,27 @@ class BirdRingingDB:
             CREATE INDEX IF NOT EXISTS idx_weather_date
             ON weather_data(CAST(observation_time AS DATE))
         """)
+
+        # Add any columns that are missing from an older version of the table
+        # (incremental migration — safe to run on an already-current schema).
+        _WEATHER_COLS = [
+            ("visibility",         "DOUBLE"),
+            ("visibility_quality", "VARCHAR(2)"),
+        ]
+        current_cols = {
+            row[0]
+            for row in self.conn.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'weather_data'"
+            ).fetchall()
+        }
+        for col_name, col_type in _WEATHER_COLS:
+            if col_name not in current_cols:
+                print(f"  Migrating weather_data: adding column '{col_name}' …")
+                self.conn.execute(
+                    f"ALTER TABLE weather_data ADD COLUMN {col_name} {col_type}"
+                )
+
         print("Weather schema initialized.")
 
     def initialize_vinga_schema(self):
@@ -241,6 +267,7 @@ class BirdRingingDB:
 
         * **Precipitation** — Nidingen ended 2007-03-22; Vinga started 2007-06-01
         * **Pressure**      — Nidingen ended 1995-06-30; Vinga has data from 1968
+        * **Visibility**    — Nidingen ended 2007; Vinga has data from 1949 to present
 
         The schema is intentionally identical to ``weather_data`` so that the
         same query patterns and joins work against both tables.  The Vinga data
@@ -256,6 +283,7 @@ class BirdRingingDB:
                 humidity          DOUBLE,
                 precipitation     DOUBLE,
                 pressure          DOUBLE,
+                visibility        DOUBLE,
                 cloud_cover       DOUBLE,
                 gust_wind         DOUBLE,
                 temperature_quality    VARCHAR(2),
@@ -264,6 +292,7 @@ class BirdRingingDB:
                 humidity_quality       VARCHAR(2),
                 precipitation_quality  VARCHAR(2),
                 pressure_quality       VARCHAR(2),
+                visibility_quality     VARCHAR(2),
                 cloud_cover_quality    VARCHAR(2),
                 gust_wind_quality      VARCHAR(2),
                 station_id        INTEGER,
@@ -280,6 +309,26 @@ class BirdRingingDB:
             CREATE INDEX IF NOT EXISTS idx_vinga_date
             ON weather_data_vinga(CAST(observation_time AS DATE))
         """)
+
+        # Incremental migration: add columns missing from older versions of the table.
+        _VINGA_COLS = [
+            ("visibility",         "DOUBLE"),
+            ("visibility_quality", "VARCHAR(2)"),
+        ]
+        current_cols = {
+            row[0]
+            for row in self.conn.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'weather_data_vinga'"
+            ).fetchall()
+        }
+        for col_name, col_type in _VINGA_COLS:
+            if col_name not in current_cols:
+                print(f"  Migrating weather_data_vinga: adding column '{col_name}' …")
+                self.conn.execute(
+                    f"ALTER TABLE weather_data_vinga ADD COLUMN {col_name} {col_type}"
+                )
+
         print("Vinga weather schema initialized.")
 
     def load_csv_to_table(
