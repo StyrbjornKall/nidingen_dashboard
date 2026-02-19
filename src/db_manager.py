@@ -122,27 +122,42 @@ class BirdRingingDB:
             )
         """)
         
-        # Weather data table (for future expansion)
+        # Weather data table — populated by src/fetch_smhi_weather.py
+        # Uses observation_time as the primary key so the table can be safely
+        # re-populated without duplicates.
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS weather_data (
-                weather_id INTEGER PRIMARY KEY,
-                date DATE NOT NULL,
-                hour INTEGER,
-                temperature DOUBLE,
-                wind_speed DOUBLE,
-                wind_direction VARCHAR(10),
-                precipitation DOUBLE,
-                cloud_cover INTEGER,
-                visibility DOUBLE,
-                pressure DOUBLE,
-                humidity INTEGER,
-                data_source VARCHAR(50),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                observation_time  TIMESTAMPTZ NOT NULL PRIMARY KEY,
+                temperature       DOUBLE,          -- °C  (param 1)
+                wind_direction    DOUBLE,          -- °   (param 3)
+                wind_speed        DOUBLE,          -- m/s (param 4)
+                humidity          DOUBLE,          -- %   (param 6)
+                precipitation     DOUBLE,          -- mm  (param 7)
+                pressure          DOUBLE,          -- hPa (param 9)
+                cloud_cover       DOUBLE,          -- %   (param 16)
+                gust_wind         DOUBLE,          -- m/s (param 21)
+                temperature_quality    VARCHAR(2),
+                wind_direction_quality VARCHAR(2),
+                wind_speed_quality     VARCHAR(2),
+                humidity_quality       VARCHAR(2),
+                precipitation_quality  VARCHAR(2),
+                pressure_quality       VARCHAR(2),
+                cloud_cover_quality    VARCHAR(2),
+                gust_wind_quality      VARCHAR(2),
+                station_id        INTEGER,
+                station_name      VARCHAR(100),
+                data_source       VARCHAR(50),
+                fetched_at        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         self.conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_weather_date ON weather_data(date)
+            CREATE INDEX IF NOT EXISTS idx_weather_time
+            ON weather_data(observation_time)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_weather_date
+            ON weather_data(CAST(observation_time AS DATE))
         """)
         
         # Ringer information table
@@ -158,7 +173,64 @@ class BirdRingingDB:
         """)
         
         print("Database schema initialized successfully.")
-        
+
+    def initialize_weather_schema(self):
+        """
+        Create (or recreate) the weather_data table and its indexes.
+
+        This is called by ``src/fetch_smhi_weather.py`` so that the weather
+        table can be set up independently of the full ``initialize_schema()``
+        call.  If the table already exists with a different schema (e.g. the
+        old placeholder schema), it is dropped and recreated automatically.
+        """
+        # Check whether the table exists with the new schema already
+        existing_cols = {
+            row[0]
+            for row in self.conn.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'weather_data'"
+            ).fetchall()
+        }
+        needs_recreate = bool(existing_cols) and "observation_time" not in existing_cols
+        if needs_recreate:
+            print("  Dropping old weather_data table (schema migration) …")
+            self.conn.execute("DROP TABLE IF EXISTS weather_data")
+
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS weather_data (
+                observation_time  TIMESTAMPTZ NOT NULL PRIMARY KEY,
+                temperature       DOUBLE,
+                wind_direction    DOUBLE,
+                wind_speed        DOUBLE,
+                humidity          DOUBLE,
+                precipitation     DOUBLE,
+                pressure          DOUBLE,
+                cloud_cover       DOUBLE,
+                gust_wind         DOUBLE,
+                temperature_quality    VARCHAR(2),
+                wind_direction_quality VARCHAR(2),
+                wind_speed_quality     VARCHAR(2),
+                humidity_quality       VARCHAR(2),
+                precipitation_quality  VARCHAR(2),
+                pressure_quality       VARCHAR(2),
+                cloud_cover_quality    VARCHAR(2),
+                gust_wind_quality      VARCHAR(2),
+                station_id        INTEGER,
+                station_name      VARCHAR(100),
+                data_source       VARCHAR(50),
+                fetched_at        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_weather_time
+            ON weather_data(observation_time)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_weather_date
+            ON weather_data(CAST(observation_time AS DATE))
+        """)
+        print("Weather schema initialized.")
+
     def load_csv_to_table(
         self, 
         csv_path: Union[str, Path], 

@@ -5,40 +5,58 @@
 This project is a web-based dashboard application for visualizing and analyzing bird ringing data from Nidingen ringing station in Sweden. The application uses **Plotly Dash** for the frontend, **DuckDB** for the database, and **Polars** for high-performance data processing.
 
 **Key Features:**
-- Interactive time series visualizations of bird observations
-- Morphometric analysis (weight, wing length distributions)
-- Phenology (migration timing) analysis
-- Recapture statistics
-- Multi-dimensional filtering and aggregation
+- Interactive time series visualizations of bird observations (bar and line charts)
+- Morphometric analysis (weight, wing length, age class, fat score distributions)
+- Phenology (migration timing) analysis with bimodal spring/autumn patterns
+- Weekly heatmap showing observation patterns for the top 30 species
+- Summary statistics dashboard
+- Multi-dimensional filtering (species, date range, time aggregation)
 - Support for millions of records with efficient query performance
 
 ## Technology Stack
 
-- **Frontend**: Plotly Dash (Python web framework)
+- **Frontend**: Plotly Dash + Dash Bootstrap Components (Python web framework)
 - **Database**: DuckDB (embedded analytical database)
 - **Data Processing**: Polars (high-performance DataFrame library)
 - **Visualization**: Plotly (interactive charts)
 - **Language**: Python 3.9+
+- **Web Server**: Gunicorn (production deployment)
 
 ## Project Structure
 
 ```
 märkning/
+├── app.py                       # Main Dash application (entry point)
+├── requirements.txt             # Python dependencies
 ├── data/
 │   ├── bird_ringing.db          # DuckDB database (generated)
-│   ├── metadata/                # Species and ringer metadata
 │   ├── processed/               # Processed CSV files
-│   │   └── processed_nidingen_data.csv
-│   └── raw/                     # Raw data files
-├── figures/                     # Generated visualizations
+│   │   ├── processed_nidingen_data.csv
+│   │   └── weather.csv          # SMHI weather export (300K+ rows, 1982–present)
+│   └── raw/                     # Raw yearly data files (2020–2024)
+│       ├── 0016år-<year>.txt    # Combined yearly files
+│       └── 0016år-<year>/       # Per-year directories with sub-files
+│           ├── ring_records.txt
+│           ├── meta_header.txt
+│           ├── meta_locations.txt
+│           ├── meta_ringer_initials.txt
+│           └── meta_station.txt
+├── figures/                     # Generated HTML visualization exports
 ├── notebooks/                   # Jupyter notebooks for exploration
+│   └── exploration.ipynb
 ├── src/
 │   ├── db_manager.py           # DuckDB database operations
 │   ├── data_processor.py       # Polars data processing utilities
 │   ├── query_utils.py          # Pre-built SQL queries
 │   ├── initialize_database.py  # Database setup script
-│   └── preprocess_raw_data.py  # Raw data preprocessing
-└── requirements.txt            # Python dependencies
+│   ├── preprocess_raw_data.py  # Raw data preprocessing
+│   ├── fetch_smhi_weather.py   # SMHI weather downloader (CLI script)
+│   └── scrape_artfakta.py      # Selenium scraper for species metadata
+└── tests/                      # Test files
+    ├── test_setup.py
+    ├── test_heatmap.py
+    ├── test_phenology_patterns.py
+    └── test_phenology_visualizations.py
 ```
 
 ## Data Schema
@@ -75,8 +93,38 @@ märkning/
 ### Supporting Tables
 
 - `species_metadata`: Extended species information
-- `weather_data`: Weather conditions (for future integration)
+- `weather_data`: SMHI hourly meteorological observations — see full schema below
 - `ringer_info`: Ringer contact information
+
+### `weather_data` Table Schema
+
+| Column | Type | Description |
+|--------|------|-------------|
+| observation_time | TIMESTAMPTZ PK | UTC timestamp of the observation |
+| temperature | DOUBLE | Air temperature (°C, instantaneous) |
+| wind_direction | DOUBLE | Wind direction (°, 10-min mean) |
+| wind_speed | DOUBLE | Wind speed (m/s, 10-min mean) |
+| gust_wind | DOUBLE | Gust wind speed (m/s, max in 1 h) |
+| humidity | DOUBLE | Relative humidity (%, instantaneous) |
+| precipitation | DOUBLE | Precipitation (mm, 1-h sum) |
+| pressure | DOUBLE | Air pressure sea-level (hPa) |
+| cloud_cover | DOUBLE | Total cloud cover (%) |
+| temperature_quality | VARCHAR(2) | SMHI quality flag for temperature |
+| wind_speed_quality | VARCHAR(2) | SMHI quality flag for wind speed |
+| precipitation_quality | VARCHAR(2) | SMHI quality flag for precipitation |
+| station_id | INTEGER | SMHI station ID (71190 = Nidingen A) |
+| station_name | VARCHAR | Station name |
+| data_source | VARCHAR | Always `'SMHI-OpenData'` |
+| fetched_at | TIMESTAMP | When the row was downloaded |
+
+**Indexes:** `idx_weather_time` on `observation_time`, `idx_weather_date` on `CAST(observation_time AS DATE)`
+
+**Coverage reality** (important for join logic):
+- **1982–1994**: 3-hourly synoptic schedule (00, 03, 06 … 21 UTC) — ~8 obs/day, `data_completeness ≈ 0.33`
+- **1995**: transition year (~18% coverage)
+- **1996–present**: hourly, ~99–100% coverage
+- **Ringing data era (2020–2024)**: essentially 100% hourly — ASOF join gaps are 0 h
+- `humidity`, `precipitation`, `gust_wind` are NULL for most of 1982–1994 (sensors not yet installed)
 
 ## Core Modules
 
@@ -100,79 +148,174 @@ with BirdRingingDB("data/bird_ringing.db") as db:
 ```
 
 **Key Methods:**
-- `initialize_schema()`: Create database tables and indexes
-- `load_csv_to_table()`: Load CSV data into database
-- `get_data_as_polars()`: Retrieve data as Polars DataFrame
-- `execute_query()`: Execute custom SQL queries
-- `get_summary_stats()`: Get database summary statistics
-- `optimize_database()`: Run optimization operations
-- `export_table_to_parquet()`: Export to Parquet format
+- `initialize_schema()`: Create database tables and indexes (uses a sequence for `record_id` auto-increment)
+- `initialize_weather_schema()`: Create (or migrate) the `weather_data` table. Detects and drops an old schema that lacks `observation_time`; safe to call repeatedly.
+- `load_csv_to_table(csv_path, table_name, if_exists)`: Load CSV data into database; auto-excludes `record_id` from insert so the sequence handles it
+- `get_data_as_polars(query, table_name, filters)`: Retrieve data as Polars DataFrame; `filters` dict supports single values, lists, and scalars
+- `execute_query(query)`: Execute raw SQL and return DuckDB result object (call `.pl()` or `.fetchall()` on result)
+- `get_summary_stats()`: Get total records, date range, unique species/ringers, and top 10 species
+- `optimize_database()`: Run `ANALYZE` and `CHECKPOINT`
+- `export_table_to_parquet(table_name, output_path, partition_by)`: Export to Parquet format
+
+**Configuration:** DuckDB is initialized with `memory_limit='4GB'` and `threads=4`. Adjust in `__init__` for different environments.
 
 ### 2. `data_processor.py` - Data Processing
 
-**Class: `BirdDataProcessor`**
+**Class: `BirdDataProcessor`** (all static methods)
 
 High-performance data processing using Polars.
 
 ```python
-processor = BirdDataProcessor()
-
 # Load and clean data
-df = processor.load_csv("data.csv")
-df = processor.clean_ring_records(df)
+df = BirdDataProcessor.load_csv("data.csv")
+df = BirdDataProcessor.clean_ring_records(df)
 
 # Add time features
-df = processor.add_time_features(df)
+df = BirdDataProcessor.add_time_features(df)
 
 # Get species summary
-summary = processor.get_species_summary(df)
+summary = BirdDataProcessor.get_species_summary(df)
 
 # Calculate phenology
-phenology = processor.calculate_phenology_metrics(df)
+phenology = BirdDataProcessor.calculate_phenology_metrics(df)
 ```
 
 **Key Methods:**
-- `load_csv()`: Load CSV with optimized settings
-- `clean_ring_records()`: Clean and standardize data
-- `add_time_features()`: Add year, month, day, season columns
-- `filter_by_date_range()`: Filter by date range
-- `filter_by_species()`: Filter by species
-- `aggregate_daily_counts()`: Aggregate to daily counts
-- `calculate_recapture_stats()`: Analyze recaptures
-- `get_species_summary()`: Generate species statistics
-- `calculate_phenology_metrics()`: Migration timing analysis
-- `detect_outliers()`: Identify outliers in data
+- `load_csv()`: Load CSV with optimized settings; forces `notes` column to `Utf8`
+- `clean_ring_records()`: Strip whitespace, standardize empty strings to `null`, parse date column
+- `add_time_features()`: Add `year`, `month`, `day`, `weekday`, `day_of_year`, `week_of_year`, `season` columns
+- `filter_by_date_range()`: Filter by date range (inclusive)
+- `filter_by_species()`: Filter by species code(s)
+- `aggregate_daily_counts()`: Group by date+species and aggregate counts and mean morphometrics
+- `calculate_recapture_stats()`: Find birds captured >1 time, calculate days between captures
+- `pivot_species_by_time()`: Create a time × species pivot table
+- `get_species_summary()`: Generate per-species statistics (counts, morphometrics, most common age)
+- `calculate_phenology_metrics()`: Migration timing by species and year (first/last/median/IQR arrival day)
+- `detect_outliers()`: Flag outliers using IQR or z-score method
+- `merge_with_metadata()`: Join ring records with a metadata DataFrame
+- `export_to_formats()`: Export to Parquet, CSV, or JSON
 
 ### 3. `query_utils.py` - Pre-built Queries
 
-**Class: `BirdRingingQueries`**
+**Class: `BirdRingingQueries`** (all static methods)
 
-Optimized SQL queries for common dashboard operations.
+Optimized SQL query builders for common dashboard operations. All methods return SQL strings to pass to `db.execute_query()`.
 
 ```python
 from query_utils import BirdRingingQueries
 
-# Get time series query
 query = BirdRingingQueries.get_species_time_series(
     start_date="2020-01-01",
     species_codes=["GÄSMY", "BLMES"],
     aggregation="weekly"
 )
 
-# Execute with database
-with BirdRingingDB("data/bird_ringing.db") as db:
+with BirdRingingDB("data/bird_ringing.db", read_only=True) as db:
     df = db.execute_query(query).pl()
 ```
 
-**Available Queries:**
-- `get_species_time_series()`: Time series of observations
-- `get_morphometric_distributions()`: Weight/wing length data
-- `get_recapture_analysis()`: Recapture statistics
-- `get_phenology_by_species()`: Migration timing
-- `get_ringer_statistics()`: Ringer activity
-- `get_species_diversity_over_time()`: Species richness over time
-- `get_conditional_body_metrics()`: Body condition metrics
-- `get_year_over_year_comparison()`: Year-over-year changes
+**Available Query Builders:**
+
+| Method | Description |
+|--------|-------------|
+| `get_species_time_series(start_date, end_date, species_codes, aggregation)` | Observation counts over time; aggregation: `daily`, `weekly`, `monthly`, `yearly` |
+| `get_morphometric_distributions(species_codes, year)` | Raw weight/wing_length/age rows for box plots |
+| `get_recapture_analysis()` | Birds captured >1 time with days-between stats |
+| `get_phenology_by_species(species_codes, start_year, end_year)` | **DEPRECATED** — per-year first/median/last arrival day; does not capture bimodal patterns well |
+| `get_phenology_daily_distribution(species_codes, start_year, end_year, aggregate_years)` | Daily counts or avg counts per day-of-year; preferred for ridge plots |
+| `get_phenology_weekly_distribution(species_codes, start_year, end_year, aggregate_years)` | Weekly counts or avg counts; used for weekly phenology and year-over-year plots |
+| `get_phenology_migration_windows(species_codes, start_year, end_year, spring_months, autumn_months)` | Separate spring/autumn IQR timing per species per year |
+| `get_ringer_statistics(start_date, end_date)` | Per-ringer totals, unique species, active days |
+| `get_species_diversity_over_time(aggregation)` | Species richness and total observations by time period |
+| `get_conditional_body_metrics(metric, group_by)` | Mean/std/quantile body metrics grouped by any columns |
+| `get_year_over_year_comparison(species_codes)` | Yearly counts with YoY absolute and percent change |
+| `get_weekly_heatmap_data(year, top_n_species)` | Top-N species × week pivot data for heatmap; `year=None` averages across all years |
+| `get_weather_for_date_range(start_date, end_date, aggregation)` | Raw or aggregated SMHI weather; `aggregation`: `hourly`, `daily`, `weekly`, `monthly` |
+| `get_weather_joined_with_ringing(start_date, end_date, species_codes, weather_aggregation, max_gap_hours)` | Ringing counts joined to weather; `weather_aggregation='daily'` (robust default) or `'nearest'` (ASOF JOIN, adds `weather_match_hours` gap column) |
+| `get_weather_at_capture_time(start_date, end_date, species_codes, max_gap_hours)` | Record-level ASOF join — one row per individual capture with nearest weather attached; `weather_match_hours` always present; weather columns NULL when gap > `max_gap_hours` |
+| `get_daily_weather_summary(start_date, end_date)` | Compact daily table: min/max/mean temp, wind, rain, cloud, `data_completeness` (≈1.0 post-1996, ≈0.33 for 3-hourly pre-1996) |
+
+## Dashboard Architecture (`app.py`)
+
+The dashboard is fully implemented in `app.py`. It uses:
+- **Dash Bootstrap Components** (`dbc`) for layout (cards, tabs, spinners, radio items)
+- **Font Awesome** icons via `dbc.icons.FONT_AWESOME`
+- A shared **pastel colour palette** (`PASTEL_COLORS`) used consistently across all plots
+- All filters and species/year metadata are **loaded once at startup** from the database
+
+### Global Setup (at module level)
+
+```python
+DB_PATH = Path(__file__).parent / "data" / "bird_ringing.db"
+
+# Loaded once at startup
+species_options   # list of {label, value} for the species dropdown
+year_options      # list of {label, value} for the heatmap year dropdown
+date_range        # (min_date, max_date) tuple
+```
+
+### Tabs and Callbacks
+
+| Tab | Tab ID | Callback inputs | Plot IDs |
+|-----|--------|-----------------|----------|
+| 📈 Time Series | `tab-timeseries` | species, aggregation, date range, plot type toggle | `time-series-plot` |
+| 📊 Morphometrics | `tab-morpho` | species, date range | `weight-distribution`, `wing-length-distribution`, `age-distribution`, `fat-score-distribution` |
+| 🌸 Phenology | `tab-phenology` | species, date range | `phenology-weekly-plot`, `phenology-ridgeline-plot`, `phenology-seasonal-plot`, `phenology-yearly-plot` |
+| 🔥 Weekly Heatmap | `tab-heatmap` | heatmap year dropdown | `weekly-heatmap` |
+| 📋 Summary | `tab-summary` | species, date range | `summary-stats` (returns Bootstrap cards) |
+
+### Callback Pattern
+
+All callbacks follow this pattern:
+
+```python
+@callback(
+    Output("plot-id", "figure"),
+    [Input("species-dropdown", "value"), ...]
+)
+def update_plot(species_codes, ...):
+    if not species_codes:
+        return go.Figure()   # Return empty figure for missing input
+
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        query = BirdRingingQueries.some_query(species_codes=species_codes, ...)
+        df = db.execute_query(query).pl().to_pandas()
+
+    fig = ...   # Build Plotly figure
+    fig.update_layout(
+        template="plotly_white",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50")
+    )
+    return fig
+```
+
+### Colour Palette
+
+All charts use the shared pastel palette defined at the top of `app.py`:
+
+```python
+PASTEL_COLORS = [
+    '#B4D4E1',  # Pastel blue
+    '#FFD4B8',  # Pastel orange
+    '#C5E1B5',  # Pastel green
+    '#FFB8C3',  # Pastel pink
+    '#E0C5E8',  # Pastel purple
+    '#FFE8B8',  # Pastel yellow
+    '#B8E6E6',  # Pastel cyan
+    '#FFD4E5',  # Pastel rose
+    '#D4E8D4',  # Pastel mint
+    '#E8D4C5',  # Pastel tan
+]
+```
+
+When converting hex colours to `rgba` for fills (e.g. phenology area charts), parse with:
+```python
+r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+fill_color = f'rgba({r}, {g}, {b}, 0.3)'
+```
 
 ## Development Workflow
 
@@ -188,6 +331,17 @@ with BirdRingingDB("data/bird_ringing.db") as db:
    python src/initialize_database.py
    ```
 
+3. **Download weather data:**
+   ```bash
+   python src/fetch_smhi_weather.py
+   ```
+
+4. **Run dashboard:**
+   ```bash
+   python app.py
+   # Opens at http://localhost:8050
+   ```
+
 ### Loading New Data
 
 When adding new years or data:
@@ -196,7 +350,6 @@ When adding new years or data:
 from src.db_manager import BirdRingingDB
 
 with BirdRingingDB("data/bird_ringing.db") as db:
-    # Append new data (preserves existing records)
     db.load_csv_to_table(
         csv_path="data/processed/new_data.csv",
         if_exists="append"
@@ -204,146 +357,127 @@ with BirdRingingDB("data/bird_ringing.db") as db:
     db.optimize_database()
 ```
 
-### Building Dashboard Components
+### Adding a New Dashboard Visualisation
 
-When creating new dashboard visualizations:
-
-1. **Define query** using `BirdRingingQueries` or custom SQL
-2. **Fetch data** using `BirdRingingDB.execute_query()` or `get_data_as_polars()`
-3. **Process data** using `BirdDataProcessor` methods if needed
-4. **Create Plotly figure** using `plotly.graph_objects` or `plotly.express`
-5. **Add to Dash layout** as `dcc.Graph` component
-
-### Example Dashboard Component
-
-```python
-import dash
-from dash import dcc, html, Input, Output
-import plotly.express as px
-from src.db_manager import BirdRingingDB
-from src.query_utils import BirdRingingQueries
-
-app = dash.Dash(__name__)
-
-@app.callback(
-    Output("time-series-plot", "figure"),
-    Input("species-dropdown", "value")
-)
-def update_time_series(species_codes):
-    # Get data from database
-    with BirdRingingDB("data/bird_ringing.db", read_only=True) as db:
-        query = BirdRingingQueries.get_species_time_series(
-            species_codes=species_codes,
-            aggregation="monthly"
-        )
-        df = db.execute_query(query).pl()
-    
-    # Convert to pandas for Plotly
-    df_pd = df.to_pandas()
-    
-    # Create figure
-    fig = px.line(
-        df_pd,
-        x="period",
-        y="count",
-        color="swedish_name",
-        title="Monthly Species Observations"
-    )
-    
-    return fig
-```
+1. **Define query** in `BirdRingingQueries` (or use inline SQL)
+2. **Add a `dcc.Graph`** component to the relevant tab in `app.layout`
+3. **Register a `@callback`** following the callback pattern above
+4. **Use `PASTEL_COLORS`** and the standard `update_layout` kwargs for visual consistency
 
 ## Performance Best Practices
 
 ### Database Operations
 
-1. **Use indexes**: Queries on date, species_code are optimized
-2. **Filter early**: Apply WHERE clauses before aggregations
-3. **Use read_only mode**: For dashboard queries (prevents locking)
-4. **Batch operations**: Use transactions for multiple inserts
-5. **Optimize regularly**: Run `db.optimize_database()` after bulk loads
+1. **Use indexes**: Queries on `date`, `species_code`, and `(date, species_code)` are indexed
+2. **Filter early**: Apply `WHERE` clauses before aggregations
+3. **Use `read_only=True`**: For all dashboard callbacks (prevents locking)
+4. **Optimize regularly**: Run `db.optimize_database()` after bulk loads
 
 ### Data Processing with Polars
 
-1. **Lazy evaluation**: Use `.lazy()` for query optimization
-2. **Avoid pandas**: Polars is 10-100x faster for large datasets
-3. **Use `.pl()` method**: Convert DuckDB results directly to Polars
-4. **Filter before collect**: Apply filters in lazy mode
-5. **Parallel processing**: Polars automatically parallelizes operations
+1. **Prefer DuckDB aggregation**: Do as much as possible in SQL before converting to Polars/pandas
+2. **Use `.pl()` method**: Convert DuckDB results directly to Polars, avoid intermediate copies
+3. **Convert to pandas only for Plotly**: Call `.to_pandas()` immediately before plotting
+4. **Parallel processing**: Polars automatically parallelizes operations
 
 ### Dashboard Performance
 
-1. **Cache data**: Use `@lru_cache` for repeated queries
-2. **Pagination**: Limit initial data load for large tables
-3. **Aggregation**: Pre-aggregate data when possible
-4. **Lazy loading**: Load data only when needed
-5. **Use Parquet**: For large static datasets
+1. **Startup queries are cached** in module-level variables (`species_options`, `year_options`, `date_range`)
+2. **Aggregation in SQL**: All heavy aggregation happens in DuckDB, not Python
+3. **Spinners**: All graphs are wrapped in `dbc.Spinner` to provide loading feedback
 
-## Common Queries for Dashboard
+## Common Queries
 
-### Time Series Visualization
+### Time Series
 ```python
 query = BirdRingingQueries.get_species_time_series(
-    start_date="2020-01-01",
-    end_date="2024-12-31",
-    species_codes=["GÄSMY", "BLMES"],
-    aggregation="monthly"
+    start_date="2020-01-01", end_date="2024-12-31",
+    species_codes=["GÄSMY", "BLMES"], aggregation="monthly"
 )
 ```
 
-### Box Plot for Morphometrics
+### Morphometrics (Box Plot Input)
 ```python
 query = BirdRingingQueries.get_morphometric_distributions(
-    species_codes=["GÄSMY"],
-    year=2023
+    species_codes=["GÄSMY"], year=2023
 )
 ```
 
-### Recapture Analysis
+### Phenology – Weekly Distribution (Recommended)
 ```python
-query = BirdRingingQueries.get_recapture_analysis()
-```
+# Averaged across all years
+query = BirdRingingQueries.get_phenology_weekly_distribution(
+    species_codes=["GÄSMY"], start_year=2020, end_year=2024, aggregate_years=True
+)
 
-### Phenology (Migration Timing)
-```python
-query = BirdRingingQueries.get_phenology_by_species(
-    species_codes=["GÄSMY"],
-    start_year=2020,
-    end_year=2024
+# Per-year (for year-over-year plots)
+query = BirdRingingQueries.get_phenology_weekly_distribution(
+    species_codes=["GÄSMY"], start_year=2020, end_year=2024, aggregate_years=False
 )
 ```
 
-## Data Types and Visualization Suggestions
+### Migration Windows (Spring vs Autumn)
+```python
+query = BirdRingingQueries.get_phenology_migration_windows(
+    species_codes=["GÄSMY"],
+    spring_months=[3, 4, 5],
+    autumn_months=[8, 9, 10]
+)
+```
 
-### Scatter Plots
-- Weight vs. Wing Length (morphometric relationships)
-- Date vs. Weight (seasonal patterns)
-- Fat Score vs. Weight (body condition)
+### Weekly Heatmap
+```python
+query = BirdRingingQueries.get_weekly_heatmap_data(year=2023, top_n_species=30)
+query = BirdRingingQueries.get_weekly_heatmap_data(year=None, top_n_species=30)  # all-year average
+```
 
-### Histograms
-- Weight distributions by species
-- Wing length distributions by age class
-- Arrival day distributions (phenology)
+### Weather – Daily Summary (robust, any era)
+```python
+query = BirdRingingQueries.get_daily_weather_summary(
+    start_date="2020-01-01", end_date="2024-12-31"
+)
+# Returns: date, mean/min/max_temperature, mean_wind_speed, max_gust,
+#          total_precipitation, mean_cloud_cover, data_completeness
+```
 
-### Box Plots
-- Weight by species and year
-- Wing length by age class
-- Fat scores across seasons
+### Weather + Ringing – Daily Join (recommended)
+```python
+# Daily mean weather joined to daily capture counts — works for any date range
+query = BirdRingingQueries.get_weather_joined_with_ringing(
+    start_date="2022-01-01", end_date="2022-12-31",
+    species_codes=["GÄSMY", "BLMES"],
+    weather_aggregation="daily",   # default
+)
+# Returns: date, species_code, captures, mean_weight, mean_fat_score,
+#          mean/min/max_temperature, total_precipitation, data_completeness, …
+```
 
-### Line Plots
-- Daily/weekly/monthly observation counts
-- Cumulative arrivals (phenology curves)
-- Year-over-year trends
+### Weather + Ringing – Nearest-Hour Join (for hourly correlation)
+```python
+# ASOF JOIN: nearest weather observation per capture-hour group
+# max_gap_hours=2 nullifies weather columns if gap > 2 h (safe for 2020+ era)
+query = BirdRingingQueries.get_weather_joined_with_ringing(
+    start_date="2022-09-01", end_date="2022-10-31",
+    species_codes=["GÄSMY"],
+    weather_aggregation="nearest",
+    max_gap_hours=2,
+)
+# Returns: date, capture_hour, captures, weather_match_hours, temperature, wind_speed, …
+```
 
-### Heatmaps
-- Species by month matrix
-- Hour of day by species activity
-- Year by species observation counts
-
-### Bar Charts
-- Top species by count
-- Ringer activity statistics
-- Species richness by year
+### Weather at Individual Capture Time (record-level)
+```python
+# One row per ringing record with nearest weather observation attached
+# Use for scatter plots: fat_score vs temperature, weight vs wind_speed, etc.
+query = BirdRingingQueries.get_weather_at_capture_time(
+    start_date="2022-09-01", end_date="2022-10-31",
+    species_codes=["GÄSMY"],
+    max_gap_hours=2,
+)
+# Returns: record_id, date, time, ring_number, species_code, age, weight,
+#          wing_length, fat_score, muscle_score,
+#          weather_ts, weather_match_hours, temperature, wind_speed, …
+```
 
 ## Testing Queries
 
@@ -353,22 +487,30 @@ Always test queries before adding to dashboard:
 with BirdRingingDB("data/bird_ringing.db", read_only=True) as db:
     query = "YOUR_SQL_QUERY"
     result = db.execute_query(query)
-    print(result.pl())  # Check results
+    print(result.pl())  # Check results as Polars DataFrame
 ```
 
 ## Extending the Database
 
 ### Adding Weather Data
 
-```python
-# Create weather data table (already defined in schema)
-with BirdRingingDB("data/bird_ringing.db") as db:
-    db.initialize_schema()  # Creates weather_data table
-    
-    # Load weather CSV
-    weather_df = pl.read_csv("weather_data.csv")
-    db.conn.execute("INSERT INTO weather_data SELECT * FROM weather_df")
+Weather data is fetched from the SMHI Open Data API using `src/fetch_smhi_weather.py`:
+
+```bash
+# Full download + load into DB (run once; re-run to refresh)
+python src/fetch_smhi_weather.py
+
+# Download and also save to CSV (for inspection)
+python src/fetch_smhi_weather.py --output-csv data/processed/weather.csv
+
+# Fetch without writing to DB
+python src/fetch_smhi_weather.py --dry-run
 ```
+
+The script downloads 8 parameters (temperature, wind, humidity, precipitation,
+pressure, cloud cover, gust wind) for Nidingen A (SMHI station 71190) from 1980
+to present, deduplicates, and upserts into `weather_data`.  It calls
+`db.initialize_weather_schema()` automatically — safe to run on an existing DB.
 
 ### Adding New Species Metadata
 
@@ -383,37 +525,27 @@ with BirdRingingDB("data/bird_ringing.db") as db:
 ## Troubleshooting
 
 ### Database Lock Issues
-- Use `read_only=True` for queries in dashboard
+- Always use `read_only=True` for callbacks in `app.py`
 - Only one write connection at a time
-- Close connections properly (use context manager)
+- Use the context manager (`with BirdRingingDB(...) as db:`) to ensure proper cleanup
 
 ### Memory Issues
-- Use DuckDB's query result streaming for large results
-- Apply filters before fetching data
-- Use pagination for dashboard tables
-- Increase `memory_limit` in BirdRingingDB.__init__
+- Apply filters in SQL before fetching data
+- Increase `memory_limit` in `BirdRingingDB.__init__` if needed
+- Use `export_table_to_parquet()` and load from Parquet for very large static datasets
 
 ### Performance Issues
-- Check if indexes are being used: `EXPLAIN query`
-- Ensure database is optimized: `db.optimize_database()`
-- Profile queries with `EXPLAIN ANALYZE`
-- Consider materialized views for complex aggregations
-
-## Next Steps
-
-1. **Build dashboard layout**: Create main dashboard file with Dash components
-2. **Implement filters**: Add dropdowns for species, date ranges, ringers
-3. **Create visualizations**: Implement plot types as callback functions
-4. **Add interactivity**: Link filters to plots with callbacks
-5. **Style dashboard**: Add CSS, improve layout with dash-bootstrap-components
-6. **Deploy**: Use Gunicorn for production deployment
+- Use `EXPLAIN query` to check index usage
+- Run `db.optimize_database()` (`ANALYZE` + `CHECKPOINT`) after bulk loads
+- Profile with `EXPLAIN ANALYZE`
 
 ## Useful Resources
 
 - DuckDB SQL: https://duckdb.org/docs/sql/introduction
-- Polars API: https://pola-rs.github.io/polars/py-polars/html/reference/
+- Polars API: https://docs.pola.rs/api/python/stable/reference/
 - Plotly Dash: https://dash.plotly.com/
 - Plotly Graphs: https://plotly.com/python/
+- Dash Bootstrap Components: https://dash-bootstrap-components.opensource.faculty.ai/
 
 ## Common Species Codes
 
@@ -429,6 +561,6 @@ with BirdRingingDB("data/bird_ringing.db") as db:
 
 ---
 
-**Last Updated**: 2026-02-16
+**Last Updated**: 2026-02-19
 **Database Version**: 1.0
 **Schema Version**: 1.0
