@@ -327,6 +327,88 @@ app.layout = dbc.Container([
                     ], className="p-3")
                 ]),
                 
+                # Weather Analysis Tab
+                dbc.Tab(label="🌤️ Weather Analysis", tab_id="tab-weather", children=[
+                    html.Div([
+                        html.Div([
+                            html.H4("Weather Analysis", className="text-center mb-2"),
+                            html.P(
+                                "Meteorological observations from SMHI Nidingen A (station 71190) "
+                                "supplemented by Vinga A (station 71380) where Nidingen lacks data.",
+                                className="text-center text-muted mb-3"
+                            ),
+                            # Data source legend
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Alert([
+                                        dbc.Row([
+                                            dbc.Col([
+                                                html.Strong("🏝️ Nidingen A (71190) · primary station"),
+                                                html.Br(),
+                                                html.Small(
+                                                    "Temperature, wind, humidity, cloud cover, gust wind: full archive 1980–present. "
+                                                    "Precipitation: 1980–2007. Pressure: 1980–1995.",
+                                                    className="text-muted"
+                                                ),
+                                            ], md=6),
+                                            dbc.Col([
+                                                html.Strong("⚓ Vinga A (71380) · supplementary station"),
+                                                html.Br(),
+                                                html.Small(
+                                                    "Precipitation: 2007–present (gap-fills Nidingen). "
+                                                    "Pressure: 1996–present (gap-fills Nidingen). "
+                                                    "Full Vinga archive stored separately in weather_data_vinga.",
+                                                    className="text-muted"
+                                                ),
+                                            ], md=6),
+                                        ])
+                                    ], color="light", className="mb-3 py-2 px-3",
+                                       style={"borderRadius": "8px", "fontSize": "0.88rem"})
+                                ], md=12)
+                            ]),
+                        ], className="mt-3"),
+
+                        # Variable selector
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label(
+                                    "Select variables to display",
+                                    className="fw-bold mb-2",
+                                    style={"color": "#6c757d"}
+                                ),
+                                dbc.Checklist(
+                                    id="weather-variable-checklist",
+                                    options=[
+                                        {"label": "🌡️ Temperature (mean / min / max) — Nidingen A",    "value": "temperature"},
+                                        {"label": "💨 Wind speed & gusts — Nidingen A",                 "value": "wind"},
+                                        {"label": "🌧️ Precipitation — Nidingen A (≤2007) + Vinga A (2007→)", "value": "precipitation"},
+                                        {"label": "☁️ Cloud cover — Nidingen A",                       "value": "cloud"},
+                                        {"label": "💧 Humidity — Nidingen A",                           "value": "humidity"},
+                                        {"label": "🔵 Pressure — Nidingen A (≤1995) + Vinga A (1996→)", "value": "pressure"},
+                                    ],
+                                    value=["temperature", "wind", "precipitation"],
+                                    inline=False,
+                                    className="mb-3",
+                                ),
+                            ], md=12),
+                        ]),
+
+                        # Time series plot
+                        html.Div([
+                            html.H5([
+                                html.I(className="fas fa-chart-line me-2"),
+                                "Daily Weather Time Series"
+                            ], className="mb-3", style={"color": "#495057"}),
+                            dbc.Spinner(
+                                dcc.Graph(id="weather-timeseries-plot"),
+                                color="primary",
+                                type="border",
+                                spinner_style={"width": "3rem", "height": "3rem"}
+                            ),
+                        ], className="mb-4"),
+                    ], className="p-3")
+                ]),
+
                 # Summary Tab
                 dbc.Tab(label="📋 Summary", tab_id="tab-summary", children=[
                     html.Div(id="summary-stats", className="p-4")
@@ -1375,6 +1457,261 @@ def update_weekly_heatmap(selected_year):
         title_font=dict(size=18, color="#2c3e50")
     )
     
+    return fig
+
+
+@callback(
+    Output("weather-timeseries-plot", "figure"),
+    [Input("date-range-picker", "start_date"),
+     Input("date-range-picker", "end_date"),
+     Input("weather-variable-checklist", "value")]
+)
+def update_weather_timeseries(start_date, end_date, selected_vars):
+    """Update the weather time series plot for the selected date range and variables."""
+    if not selected_vars:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Please select at least one variable",
+            showarrow=False,
+            font={"size": 16, "color": "#95a5a6"},
+            xref="paper", yref="paper", x=0.5, y=0.5
+        )
+        fig.update_layout(template="plotly_white", paper_bgcolor="rgba(0,0,0,0)")
+        return fig
+
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        query = BirdRingingQueries.get_daily_weather_summary(
+            start_date=start_date,
+            end_date=end_date
+        )
+        df = db.execute_query(query).pl().to_pandas()
+
+    if df.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No weather data available for the selected period",
+            showarrow=False,
+            font={"size": 16, "color": "#95a5a6"},
+            xref="paper", yref="paper", x=0.5, y=0.5
+        )
+        fig.update_layout(template="plotly_white", paper_bgcolor="rgba(0,0,0,0)")
+        return fig
+
+    # -----------------------------------------------------------------------
+    # Build subplot grid: one row per selected variable
+    # -----------------------------------------------------------------------
+    VAR_META = {
+        "temperature":   {"title": "Temperature (°C)  ·  Nidingen A",  "color_idx": 0},
+        "wind":          {"title": "Wind (m/s)  ·  Nidingen A",         "color_idx": 1},
+        "precipitation": {"title": "Precipitation (mm)  ·  Nidingen A + Vinga A", "color_idx": 2},
+        "cloud":         {"title": "Cloud cover (%)  ·  Nidingen A",    "color_idx": 6},
+        "humidity":      {"title": "Humidity (%)  ·  Nidingen A",       "color_idx": 3},
+        "pressure":      {"title": "Pressure (hPa)  ·  Nidingen A + Vinga A", "color_idx": 4},
+    }
+
+    # Vinga accent colour (pastel tan, distinct from the primary colours used above)
+    VINGA_COLOR = "#E8D4C5"  # pastel tan
+    rv, gv, bv = int(VINGA_COLOR[1:3], 16), int(VINGA_COLOR[3:5], 16), int(VINGA_COLOR[5:7], 16)
+
+    # Keep order stable regardless of checklist order
+    var_order = ["temperature", "wind", "precipitation", "cloud", "humidity", "pressure"]
+    active_vars = [v for v in var_order if v in selected_vars]
+    n_rows = len(active_vars)
+
+    # Row heights: temperature gets a bit more vertical space
+    row_heights = []
+    for v in active_vars:
+        row_heights.append(1.5 if v == "temperature" else 1.0)
+    total_height = sum(row_heights)
+    row_heights_norm = [h / total_height for h in row_heights]
+
+    from plotly.subplots import make_subplots
+
+    subplot_titles = [VAR_META[v]["title"] for v in active_vars]
+    fig = make_subplots(
+        rows=n_rows,
+        cols=1,
+        shared_xaxes=True,
+        subplot_titles=subplot_titles,
+        row_heights=row_heights_norm,
+        vertical_spacing=0.06,
+    )
+
+    for row_idx, var in enumerate(active_vars, start=1):
+        color = PASTEL_COLORS[VAR_META[var]["color_idx"]]
+        r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+        fill_color = f"rgba({r},{g},{b},0.25)"
+
+        if var == "temperature":
+            # Shaded band: min–max + mean line
+            fig.add_trace(
+                go.Scatter(
+                    x=df["date"].tolist() + df["date"].tolist()[::-1],
+                    y=df["max_temperature"].tolist() + df["min_temperature"].tolist()[::-1],
+                    fill="toself",
+                    fillcolor=fill_color,
+                    line=dict(color="rgba(0,0,0,0)"),
+                    showlegend=True,
+                    name="Temp min–max · Nidingen A",
+                    hoverinfo="skip",
+                ),
+                row=row_idx, col=1,
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=df["date"],
+                    y=df["mean_temperature"],
+                    mode="lines",
+                    line=dict(color=color, width=2),
+                    name="Mean temp · Nidingen A",
+                    hovertemplate="%{x|%Y-%m-%d}<br>Mean: %{y:.1f} °C  [Nidingen A]<extra></extra>",
+                ),
+                row=row_idx, col=1,
+            )
+
+        elif var == "wind":
+            gust_color = PASTEL_COLORS[VAR_META["temperature"]["color_idx"]]
+            r2, g2, b2 = int(gust_color[1:3], 16), int(gust_color[3:5], 16), int(gust_color[5:7], 16)
+            fig.add_trace(
+                go.Scatter(
+                    x=df["date"],
+                    y=df["max_gust"],
+                    mode="lines",
+                    line=dict(color=f"rgba({r2},{g2},{b2},0.5)", width=1, dash="dot"),
+                    name="Max gust · Nidingen A",
+                    hovertemplate="%{x|%Y-%m-%d}<br>Max gust: %{y:.1f} m/s  [Nidingen A]<extra></extra>",
+                ),
+                row=row_idx, col=1,
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=df["date"],
+                    y=df["mean_wind_speed"],
+                    mode="lines",
+                    line=dict(color=color, width=2),
+                    fill="tozeroy",
+                    fillcolor=fill_color,
+                    name="Mean wind · Nidingen A",
+                    hovertemplate="%{x|%Y-%m-%d}<br>Mean wind: %{y:.1f} m/s  [Nidingen A]<extra></extra>",
+                ),
+                row=row_idx, col=1,
+            )
+
+        elif var == "precipitation":
+            # Split into Nidingen rows and Vinga gap-fill rows
+            df_nid  = df[~df["vinga_gap_fill_used"]]
+            df_ving = df[df["vinga_gap_fill_used"]]
+            if not df_nid.empty:
+                fig.add_trace(
+                    go.Bar(
+                        x=df_nid["date"],
+                        y=df_nid["total_precipitation"],
+                        marker_color=color,
+                        marker_line_width=0,
+                        name="Precipitation · Nidingen A",
+                        hovertemplate="%{x|%Y-%m-%d}<br>Precip: %{y:.1f} mm  [Nidingen A]<extra></extra>",
+                    ),
+                    row=row_idx, col=1,
+                )
+            if not df_ving.empty:
+                fig.add_trace(
+                    go.Bar(
+                        x=df_ving["date"],
+                        y=df_ving["total_precipitation"],
+                        marker_color=VINGA_COLOR,
+                        marker_line_width=0,
+                        name="Precipitation · Vinga A (gap-fill)",
+                        hovertemplate="%{x|%Y-%m-%d}<br>Precip: %{y:.1f} mm  [Vinga A]<extra></extra>",
+                    ),
+                    row=row_idx, col=1,
+                )
+
+        elif var == "cloud":
+            fig.add_trace(
+                go.Scatter(
+                    x=df["date"],
+                    y=df["mean_cloud_cover"],
+                    mode="lines",
+                    line=dict(color=color, width=2),
+                    fill="tozeroy",
+                    fillcolor=fill_color,
+                    name="Cloud cover · Nidingen A",
+                    hovertemplate="%{x|%Y-%m-%d}<br>Cloud: %{y:.0f}%  [Nidingen A]<extra></extra>",
+                ),
+                row=row_idx, col=1,
+            )
+
+        elif var == "humidity":
+            fig.add_trace(
+                go.Scatter(
+                    x=df["date"],
+                    y=df["mean_humidity"],
+                    mode="lines",
+                    line=dict(color=color, width=2),
+                    fill="tozeroy",
+                    fillcolor=fill_color,
+                    name="Humidity · Nidingen A",
+                    hovertemplate="%{x|%Y-%m-%d}<br>Humidity: %{y:.0f}%  [Nidingen A]<extra></extra>",
+                ),
+                row=row_idx, col=1,
+            )
+
+        elif var == "pressure":
+            # Split into Nidingen rows and Vinga gap-fill rows
+            df_nid  = df[~df["vinga_gap_fill_used"]]
+            df_ving = df[df["vinga_gap_fill_used"]]
+            if not df_nid.empty:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_nid["date"],
+                        y=df_nid["mean_pressure"],
+                        mode="lines",
+                        line=dict(color=color, width=2),
+                        name="Pressure · Nidingen A",
+                        hovertemplate="%{x|%Y-%m-%d}<br>Pressure: %{y:.1f} hPa  [Nidingen A]<extra></extra>",
+                    ),
+                    row=row_idx, col=1,
+                )
+            if not df_ving.empty:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_ving["date"],
+                        y=df_ving["mean_pressure"],
+                        mode="lines",
+                        line=dict(color=VINGA_COLOR, width=2),
+                        name="Pressure · Vinga A (gap-fill)",
+                        hovertemplate="%{x|%Y-%m-%d}<br>Pressure: %{y:.1f} hPa  [Vinga A]<extra></extra>",
+                    ),
+                    row=row_idx, col=1,
+                )
+
+    # Shared layout
+    plot_height = max(350, 220 * n_rows)
+    fig.update_layout(
+        height=plot_height,
+        template="plotly_white",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50"),
+        hovermode="x unified",
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="#dee2e6",
+            borderwidth=1,
+        ),
+        margin=dict(l=60, r=30, t=60, b=40),
+    )
+
+    # Style subplot title annotations
+    for annotation in fig.layout.annotations:
+        annotation.update(font=dict(size=13, color="#495057"), xanchor="left", x=0)
+
     return fig
 
 
