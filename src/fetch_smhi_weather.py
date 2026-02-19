@@ -10,27 +10,19 @@ Coordinates: 57.3036°N, 11.9049°E
 Height: 3.785 m
 
 Parameters downloaded (all hourly, corrected-archive period):
-  1  – Lufttemperatur        (Air temperature, °C, instantaneous)
-  3  – Vindriktning          (Wind direction, °, 10-min mean)
-  4  – Vindhastighet         (Wind speed, m/s, 10-min mean)
+  1  – Lufttemperatur      (Air temperature, °C, instantaneous)
+  3  – Vindriktning        (Wind direction, °, 10-min mean)
+  4  – Vindhastighet       (Wind speed, m/s, 10-min mean)
   6  – Relativ Luftfuktighet (Relative humidity, %, instantaneous)
-  7  – Nederbördsmängd       (Precipitation, mm, hourly sum)
-  9  – Lufttryck reducerat   (Air pressure sea-level, hPa, instantaneous)
- 12  – Sikt                  (Visibility, m, instantaneous)
- 16  – Total molnmängd       (Total cloud cover, %, instantaneous)
- 21  – Byvind                (Gust wind speed, m/s, max in 1 h)
-
-Supplementary station: Vinga A (station 71380) — fills gaps where Nidingen
-data ends:
-  Precipitation : Nidingen ended 2007-03-22 → Vinga from 2007-06-01 to present
-  Pressure      : Nidingen ended 1995-06-30 → Vinga from 1968 to present
-  Visibility    : Nidingen ended 2007        → Vinga from 1949 to present
+  7  – Nederbördsmängd     (Precipitation, mm, hourly sum)
+  9  – Lufttryck reducerat (Air pressure sea-level, hPa, instantaneous)
+ 16  – Total molnmängd     (Total cloud cover, %, instantaneous)
+ 21  – Byvind              (Gust wind speed, m/s, max in 1 h)
 
 Usage:
     python src/fetch_smhi_weather.py
     python src/fetch_smhi_weather.py --db-path data/bird_ringing.db
     python src/fetch_smhi_weather.py --dry-run      # fetch but don't write to DB
-    python src/fetch_smhi_weather.py --no-vinga     # skip Vinga supplementary fetch
 """
 
 import argparse
@@ -67,7 +59,6 @@ PARAMETERS = [
     (6,  "humidity",       "Relative humidity",        "%"),
     (7,  "precipitation",  "Precipitation (1-h sum)",  "mm"),
     (9,  "pressure",       "Air pressure (sea level)", "hPa"),
-    (12, "visibility",     "Visibility",              "m"), 
     (16, "cloud_cover",    "Total cloud cover",        "%"),
     (21, "gust_wind",      "Gust wind speed",          "m/s"),
 ]
@@ -422,12 +413,12 @@ def patch_nidingen_from_vinga(db_path: str) -> None:
         null_counts = conn.execute("""
             SELECT
                 COUNT(*) FILTER (WHERE w.precipitation IS NULL AND v.precipitation IS NOT NULL) AS precip_fillable,
-                COUNT(*) FILTER (WHERE w.pressure      IS NULL AND v.pressure      IS NOT NULL) AS pressure_fillable,
-                COUNT(*) FILTER (WHERE w.visibility    IS NULL AND v.visibility    IS NOT NULL) AS visibility_fillable
+                COUNT(*) FILTER (WHERE w.pressure      IS NULL AND v.pressure      IS NOT NULL) AS pressure_fillable
             FROM weather_data w
             JOIN weather_data_vinga v ON w.observation_time = v.observation_time
         """).fetchone()
-        print(f"  Fillable rows — precipitation: {null_counts[0]:,}  |  pressure: {null_counts[1]:,}  |  visibility: {null_counts[2]:,}")
+        print(f"  Fillable rows — precipitation: {null_counts[0]:,}  |  pressure: {null_counts[1]:,}")
+
         # Patch precipitation
         updated_precip = conn.execute("""
             UPDATE weather_data w
@@ -452,33 +443,20 @@ def patch_nidingen_from_vinga(db_path: str) -> None:
               AND v.pressure IS NOT NULL
         """).fetchone()
 
-        # Patch visibility
-        updated_visibility = conn.execute("""
-            UPDATE weather_data w
-            SET
-                visibility         = v.visibility,
-                visibility_quality = v.visibility_quality
-            FROM weather_data_vinga v
-            WHERE w.observation_time = v.observation_time
-              AND w.visibility IS NULL
-              AND v.visibility IS NOT NULL
-        """).fetchone()
-
-        print(f"  Patched precipitation in {null_counts[0]:,} rows, pressure in {null_counts[1]:,} rows, visibility in {null_counts[2]:,} rows.")
+        print(f"  Patched precipitation in {null_counts[0]:,} rows, pressure in {null_counts[1]:,} rows.")
 
         # Report final null counts
         remaining = conn.execute("""
             SELECT
                 COUNT(*) FILTER (WHERE precipitation IS NULL) AS precip_null,
                 COUNT(*) FILTER (WHERE pressure IS NULL)      AS pressure_null,
-                COUNT(*) FILTER (WHERE visibility IS NULL)    AS visibility_null,
                 MIN(CAST(observation_time AS DATE))           AS min_date,
                 MAX(CAST(observation_time AS DATE))           AS max_date
             FROM weather_data
         """).fetchone()
         print(
-            f"  Remaining NULLs — precipitation: {remaining[0]:,}  pressure: {remaining[1]:,}  visibility: {remaining[2]:,}  "
-            f"(date range {remaining[3]} → {remaining[4]})"
+            f"  Remaining NULLs — precipitation: {remaining[0]:,}  pressure: {remaining[1]:,}  "
+            f"(date range {remaining[2]} → {remaining[3]})"
         )
 
         db.optimize_database()
@@ -508,14 +486,9 @@ def main() -> None:
         help="Fetch data and print a summary, but do NOT write to the database.",
     )
     parser.add_argument(
-        "--output-nidingen-csv",
+        "--output-csv",
         default=None,
         help="Optionally save the Nidingen fetched data as a CSV file.",
-    )
-    parser.add_argument(
-        "--output-vinga-csv",
-        default=None,
-        help="Optionally save the Vinga fetched data as a CSV file.",
     )
     parser.add_argument(
         "--no-vinga",
@@ -547,8 +520,8 @@ def main() -> None:
                 else f"  {col:<25s} all null"
             )
 
-    if args.output_nidingen_csv:
-        out = Path(args.output_nidingen_csv)
+    if args.output_csv:
+        out = Path(args.output_csv)
         out.parent.mkdir(parents=True, exist_ok=True)
         df_nidingen.write_csv(str(out))
         print(f"\nSaved to {out}")
@@ -581,12 +554,6 @@ def main() -> None:
                     if len(non_null) > 0
                     else f"  {col:<25s} all null"
                 )
-
-        if args.output_vinga_csv:
-            out_v = Path(args.output_vinga_csv)
-            out_v.parent.mkdir(parents=True, exist_ok=True)
-            df_vinga.write_csv(str(out_v))
-            print(f"\nSaved to {out_v}")
 
         if args.dry_run:
             print("\n[dry-run] Skipping Vinga database write and gap-fill patch.")

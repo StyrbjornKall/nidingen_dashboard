@@ -1077,14 +1077,11 @@ class BirdRingingQueries:
             SUM(COALESCE(w.precipitation, v.precipitation))        AS total_precipitation,
             -- Prefer Nidingen pressure; fall back to Vinga when NULL
             AVG(COALESCE(w.pressure, v.pressure))                  AS mean_pressure,
-            -- Prefer Nidingen visibility; fall back to Vinga when NULL
-            AVG(COALESCE(w.visibility, v.visibility))              AS mean_visibility,
             AVG(w.cloud_cover)                 AS mean_cloud_cover,
             COUNT(w.temperature) * 1.0 / 24.0 AS data_completeness,   -- 1.0 = full hourly day; ~0.33 = 3-hourly synoptic (pre-1996)
             -- Flag whether any Vinga values were used in this day's aggregation
             BOOL_OR(w.precipitation IS NULL AND v.precipitation IS NOT NULL
-                    OR w.pressure   IS NULL AND v.pressure      IS NOT NULL
-                    OR w.visibility IS NULL AND v.visibility    IS NOT NULL)
+                    OR w.pressure IS NULL AND v.pressure IS NOT NULL)
                                                AS vinga_gap_fill_used
         FROM weather_data w
         LEFT JOIN weather_data_vinga v ON w.observation_time = v.observation_time
