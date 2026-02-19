@@ -231,6 +231,57 @@ class BirdRingingDB:
         """)
         print("Weather schema initialized.")
 
+    def initialize_vinga_schema(self):
+        """
+        Create (or ensure existence of) the ``weather_data_vinga`` table.
+
+        This table stores the **full** SMHI archive for Vinga A (station 71380),
+        which acts as a supplementary station for parameters that Nidingen A
+        (71190) stopped recording:
+
+        * **Precipitation** — Nidingen ended 2007-03-22; Vinga started 2007-06-01
+        * **Pressure**      — Nidingen ended 1995-06-30; Vinga has data from 1968
+
+        The schema is intentionally identical to ``weather_data`` so that the
+        same query patterns and joins work against both tables.  The Vinga data
+        is kept separately and never merged into ``weather_data``; queries that
+        need gap-filled values use a ``COALESCE`` join at query time.
+        """
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS weather_data_vinga (
+                observation_time  TIMESTAMPTZ NOT NULL PRIMARY KEY,
+                temperature       DOUBLE,
+                wind_direction    DOUBLE,
+                wind_speed        DOUBLE,
+                humidity          DOUBLE,
+                precipitation     DOUBLE,
+                pressure          DOUBLE,
+                cloud_cover       DOUBLE,
+                gust_wind         DOUBLE,
+                temperature_quality    VARCHAR(2),
+                wind_direction_quality VARCHAR(2),
+                wind_speed_quality     VARCHAR(2),
+                humidity_quality       VARCHAR(2),
+                precipitation_quality  VARCHAR(2),
+                pressure_quality       VARCHAR(2),
+                cloud_cover_quality    VARCHAR(2),
+                gust_wind_quality      VARCHAR(2),
+                station_id        INTEGER,
+                station_name      VARCHAR(100),
+                data_source       VARCHAR(50),
+                fetched_at        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_vinga_time
+            ON weather_data_vinga(observation_time)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_vinga_date
+            ON weather_data_vinga(CAST(observation_time AS DATE))
+        """)
+        print("Vinga weather schema initialized.")
+
     def load_csv_to_table(
         self, 
         csv_path: Union[str, Path], 

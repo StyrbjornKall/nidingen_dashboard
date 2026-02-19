@@ -1055,31 +1055,38 @@ class BirdRingingQueries:
         """
         where_parts = ["1=1"]
         if start_date:
-            where_parts.append(f"CAST(observation_time AS DATE) >= '{start_date}'")
+            where_parts.append(f"CAST(w.observation_time AS DATE) >= '{start_date}'")
         if end_date:
-            where_parts.append(f"CAST(observation_time AS DATE) <= '{end_date}'")
+            where_parts.append(f"CAST(w.observation_time AS DATE) <= '{end_date}'")
         where_clause = " AND ".join(where_parts)
 
         return f"""
         SELECT
-            CAST(observation_time AS DATE)   AS date,
-            EXTRACT(YEAR  FROM observation_time)::INTEGER AS year,
-            EXTRACT(MONTH FROM observation_time)::INTEGER AS month,
-            EXTRACT(DOY   FROM observation_time)::INTEGER AS day_of_year,
-            AVG(temperature)                 AS mean_temperature,
-            MIN(temperature)                 AS min_temperature,
-            MAX(temperature)                 AS max_temperature,
-            AVG(wind_speed)                  AS mean_wind_speed,
-            MAX(gust_wind)                   AS max_gust,
-            AVG(wind_direction)              AS mean_wind_direction,
-            AVG(humidity)                    AS mean_humidity,
-            SUM(precipitation)               AS total_precipitation,
-            AVG(pressure)                    AS mean_pressure,
-            AVG(cloud_cover)                 AS mean_cloud_cover,
-            COUNT(temperature) * 1.0 / 24.0 AS data_completeness   -- 1.0 = full hourly day; ~0.33 = 3-hourly synoptic (pre-1996)
-        FROM weather_data
+            CAST(w.observation_time AS DATE)                       AS date,
+            EXTRACT(YEAR  FROM CAST(w.observation_time AS DATE))::INTEGER AS year,
+            EXTRACT(MONTH FROM CAST(w.observation_time AS DATE))::INTEGER AS month,
+            EXTRACT(DOY   FROM CAST(w.observation_time AS DATE))::INTEGER AS day_of_year,
+            AVG(w.temperature)                 AS mean_temperature,
+            MIN(w.temperature)                 AS min_temperature,
+            MAX(w.temperature)                 AS max_temperature,
+            AVG(w.wind_speed)                  AS mean_wind_speed,
+            MAX(w.gust_wind)                   AS max_gust,
+            AVG(w.wind_direction)              AS mean_wind_direction,
+            AVG(w.humidity)                    AS mean_humidity,
+            -- Prefer Nidingen precipitation; fall back to Vinga when NULL
+            SUM(COALESCE(w.precipitation, v.precipitation))        AS total_precipitation,
+            -- Prefer Nidingen pressure; fall back to Vinga when NULL
+            AVG(COALESCE(w.pressure, v.pressure))                  AS mean_pressure,
+            AVG(w.cloud_cover)                 AS mean_cloud_cover,
+            COUNT(w.temperature) * 1.0 / 24.0 AS data_completeness,   -- 1.0 = full hourly day; ~0.33 = 3-hourly synoptic (pre-1996)
+            -- Flag whether any Vinga values were used in this day's aggregation
+            BOOL_OR(w.precipitation IS NULL AND v.precipitation IS NOT NULL
+                    OR w.pressure IS NULL AND v.pressure IS NOT NULL)
+                                               AS vinga_gap_fill_used
+        FROM weather_data w
+        LEFT JOIN weather_data_vinga v ON w.observation_time = v.observation_time
         WHERE {where_clause}
-        GROUP BY CAST(observation_time AS DATE)
+        GROUP BY CAST(w.observation_time AS DATE)
         ORDER BY date
         """
 

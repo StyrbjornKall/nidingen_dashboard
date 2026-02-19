@@ -40,8 +40,15 @@ import polars as pl
 # ---------------------------------------------------------------------------
 
 BASE_URL = "https://opendata-download-metobs.smhi.se/api/version/1.0"
-STATION_ID = 71190          # Nidingen A
+
+# Primary station — Nidingen A
+STATION_ID = 71190
 STATION_NAME = "Nidingen A"
+
+# Supplementary station — Vinga A (fills precipitation gap from 2007, pressure gap from 1996)
+VINGA_STATION_ID = 71380
+VINGA_STATION_NAME = "Vinga A"
+
 PERIOD = "corrected-archive"  # Full archive (CSV only); recent data via latest-months
 
 # Parameters: (id, short_name, description, unit)
@@ -200,9 +207,13 @@ def _parse_smhi_csv(csv_text: str, value_column: str) -> pl.DataFrame:
 # Fetching a single parameter
 # ---------------------------------------------------------------------------
 
-def fetch_parameter(param_id: int, value_column: str) -> pl.DataFrame:
+def fetch_parameter(
+    param_id: int,
+    value_column: str,
+    station_id: int = STATION_ID,
+) -> pl.DataFrame:
     """
-    Download *all* corrected-archive data for one parameter from Nidingen A.
+    Download *all* corrected-archive data for one parameter from a station.
 
     SMHI serves the full corrected archive as a single CSV file.
     For very recent data not yet in the corrected archive we also try
@@ -214,7 +225,7 @@ def fetch_parameter(param_id: int, value_column: str) -> pl.DataFrame:
     frames = []
 
     # ---- corrected-archive (historical + corrected recent) ----
-    url = f"{BASE_URL}/parameter/{param_id}/station/{STATION_ID}/period/{PERIOD}/data.csv"
+    url = f"{BASE_URL}/parameter/{param_id}/station/{station_id}/period/{PERIOD}/data.csv"
     print(f"  Fetching parameter {param_id:>2} ({value_column}) … ", end="", flush=True)
     try:
         resp = _get(url)
@@ -228,7 +239,7 @@ def fetch_parameter(param_id: int, value_column: str) -> pl.DataFrame:
     time.sleep(REQUEST_DELAY_S)
 
     # ---- latest-months (most recent ~4 months, not yet in archive) ----
-    url_recent = f"{BASE_URL}/parameter/{param_id}/station/{STATION_ID}/period/latest-months/data.csv"
+    url_recent = f"{BASE_URL}/parameter/{param_id}/station/{station_id}/period/latest-months/data.csv"
     try:
         resp_r = _get(url_recent)
         df_r = _parse_smhi_csv(resp_r.text, value_column)
@@ -269,12 +280,15 @@ def fetch_parameter(param_id: int, value_column: str) -> pl.DataFrame:
 # Merge all parameters into one wide table
 # ---------------------------------------------------------------------------
 
-def fetch_all_parameters() -> pl.DataFrame:
-    """Fetch all configured parameters and join them on observation_time."""
+def fetch_all_parameters(
+    station_id: int = STATION_ID,
+    station_name: str = STATION_NAME,
+) -> pl.DataFrame:
+    """Fetch all configured parameters for *station_id* and join on observation_time."""
     master: pl.DataFrame | None = None
 
     for param_id, short_name, _desc, _unit in PARAMETERS:
-        df = fetch_parameter(param_id, short_name)
+        df = fetch_parameter(param_id, short_name, station_id=station_id)
         if len(df) == 0:
             print(f"    WARNING: no data returned for parameter {param_id}")
             continue
@@ -285,12 +299,12 @@ def fetch_all_parameters() -> pl.DataFrame:
             master = master.join(df, on="observation_time", how="full", coalesce=True)
 
     if master is None:
-        raise RuntimeError("No weather data could be fetched from SMHI.")
+        raise RuntimeError(f"No weather data could be fetched for station {station_id}.")
 
     # Add station metadata columns
     master = master.with_columns([
-        pl.lit(STATION_ID).cast(pl.Int32).alias("station_id"),
-        pl.lit(STATION_NAME).alias("station_name"),
+        pl.lit(station_id).cast(pl.Int32).alias("station_id"),
+        pl.lit(station_name).alias("station_name"),
         pl.lit("SMHI-OpenData").alias("data_source"),
         pl.lit(datetime.now(timezone.utc)).alias("fetched_at"),
     ])
@@ -304,13 +318,16 @@ def fetch_all_parameters() -> pl.DataFrame:
 # Database loading
 # ---------------------------------------------------------------------------
 
-def load_into_db(df: pl.DataFrame, db_path: str) -> None:
+def load_into_db_table(
+    df: pl.DataFrame,
+    db_path: str,
+    table_name: str = "weather_data",
+) -> None:
     """
-    Write the weather DataFrame into the DuckDB `weather_data` table.
+    Write a weather DataFrame into *table_name* in the DuckDB database.
     Existing rows with the same observation_time are replaced (upsert via
     DELETE + INSERT pattern).
     """
-    # Import here so the script can still be used for --dry-run without a DB.
     sys.path.insert(0, str(Path(__file__).parent))
     from db_manager import BirdRingingDB
 
@@ -321,38 +338,130 @@ def load_into_db(df: pl.DataFrame, db_path: str) -> None:
             "Run `python src/initialize_database.py` first."
         )
 
-    print(f"\nLoading {len(df):,} rows into {db_path.name} …")
+    print(f"\nLoading {len(df):,} rows into '{table_name}' in {db_path.name} …")
     with BirdRingingDB(str(db_path)) as db:
         # Ensure the schema exists (idempotent)
-        db.initialize_weather_schema()
+        if table_name == "weather_data":
+            db.initialize_weather_schema()
+        elif table_name == "weather_data_vinga":
+            db.initialize_vinga_schema()
+        else:
+            raise ValueError(f"Unknown weather table: {table_name!r}")
 
-        # Register the Polars frame as a DuckDB relation and upsert
         conn = db.conn
         conn.register("_new_weather", df)
 
-        # Build the column list dynamically from the DataFrame
         cols = [c for c in df.columns if c != "fetched_at"]
         cols_sql = ", ".join(cols)
 
-        # Delete rows that overlap in time with the incoming batch, then insert
+        # Delete the overlapping time window, then bulk-insert
         min_t = df["observation_time"].min()
         max_t = df["observation_time"].max()
         deleted = conn.execute(
-            "DELETE FROM weather_data WHERE observation_time BETWEEN ? AND ?",
+            f"DELETE FROM {table_name} WHERE observation_time BETWEEN ? AND ?",
             [min_t, max_t],
         ).fetchone()[0]
         print(f"  Removed {deleted:,} pre-existing rows in time window.")
 
         conn.execute(f"""
-            INSERT INTO weather_data ({cols_sql}, fetched_at)
+            INSERT INTO {table_name} ({cols_sql}, fetched_at)
             SELECT {cols_sql}, CURRENT_TIMESTAMP FROM _new_weather
         """)
 
-        total = conn.execute("SELECT COUNT(*) FROM weather_data").fetchone()[0]
-        print(f"  weather_data now has {total:,} rows.")
+        total = conn.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0]
+        print(f"  {table_name} now has {total:,} rows.")
 
         conn.unregister("_new_weather")
         db.optimize_database()
+
+
+# Keep old name as alias for backward compatibility
+def load_into_db(df: pl.DataFrame, db_path: str) -> None:
+    load_into_db_table(df, db_path, table_name="weather_data")
+
+
+# ---------------------------------------------------------------------------
+# Vinga gap-fill: patch Nidingen weather_data with Vinga precipitation/pressure
+# ---------------------------------------------------------------------------
+
+def patch_nidingen_from_vinga(db_path: str) -> None:
+    """
+    Fill NULL precipitation and pressure values in ``weather_data`` (Nidingen)
+    using the corresponding values from ``weather_data_vinga`` (Vinga A).
+
+    Only rows where the Nidingen value is NULL *and* a Vinga observation exists
+    for the same timestamp are updated.  This is done in-DB with a single SQL
+    UPDATE … FROM statement for efficiency.
+
+    Parameters
+    ----------
+    db_path : str
+        Path to the DuckDB database.
+    """
+    sys.path.insert(0, str(Path(__file__).parent))
+    from db_manager import BirdRingingDB
+
+    db_path_obj = Path(db_path)
+    if not db_path_obj.exists():
+        raise FileNotFoundError(f"Database not found: {db_path_obj}")
+
+    print("\nPatching Nidingen weather_data with Vinga gap-fill values …")
+    with BirdRingingDB(str(db_path_obj)) as db:
+        conn = db.conn
+
+        # Count how many Nidingen rows need filling
+        null_counts = conn.execute("""
+            SELECT
+                COUNT(*) FILTER (WHERE w.precipitation IS NULL AND v.precipitation IS NOT NULL) AS precip_fillable,
+                COUNT(*) FILTER (WHERE w.pressure      IS NULL AND v.pressure      IS NOT NULL) AS pressure_fillable
+            FROM weather_data w
+            JOIN weather_data_vinga v ON w.observation_time = v.observation_time
+        """).fetchone()
+        print(f"  Fillable rows — precipitation: {null_counts[0]:,}  |  pressure: {null_counts[1]:,}")
+
+        # Patch precipitation
+        updated_precip = conn.execute("""
+            UPDATE weather_data w
+            SET
+                precipitation         = v.precipitation,
+                precipitation_quality = v.precipitation_quality
+            FROM weather_data_vinga v
+            WHERE w.observation_time = v.observation_time
+              AND w.precipitation IS NULL
+              AND v.precipitation IS NOT NULL
+        """).fetchone()
+
+        # Patch pressure
+        updated_pressure = conn.execute("""
+            UPDATE weather_data w
+            SET
+                pressure         = v.pressure,
+                pressure_quality = v.pressure_quality
+            FROM weather_data_vinga v
+            WHERE w.observation_time = v.observation_time
+              AND w.pressure IS NULL
+              AND v.pressure IS NOT NULL
+        """).fetchone()
+
+        print(f"  Patched precipitation in {null_counts[0]:,} rows, pressure in {null_counts[1]:,} rows.")
+
+        # Report final null counts
+        remaining = conn.execute("""
+            SELECT
+                COUNT(*) FILTER (WHERE precipitation IS NULL) AS precip_null,
+                COUNT(*) FILTER (WHERE pressure IS NULL)      AS pressure_null,
+                MIN(CAST(observation_time AS DATE))           AS min_date,
+                MAX(CAST(observation_time AS DATE))           AS max_date
+            FROM weather_data
+        """).fetchone()
+        print(
+            f"  Remaining NULLs — precipitation: {remaining[0]:,}  pressure: {remaining[1]:,}  "
+            f"(date range {remaining[2]} → {remaining[3]})"
+        )
+
+        db.optimize_database()
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -361,7 +470,10 @@ def load_into_db(df: pl.DataFrame, db_path: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Download SMHI hourly weather data for Nidingen A and load into DuckDB."
+        description=(
+            "Download SMHI hourly weather data for Nidingen A (and optionally "
+            "Vinga A as a supplementary station) and load into DuckDB."
+        )
     )
     parser.add_argument(
         "--db-path",
@@ -376,23 +488,31 @@ def main() -> None:
     parser.add_argument(
         "--output-csv",
         default=None,
-        help="Optionally save the fetched data as a CSV file.",
+        help="Optionally save the Nidingen fetched data as a CSV file.",
+    )
+    parser.add_argument(
+        "--no-vinga",
+        action="store_true",
+        help="Skip fetching Vinga A data and gap-filling (Nidingen only).",
     )
     args = parser.parse_args()
 
+    # ------------------------------------------------------------------
+    # 1. Nidingen A
+    # ------------------------------------------------------------------
     print("=" * 60)
     print(f"SMHI Weather Fetcher — {STATION_NAME} (ID {STATION_ID})")
     print(f"Period: {START_YEAR} – present   |   {len(PARAMETERS)} parameters")
     print("=" * 60)
 
-    df = fetch_all_parameters()
+    df_nidingen = fetch_all_parameters(station_id=STATION_ID, station_name=STATION_NAME)
 
-    print(f"\nFetched {len(df):,} hourly observations.")
-    print(f"Time range: {df['observation_time'].min()} → {df['observation_time'].max()}")
-    print("\nColumn summary:")
-    for col in df.columns:
-        if df[col].dtype == pl.Float64:
-            non_null = df[col].drop_nulls()
+    print(f"\nFetched {len(df_nidingen):,} hourly observations.")
+    print(f"Time range: {df_nidingen['observation_time'].min()} → {df_nidingen['observation_time'].max()}")
+    print("\nColumn summary (Nidingen):")
+    for col in df_nidingen.columns:
+        if df_nidingen[col].dtype == pl.Float64:
+            non_null = df_nidingen[col].drop_nulls()
             print(
                 f"  {col:<25s} non-null={len(non_null):>7,}  "
                 f"min={non_null.min():.2f}  max={non_null.max():.2f}"
@@ -403,13 +523,45 @@ def main() -> None:
     if args.output_csv:
         out = Path(args.output_csv)
         out.parent.mkdir(parents=True, exist_ok=True)
-        df.write_csv(str(out))
+        df_nidingen.write_csv(str(out))
         print(f"\nSaved to {out}")
 
     if args.dry_run:
-        print("\n[dry-run] Skipping database write.")
+        print("\n[dry-run] Skipping Nidingen database write.")
     else:
-        load_into_db(df, args.db_path)
+        load_into_db_table(df_nidingen, args.db_path, table_name="weather_data")
+
+    # ------------------------------------------------------------------
+    # 2. Vinga A (supplementary station for precipitation + pressure gaps)
+    # ------------------------------------------------------------------
+    if not args.no_vinga:
+        print("\n" + "=" * 60)
+        print(f"SMHI Weather Fetcher — {VINGA_STATION_NAME} (ID {VINGA_STATION_ID})")
+        print(f"Period: {START_YEAR} – present   |   {len(PARAMETERS)} parameters")
+        print("=" * 60)
+
+        df_vinga = fetch_all_parameters(station_id=VINGA_STATION_ID, station_name=VINGA_STATION_NAME)
+
+        print(f"\nFetched {len(df_vinga):,} hourly observations.")
+        print(f"Time range: {df_vinga['observation_time'].min()} → {df_vinga['observation_time'].max()}")
+        print("\nColumn summary (Vinga):")
+        for col in df_vinga.columns:
+            if df_vinga[col].dtype == pl.Float64:
+                non_null = df_vinga[col].drop_nulls()
+                print(
+                    f"  {col:<25s} non-null={len(non_null):>7,}  "
+                    f"min={non_null.min():.2f}  max={non_null.max():.2f}"
+                    if len(non_null) > 0
+                    else f"  {col:<25s} all null"
+                )
+
+        if args.dry_run:
+            print("\n[dry-run] Skipping Vinga database write and gap-fill patch.")
+        else:
+            load_into_db_table(df_vinga, args.db_path, table_name="weather_data_vinga")
+
+            # 3. Patch Nidingen weather_data with Vinga values where NULL
+            patch_nidingen_from_vinga(args.db_path)
 
     print("\nDone.")
 
