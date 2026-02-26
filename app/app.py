@@ -5,6 +5,8 @@ This is the main Dash application file for the bird ringing data dashboard.
 It provides interactive visualizations for exploring bird observation data.
 """
 
+import os
+
 import dash
 from dash import dcc, html, Input, Output, callback
 import dash_bootstrap_components as dbc
@@ -14,6 +16,9 @@ from pathlib import Path
 import sys
 import polars as pl
 from datetime import datetime, date
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Add src to path
 src_path = Path(__file__).parent / "src"
@@ -48,8 +53,8 @@ app = dash.Dash(
     ]
 )
 
-# Database path
-DB_PATH = Path(__file__).parent / "data" / "bird_ringing.db"
+# Database path — override with DUCKDB_PATH env var for deployment
+DB_PATH = os.getenv("DUCKDB_PATH", "/data/bird_ringing.db")
 
 # Load initial data for filters
 with BirdRingingDB(DB_PATH, read_only=True) as db:
@@ -1979,6 +1984,9 @@ def update_weather_timeseries(start_date, end_date, selected_vars):
 
     return fig
 
+
+# Expose Flask server for gunicorn: `gunicorn app:server`
+server = app.server
 
 if __name__ == "__main__":
     app.run(debug=True, port=8050)
