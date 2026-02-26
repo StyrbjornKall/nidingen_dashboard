@@ -592,6 +592,111 @@ class BirdRingingQueries:
         """
     
     @staticmethod
+    def get_weekly_weight_by_species(
+        species_codes: Optional[List[str]] = None,
+        year: Optional[int] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+    ) -> str:
+        """
+        Return mean (and sample-size) weight per species per week-of-year.
+
+        Parameters
+        ----------
+        species_codes : list of str, optional
+            Filter by specific species.
+        year : int, optional
+            If given, restrict to that calendar year.
+            If ``None``, averages across all years within the optional
+            *start_date* / *end_date* range.
+        start_date, end_date : str, optional
+            Inclusive date bounds ``YYYY-MM-DD``.  Only used when ``year``
+            is ``None`` (i.e. all-years average mode).
+
+        Returns
+        -------
+        str
+            SQL query string with columns:
+            ``species_code``, ``swedish_name``, ``week_of_year``,
+            ``mean_weight``, ``min_weight``, ``max_weight``, ``n``.
+        """
+        where_parts = ["weight IS NOT NULL", "weight > 0"]
+        if species_codes:
+            sp = "', '".join(species_codes)
+            where_parts.append(f"species_code IN ('{sp}')")
+        if year is not None:
+            where_parts.append(f"EXTRACT(YEAR FROM date) = {year}")
+        else:
+            if start_date:
+                where_parts.append(f"date >= '{start_date}'")
+            if end_date:
+                where_parts.append(f"date <= '{end_date}'")
+        where_sql = " AND ".join(where_parts)
+
+        return f"""
+        SELECT
+            species_code,
+            swedish_name,
+            CAST(EXTRACT(WEEK FROM date) AS INTEGER)  AS week_of_year,
+            AVG(weight)                               AS mean_weight,
+            MIN(weight)                               AS min_weight,
+            MAX(weight)                               AS max_weight,
+            COUNT(*)                                  AS n
+        FROM ring_records
+        WHERE {where_sql}
+        GROUP BY species_code, swedish_name, week_of_year
+        ORDER BY species_code, week_of_year
+        """
+
+    @staticmethod
+    def get_yearly_weight_by_species(
+        species_codes: Optional[List[str]] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+    ) -> str:
+        """
+        Return mean, min, max weight per species per year, for trend analysis.
+
+        Parameters
+        ----------
+        species_codes : list of str, optional
+            Filter by specific species.
+        start_date, end_date : str, optional
+            Date range in ``YYYY-MM-DD`` format.
+
+        Returns
+        -------
+        str
+            SQL query string with columns:
+            ``species_code``, ``swedish_name``, ``year``,
+            ``mean_weight``, ``min_weight``, ``max_weight``, ``n``.
+        """
+        where_parts = ["weight IS NOT NULL", "weight > 0"]
+        if species_codes:
+            sp = "', '".join(species_codes)
+            where_parts.append(f"species_code IN ('{sp}')")
+        if start_date:
+            where_parts.append(f"date >= '{start_date}'")
+        if end_date:
+            where_parts.append(f"date <= '{end_date}'")
+        where_sql = " AND ".join(where_parts)
+
+        return f"""
+        SELECT
+            species_code,
+            swedish_name,
+            CAST(EXTRACT(YEAR FROM date) AS INTEGER)  AS year,
+            AVG(weight)                               AS mean_weight,
+            MIN(weight)                               AS min_weight,
+            MAX(weight)                               AS max_weight,
+            COUNT(*)                                  AS n
+        FROM ring_records
+        WHERE {where_sql}
+        GROUP BY species_code, swedish_name, year
+        ORDER BY species_code, year
+        """
+
+    @staticmethod
     def get_year_over_year_comparison(
         species_codes: Optional[List[str]] = None
     ) -> str:
@@ -800,10 +905,12 @@ class BirdRingingQueries:
                 humidity,
                 precipitation,
                 pressure,
+                visibility,
                 cloud_cover,
                 temperature_quality,
                 wind_speed_quality,
-                precipitation_quality
+                precipitation_quality,
+                visibility_quality
             FROM weather_data
             WHERE {where_clause}
             ORDER BY observation_time
@@ -829,6 +936,7 @@ class BirdRingingQueries:
             AVG(humidity)                    AS mean_humidity,
             SUM(precipitation)               AS total_precipitation,
             AVG(pressure)                    AS mean_pressure,
+            AVG(visibility)                  AS mean_visibility,
             AVG(cloud_cover)                 AS mean_cloud_cover,
             COUNT(*)                         AS n_obs
         FROM weather_data
@@ -853,11 +961,14 @@ class BirdRingingQueries:
 
         ``'daily'`` (recommended, default)
             Ringing counts per (date, species) are joined to **daily
-            aggregated** weather (mean/min/max/sum).  This is robust to any
-            temporal gaps in the weather archive, including the 3-hourly
-            synoptic era (1982-1994), and always returns a ``data_completeness``
-            column (fraction of 24 hours that have data, e.g. 0.33 for the
-            pre-1996 era).
+            aggregated** weather (mean/min/max/sum).  Weather is aggregated
+            over the **ringing window (03:00–13:00 UTC)** only, matching the
+            hours when most birds are captured.  Precipitation, pressure,
+            and visibility are gap-filled from Vinga A via ``COALESCE``.
+            This is robust to any temporal gaps in the weather archive,
+            including the 3-hourly synoptic era (1982-1994), and always
+            returns a ``data_completeness`` column (fraction of the 10
+            ringing-window hours that have data).
 
         ``'nearest'``
             Each ringing group (date + whole hour) is matched to the
@@ -953,6 +1064,7 @@ class BirdRingingQueries:
                     w.humidity,
                     w.precipitation,
                     w.pressure,
+                    w.visibility,
                     w.cloud_cover
                 FROM ringing ri
                 ASOF JOIN weather_data w
@@ -977,6 +1089,7 @@ class BirdRingingQueries:
                 CASE WHEN weather_match_hours <= {max_gap_hours} THEN humidity        ELSE NULL END AS humidity,
                 CASE WHEN weather_match_hours <= {max_gap_hours} THEN precipitation   ELSE NULL END AS precipitation,
                 CASE WHEN weather_match_hours <= {max_gap_hours} THEN pressure        ELSE NULL END AS pressure,
+                CASE WHEN weather_match_hours <= {max_gap_hours} THEN visibility      ELSE NULL END AS visibility,
                 CASE WHEN weather_match_hours <= {max_gap_hours} THEN cloud_cover     ELSE NULL END AS cloud_cover
             FROM joined
             ORDER BY date, capture_hour, species_code
@@ -984,6 +1097,8 @@ class BirdRingingQueries:
 
         # ------------------------------------------------------------------
         # Daily aggregation (default, most robust)
+        # Weather is aggregated over the ringing window (03:00–13:00 UTC)
+        # to match the hours when most birds are captured.
         # ------------------------------------------------------------------
         return f"""
         WITH ringing AS (
@@ -1000,21 +1115,25 @@ class BirdRingingQueries:
         ),
         weather AS (
             SELECT
-                CAST(observation_time AS DATE)   AS date,
-                AVG(temperature)                 AS mean_temperature,
-                MIN(temperature)                 AS min_temperature,
-                MAX(temperature)                 AS max_temperature,
-                AVG(wind_speed)                  AS mean_wind_speed,
-                MAX(gust_wind)                   AS max_gust,
-                AVG(wind_direction)              AS mean_wind_direction,
-                AVG(humidity)                    AS mean_humidity,
-                SUM(precipitation)               AS total_precipitation,
-                AVG(pressure)                    AS mean_pressure,
-                AVG(cloud_cover)                 AS mean_cloud_cover,
-                -- fraction of 24 h slots that have data (pre-1996 ≈ 0.33)
-                COUNT(temperature) / 24.0        AS data_completeness
-            FROM weather_data
-            GROUP BY CAST(observation_time AS DATE)
+                CAST(w.observation_time AS DATE)   AS date,
+                AVG(w.temperature)                 AS mean_temperature,
+                MIN(w.temperature)                 AS min_temperature,
+                MAX(w.temperature)                 AS max_temperature,
+                AVG(w.wind_speed)                  AS mean_wind_speed,
+                MAX(w.gust_wind)                   AS max_gust,
+                AVG(w.wind_direction)              AS mean_wind_direction,
+                AVG(w.humidity)                    AS mean_humidity,
+                SUM(COALESCE(w.precipitation, v.precipitation))  AS total_precipitation,
+                AVG(COALESCE(w.pressure, v.pressure))            AS mean_pressure,
+                AVG(COALESCE(w.visibility, v.visibility))        AS mean_visibility,
+                AVG(w.cloud_cover)                 AS mean_cloud_cover,
+                -- fraction of the 10 ringing-window hours that have data
+                COUNT(w.temperature) / 10.0        AS data_completeness
+            FROM weather_data w
+            LEFT JOIN weather_data_vinga v ON w.observation_time = v.observation_time
+            WHERE EXTRACT(HOUR FROM w.observation_time) >= 3
+              AND EXTRACT(HOUR FROM w.observation_time) <= 13
+            GROUP BY CAST(w.observation_time AS DATE)
         )
         SELECT
             ri.*,
@@ -1027,6 +1146,7 @@ class BirdRingingQueries:
             w.mean_humidity,
             w.total_precipitation,
             w.mean_pressure,
+            w.mean_visibility,
             w.mean_cloud_cover,
             w.data_completeness
         FROM ringing ri
@@ -1191,6 +1311,7 @@ class BirdRingingQueries:
                 w.humidity,
                 w.precipitation,
                 w.pressure,
+                w.visibility,
                 w.cloud_cover
             FROM records rc
             ASOF JOIN weather_data w
@@ -1217,6 +1338,7 @@ class BirdRingingQueries:
             CASE WHEN weather_match_hours <= {max_gap_hours} THEN humidity        ELSE NULL END AS humidity,
             CASE WHEN weather_match_hours <= {max_gap_hours} THEN precipitation   ELSE NULL END AS precipitation,
             CASE WHEN weather_match_hours <= {max_gap_hours} THEN pressure        ELSE NULL END AS pressure,
+            CASE WHEN weather_match_hours <= {max_gap_hours} THEN visibility      ELSE NULL END AS visibility,
             CASE WHEN weather_match_hours <= {max_gap_hours} THEN cloud_cover     ELSE NULL END AS cloud_cover
         FROM joined
         ORDER BY date, time, species_code

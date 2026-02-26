@@ -10,6 +10,7 @@ This project is a web-based dashboard application for visualizing and analyzing 
 - Phenology (migration timing) analysis with bimodal spring/autumn patterns
 - Weekly heatmap showing observation patterns for the top 30 species
 - Summary statistics dashboard
+- **Weather Analysis tab** — standalone multi-panel time series of all SMHI weather parameters with dual-station attribution (Nidingen A + Vinga A gap-fill)
 - Multi-dimensional filtering (species, date range, time aggregation)
 - Support for millions of records with efficient query performance
 
@@ -108,10 +109,12 @@ märkning/
 | humidity | DOUBLE | Relative humidity (%, instantaneous) |
 | precipitation | DOUBLE | Precipitation (mm, 1-h sum) |
 | pressure | DOUBLE | Air pressure sea-level (hPa) |
+| visibility | DOUBLE | Visibility (m, instantaneous) |
 | cloud_cover | DOUBLE | Total cloud cover (%) |
 | temperature_quality | VARCHAR(2) | SMHI quality flag for temperature |
 | wind_speed_quality | VARCHAR(2) | SMHI quality flag for wind speed |
 | precipitation_quality | VARCHAR(2) | SMHI quality flag for precipitation |
+| visibility_quality | VARCHAR(2) | SMHI quality flag for visibility |
 | station_id | INTEGER | SMHI station ID (71190 = Nidingen A) |
 | station_name | VARCHAR | Station name |
 | data_source | VARCHAR | Always `'SMHI-OpenData'` |
@@ -125,6 +128,22 @@ märkning/
 - **1996–present**: hourly, ~99–100% coverage
 - **Ringing data era (2020–2024)**: essentially 100% hourly — ASOF join gaps are 0 h
 - `humidity`, `precipitation`, `gust_wind` are NULL for most of 1982–1994 (sensors not yet installed)
+- `precipitation` is NULL after **2007-03-22** — gap-filled from Vinga A in `get_daily_weather_summary`
+- `pressure` is NULL after **1995-06-30** — gap-filled from Vinga A in `get_daily_weather_summary`
+- `visibility` is NULL after **2007** — gap-filled from Vinga A in `get_daily_weather_summary`
+
+### `weather_data_vinga` Table Schema
+
+Identical column layout to `weather_data`. Stores the **full** SMHI archive for **Vinga A (station 71380)**, ~30 km from Nidingen. Kept separate and never merged into `weather_data`; gap-filling is done at query time via `COALESCE`.
+
+| Parameter | Vinga coverage |
+|-----------|---------------|
+| Precipitation | 2007-06-01 → present |
+| Pressure | 1968 → present |
+| Visibility | 1949 → present |
+| Temperature, wind, humidity, cloud | Available but Nidingen is preferred |
+
+**Indexes:** `idx_vinga_time` on `observation_time`, `idx_vinga_date` on `CAST(observation_time AS DATE)`
 
 ## Core Modules
 
@@ -149,7 +168,8 @@ with BirdRingingDB("data/bird_ringing.db") as db:
 
 **Key Methods:**
 - `initialize_schema()`: Create database tables and indexes (uses a sequence for `record_id` auto-increment)
-- `initialize_weather_schema()`: Create (or migrate) the `weather_data` table. Detects and drops an old schema that lacks `observation_time`; safe to call repeatedly.
+- `initialize_weather_schema()`: Create (or migrate) the `weather_data` table. Detects and drops an old schema that lacks `observation_time`; also runs an **incremental column migration** — adds `visibility` and `visibility_quality` if they are missing from an older table (safe to call repeatedly).
+- `initialize_vinga_schema()`: Create (or migrate) the `weather_data_vinga` table with the same schema as `weather_data`. Also applies incremental column migration for `visibility`/`visibility_quality`. Safe to call repeatedly.
 - `load_csv_to_table(csv_path, table_name, if_exists)`: Load CSV data into database; auto-excludes `record_id` from insert so the sequence handles it
 - `get_data_as_polars(query, table_name, filters)`: Retrieve data as Polars DataFrame; `filters` dict supports single values, lists, and scalars
 - `execute_query(query)`: Execute raw SQL and return DuckDB result object (call `.pl()` or `.fetchall()` on result)
@@ -233,7 +253,7 @@ with BirdRingingDB("data/bird_ringing.db", read_only=True) as db:
 | `get_weather_for_date_range(start_date, end_date, aggregation)` | Raw or aggregated SMHI weather; `aggregation`: `hourly`, `daily`, `weekly`, `monthly` |
 | `get_weather_joined_with_ringing(start_date, end_date, species_codes, weather_aggregation, max_gap_hours)` | Ringing counts joined to weather; `weather_aggregation='daily'` (robust default) or `'nearest'` (ASOF JOIN, adds `weather_match_hours` gap column) |
 | `get_weather_at_capture_time(start_date, end_date, species_codes, max_gap_hours)` | Record-level ASOF join — one row per individual capture with nearest weather attached; `weather_match_hours` always present; weather columns NULL when gap > `max_gap_hours` |
-| `get_daily_weather_summary(start_date, end_date)` | Compact daily table: min/max/mean temp, wind, rain, cloud, `data_completeness` (≈1.0 post-1996, ≈0.33 for 3-hourly pre-1996) |
+| `get_daily_weather_summary(start_date, end_date)` | Compact daily table: min/max/mean temp, wind, rain, visibility, cloud, `data_completeness`, `vinga_gap_fill_used`. Uses `COALESCE(w.x, v.x)` for precipitation, pressure, and visibility. |
 
 ## Dashboard Architecture (`app.py`)
 
@@ -263,6 +283,7 @@ date_range        # (min_date, max_date) tuple
 | 🌸 Phenology | `tab-phenology` | species, date range | `phenology-weekly-plot`, `phenology-ridgeline-plot`, `phenology-seasonal-plot`, `phenology-yearly-plot` |
 | 🔥 Weekly Heatmap | `tab-heatmap` | heatmap year dropdown | `weekly-heatmap` |
 | 📋 Summary | `tab-summary` | species, date range | `summary-stats` (returns Bootstrap cards) |
+| 🌤️ Weather Analysis | `tab-weather` | variable checklist, date range | `weather-timeseries-plot` |
 
 ### Callback Pattern
 
@@ -310,6 +331,10 @@ PASTEL_COLORS = [
     '#E8D4C5',  # Pastel tan
 ]
 ```
+
+The Weather Analysis callback also defines `VINGA_COLOR = "#E8D4C5"` (pastel
+tan, index 9 of `PASTEL_COLORS`) to visually distinguish Vinga A gap-fill
+traces from the primary Nidingen A traces.
 
 When converting hex colours to `rgba` for fills (e.g. phenology area charts), parse with:
 ```python
@@ -437,7 +462,9 @@ query = BirdRingingQueries.get_daily_weather_summary(
     start_date="2020-01-01", end_date="2024-12-31"
 )
 # Returns: date, mean/min/max_temperature, mean_wind_speed, max_gust,
-#          total_precipitation, mean_cloud_cover, data_completeness
+#          total_precipitation, mean_pressure, mean_visibility,
+#          mean_cloud_cover, data_completeness, vinga_gap_fill_used
+# precipitation/pressure/visibility: COALESCE(Nidingen, Vinga)
 ```
 
 ### Weather + Ringing – Daily Join (recommended)
@@ -505,12 +532,24 @@ python src/fetch_smhi_weather.py --output-csv data/processed/weather.csv
 
 # Fetch without writing to DB
 python src/fetch_smhi_weather.py --dry-run
+
+# Skip Vinga A supplementary fetch (Nidingen only)
+python src/fetch_smhi_weather.py --no-vinga
 ```
 
-The script downloads 8 parameters (temperature, wind, humidity, precipitation,
-pressure, cloud cover, gust wind) for Nidingen A (SMHI station 71190) from 1980
-to present, deduplicates, and upserts into `weather_data`.  It calls
-`db.initialize_weather_schema()` automatically — safe to run on an existing DB.
+The script downloads **9 parameters** (temperature, wind direction, wind speed,
+humidity, precipitation, pressure, **visibility**, cloud cover, gust wind) for
+**Nidingen A** (SMHI station 71190) from 1980 to present.  It also downloads
+the same parameter set for **Vinga A** (station 71380) into the separate
+`weather_data_vinga` table, then runs `patch_nidingen_from_vinga()` which
+back-fills NULL values in `weather_data` for precipitation (post-2007),
+pressure (post-1995), and visibility (post-2007) using the Vinga readings.
+
+Both `initialize_weather_schema()` and `initialize_vinga_schema()` are called
+automatically and perform **incremental column migration** — if the table
+already exists but lacks the `visibility` / `visibility_quality` columns they
+are added via `ALTER TABLE` without touching existing data.  The full fetch is
+safe to re-run on an existing DB.
 
 ### Adding New Species Metadata
 
@@ -561,6 +600,6 @@ with BirdRingingDB("data/bird_ringing.db") as db:
 
 ---
 
-**Last Updated**: 2026-02-19
+**Last Updated**: 2026-02-20
 **Database Version**: 1.0
-**Schema Version**: 1.0
+**Schema Version**: 1.1

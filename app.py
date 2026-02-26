@@ -235,7 +235,52 @@ app.layout = dbc.Container([
                                     type="border"
                                 )
                             ], md=6),
-                        ])
+                        ]),
+
+                        html.Hr(className="my-4"),
+
+                        # Third row: Weekly weight over the year
+                        html.Div([
+                            html.H5([
+                                html.I(className="fas fa-weight-hanging me-2"),
+                                "Weekly Weight Over the Year"
+                            ], className="mb-3", style={"color": "#495057"}),
+                            dbc.Row([
+                                dbc.Col([
+                                    html.Label(
+                                        "Select Year",
+                                        className="fw-bold mb-2",
+                                        style={"color": "#6c757d"}
+                                    ),
+                                    dcc.Dropdown(
+                                        id="weight-weekly-year-dropdown",
+                                        options=year_options,
+                                        value="all",
+                                        clearable=False,
+                                        style={"width": "260px"}
+                                    ),
+                                ], width="auto"),
+                            ], className="mb-3"),
+                            dbc.Spinner(
+                                dcc.Graph(id="weight-weekly-plot", style={"height": "450px"}),
+                                color="primary",
+                                type="border"
+                            ),
+                        ], className="mt-4 mb-4"),
+
+                        # Fourth row: Yearly mean weight trend
+                        html.Div([
+                            html.H5([
+                                html.I(className="fas fa-chart-line me-2"),
+                                "Yearly Mean Weight Trend"
+                            ], className="mb-3", style={"color": "#495057"}),
+                            dbc.Spinner(
+                                dcc.Graph(id="weight-yearly-plot", style={"height": "450px"}),
+                                color="primary",
+                                type="border"
+                            ),
+                        ], className="mb-4"),
+
                     ], className="p-3")
                 ]),
                 
@@ -864,6 +909,202 @@ def update_fat_score_distribution(species_codes, start_date, end_date):
 
 
 @callback(
+    Output("weight-weekly-plot", "figure"),
+    [Input("species-dropdown", "value"),
+     Input("date-range-picker", "start_date"),
+     Input("date-range-picker", "end_date"),
+     Input("weight-weekly-year-dropdown", "value")]
+)
+def update_weight_weekly(species_codes, start_date, end_date, selected_year):
+    """Weekly mean weight over the year, one line per species."""
+    if not species_codes:
+        return go.Figure()
+
+    year_param = None if selected_year == "all" else int(selected_year)
+
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        query = BirdRingingQueries.get_weekly_weight_by_species(
+            species_codes=species_codes,
+            year=year_param,
+            start_date=start_date if year_param is None else None,
+            end_date=end_date if year_param is None else None,
+        )
+        df = db.execute_query(query).pl().to_pandas()
+
+    if df.empty:
+        return go.Figure().add_annotation(
+            text="No weight data for the selected filters",
+            showarrow=False,
+            font={"size": 16, "color": "#95a5a6"},
+        )
+
+    year_label = str(year_param) if year_param else f"Average {start_date[:4]}–{end_date[:4]}"
+    title = f"Weekly Mean Weight by Species ({year_label})"
+
+    fig = go.Figure()
+
+    for idx, species_code in enumerate(species_codes):
+        sp_df = df[df["species_code"] == species_code]
+        if sp_df.empty:
+            continue
+
+        name = sp_df["swedish_name"].iloc[0]
+        color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
+        r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+        fill_color = f"rgba({r},{g},{b},0.15)"
+
+        # Shaded min–max band
+        x_band = sp_df["week_of_year"].tolist() + sp_df["week_of_year"].tolist()[::-1]
+        y_band = sp_df["max_weight"].tolist() + sp_df["min_weight"].tolist()[::-1]
+        fig.add_trace(go.Scatter(
+            x=x_band,
+            y=y_band,
+            fill="toself",
+            fillcolor=fill_color,
+            line=dict(color="rgba(0,0,0,0)"),
+            showlegend=False,
+            hoverinfo="skip",
+            name=f"{name} range",
+        ))
+
+        # Mean line
+        fig.add_trace(go.Scatter(
+            x=sp_df["week_of_year"],
+            y=sp_df["mean_weight"],
+            mode="lines+markers",
+            name=name,
+            line=dict(color=color, width=2.5),
+            marker=dict(size=5, color=color),
+            hovertemplate=(
+                f"<b>{name}</b><br>"
+                "Week: %{x}<br>"
+                "Mean weight: %{y:.2f} g<br>"
+                "<extra></extra>"
+            ),
+        ))
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="Week of Year",
+        yaxis_title="Mean Weight (g)",
+        template="plotly_white",
+        hovermode="x unified",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50"),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="#dee2e6",
+            borderwidth=1,
+        ),
+    )
+    return fig
+
+
+@callback(
+    Output("weight-yearly-plot", "figure"),
+    [Input("species-dropdown", "value"),
+     Input("date-range-picker", "start_date"),
+     Input("date-range-picker", "end_date")]
+)
+def update_weight_yearly(species_codes, start_date, end_date):
+    """Yearly mean (± min/max) weight trend per species."""
+    if not species_codes:
+        return go.Figure()
+
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        query = BirdRingingQueries.get_yearly_weight_by_species(
+            species_codes=species_codes,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        df = db.execute_query(query).pl().to_pandas()
+
+    if df.empty:
+        return go.Figure().add_annotation(
+            text="No weight data for the selected filters",
+            showarrow=False,
+            font={"size": 16, "color": "#95a5a6"},
+        )
+
+    fig = go.Figure()
+
+    for idx, species_code in enumerate(species_codes):
+        sp_df = df[df["species_code"] == species_code].sort_values("year")
+        if sp_df.empty:
+            continue
+
+        name = sp_df["swedish_name"].iloc[0]
+        color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
+        r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+        fill_color = f"rgba({r},{g},{b},0.15)"
+
+        # Shaded min–max band
+        x_band = sp_df["year"].tolist() + sp_df["year"].tolist()[::-1]
+        y_band = sp_df["max_weight"].tolist() + sp_df["min_weight"].tolist()[::-1]
+        fig.add_trace(go.Scatter(
+            x=x_band,
+            y=y_band,
+            fill="toself",
+            fillcolor=fill_color,
+            line=dict(color="rgba(0,0,0,0)"),
+            showlegend=False,
+            hoverinfo="skip",
+            name=f"{name} range",
+        ))
+
+        # Mean line with markers
+        fig.add_trace(go.Scatter(
+            x=sp_df["year"],
+            y=sp_df["mean_weight"],
+            mode="lines+markers",
+            name=name,
+            line=dict(color=color, width=2.5),
+            marker=dict(size=8, color=color, line=dict(width=1.5, color="white")),
+            text=sp_df["n"].map(lambda v: f"n={v:,}"),
+            hovertemplate=(
+                f"<b>{name}</b><br>"
+                "Year: %{x}<br>"
+                "Mean: %{y:.2f} g<br>"
+                "%{text}<extra></extra>"
+            ),
+        ))
+
+    fig.update_layout(
+        title=(
+            f"Yearly Mean Weight by Species ({start_date[:4]}–{end_date[:4]})"
+            "<br><sub>Shaded band = full min–max range per year</sub>"
+        ),
+        xaxis_title="Year",
+        yaxis_title="Weight (g)",
+        template="plotly_white",
+        hovermode="x unified",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50"),
+        xaxis=dict(dtick=1, tickformat="d"),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="#dee2e6",
+            borderwidth=1,
+        ),
+    )
+    return fig
+
+
+@callback(
     Output("phenology-weekly-plot", "figure"),
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
@@ -1418,14 +1659,7 @@ def update_weekly_heatmap(selected_year):
         z=pivot_data.values,
         x=pivot_data.columns,
         y=pivot_data.index,
-        colorscale=[
-            [0.0, '#ffffff'],      # White for zero
-            [0.2, '#FFE8B8'],      # Pastel yellow
-            [0.4, '#FFD4B8'],      # Pastel orange
-            [0.6, '#FFB8C3'],      # Pastel pink
-            [0.8, '#E0C5E8'],      # Pastel purple
-            [1.0, '#B4D4E1']       # Pastel blue
-        ],
+        colorscale='bupu',
         colorbar=dict(
             title=dict(
                 text="% of Total<br>Observations",
