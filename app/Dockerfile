@@ -27,6 +27,9 @@ COPY --from=builder /install /usr/local
 # Copy application code
 COPY app/ $HOME/app/
 
+# Copy start script to home directory (Serve expects it at WORKDIR level)
+COPY app/start-script.sh $HOME/start-script.sh
+
 # Create the data directory that Serve will mount the volume onto
 # Must exist in the image before Serve can bind-mount over it
 RUN mkdir -p $HOME/data \
