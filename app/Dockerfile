@@ -27,13 +27,13 @@ COPY --from=builder /install /usr/local
 # Copy application code
 COPY app/ $HOME/app/
 
-# Copy start script to home directory (Serve expects it at WORKDIR level)
-COPY app/start-script.sh $HOME/start-script.sh
+# Copy start script into WORKDIR — Serve calls it as ./start-script.sh
+COPY app/start-script.sh $HOME/app/start-script.sh
 
 # Create the data directory that Serve will mount the volume onto
 # Must exist in the image before Serve can bind-mount over it
 RUN mkdir -p $HOME/data \
-    && chmod +x $HOME/start-script.sh \
+    && chmod +x $HOME/app/start-script.sh \
     && chown -R $USER:$USER $HOME
 
 WORKDIR $HOME/app
@@ -54,4 +54,4 @@ ENV GUNICORN_CMD_ARGS="--bind=0.0.0.0:8000 --workers=2 --timeout=120 --forwarded
 USER $USER
 EXPOSE 8000
 
-ENTRYPOINT ["/home/appuser/start-script.sh"]
+ENTRYPOINT ["./start-script.sh"]
