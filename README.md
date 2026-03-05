@@ -54,20 +54,23 @@ An interactive web dashboard for visualizing and analyzing bird ringing data fro
 ## Project Structure
 
 ```
-märkning/
-├── app.py                      # Main dashboard application
-├── requirements.txt            # Python dependencies
+root/
+├── app/
+│   ├── app.py                      # Main dashboard application
+│   ├── Dockerfile                  # Dockerfile for creating image
+│   ├── start-script.sh             # Shell script required for docker images that run on Scilifelab serve
+│   ├── requirements.txt            # Python dependencies
+│   ├── src/
+│   │   ├── db_manager.py          # Database operations
+│   │   ├── data_processor.py      # Data processing utilities
+│   │   ├── query_utils.py         # Pre-built SQL queries
+│   │   ├── initialize_database.py # Database setup script
+│   │   └── preprocess_raw_data.py # Raw data preprocessing
 ├── data/
 │   ├── bird_ringing.db        # DuckDB database (generated)
 │   ├── processed/             # Processed CSV data
 │   ├── metadata/              # Species and ringer metadata
 │   └── raw/                   # Raw data files
-├── src/
-│   ├── db_manager.py          # Database operations
-│   ├── data_processor.py      # Data processing utilities
-│   ├── query_utils.py         # Pre-built SQL queries
-│   ├── initialize_database.py # Database setup script
-│   └── preprocess_raw_data.py # Raw data preprocessing
 ├── notebooks/                  # Jupyter notebooks for analysis
 └── figures/                    # Generated visualizations
 ```

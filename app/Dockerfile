@@ -24,11 +24,14 @@ RUN useradd -m -u 1000 $USER
 # Copy installed packages from builder
 COPY --from=builder /install /usr/local
 
-# Copy application code and fix ownership
+# Copy application code
 COPY app/ $HOME/app/
+
 # Create the data directory that Serve will mount the volume onto
-RUN mkdir -p $HOME/data
-RUN chown -R $USER:$USER $HOME
+# Must exist in the image before Serve can bind-mount over it
+RUN mkdir -p $HOME/data \
+    && chmod +x $HOME/start-script.sh \
+    && chown -R $USER:$USER $HOME
 
 WORKDIR $HOME/app
 
@@ -44,8 +47,8 @@ ENV DUCKDB_PATH=/home/appuser/data/bird_ringing.db
 ENV PYTHONUNBUFFERED=1
 # Serve only allows ports 3000-9999; 8000 is used in all Serve examples
 ENV GUNICORN_CMD_ARGS="--bind=0.0.0.0:8000 --workers=2 --timeout=120 --forwarded-allow-ips='*' --access-logfile=-"
-EXPOSE 8000
 
 USER $USER
+EXPOSE 8000
 
-CMD ["gunicorn", "app:server"]
+ENTRYPOINT ["/home/appuser/start-script.sh"]

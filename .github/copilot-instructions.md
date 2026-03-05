@@ -26,9 +26,22 @@ This project is a web-based dashboard application for visualizing and analyzing 
 ## Project Structure
 
 ```
-märkning/
-├── app.py                       # Main Dash application (entry point)
-├── requirements.txt             # Python dependencies
+root/
+├── app/
+│   ├── app.py                      # Main dashboard application
+│   ├── Dockerfile                  # Dockerfile for creating image
+│   ├── start-script.sh             # Shell script required for docker images that run on Scilifelab serve
+│   ├── requirements.txt            # Python dependencies
+│   ├── src/
+│   │   ├── db_manager.py           # DuckDB database operations
+│   │   ├── data_processor.py       # Polars data processing utilities
+│   │   ├── query_utils.py          # Pre-built SQL queries
+│   │   ├── initialize_database.py  # Database setup script
+│   │   ├── preprocess_raw_data.py  # Raw data preprocessing
+│   │   ├── fetch_smhi_weather.py   # SMHI weather downloader (CLI script)
+│   │   └── scrape_artfakta.py      # Selenium scraper for species metadata
+├── notebooks/                  # Jupyter notebooks for analysis
+├── figures/                     # Generated HTML visualization exports
 ├── data/
 │   ├── bird_ringing.db          # DuckDB database (generated)
 │   ├── processed/               # Processed CSV files
@@ -42,17 +55,8 @@ märkning/
 │           ├── meta_locations.txt
 │           ├── meta_ringer_initials.txt
 │           └── meta_station.txt
-├── figures/                     # Generated HTML visualization exports
 ├── notebooks/                   # Jupyter notebooks for exploration
 │   └── exploration.ipynb
-├── src/
-│   ├── db_manager.py           # DuckDB database operations
-│   ├── data_processor.py       # Polars data processing utilities
-│   ├── query_utils.py          # Pre-built SQL queries
-│   ├── initialize_database.py  # Database setup script
-│   ├── preprocess_raw_data.py  # Raw data preprocessing
-│   ├── fetch_smhi_weather.py   # SMHI weather downloader (CLI script)
-│   └── scrape_artfakta.py      # Selenium scraper for species metadata
 └── tests/                      # Test files
     ├── test_setup.py
     ├── test_heatmap.py
