@@ -26,17 +26,19 @@ COPY --from=builder /install /usr/local
 
 # Copy application code and fix ownership
 COPY app/ $HOME/app/
+# Create the data directory that Serve will mount the volume onto
+RUN mkdir -p $HOME/data
 RUN chown -R $USER:$USER $HOME
 
 WORKDIR $HOME/app
 
 # ── Database path ─────────────────────────────────────────────────────────────
-# On SciLifeLab Serve the persistent volume is mounted at the path you configure
-# in Project Settings → Storage (e.g. /project-vol).  Upload bird_ringing.db
-# into that volume and set the mount path to /project-vol in the app form.
-# DUCKDB_PATH then tells the app where to find the file inside the container.
-# Override with -e DUCKDB_PATH=... for local testing or other deployments.
-ENV DUCKDB_PATH=/project-vol/bird_ringing.db
+# Serve mounts the persistent volume at /home/appuser/data.
+# Add /home/appuser/data as a Mount path in Project Settings → Storage,
+# then select it when creating the Custom app.
+# Upload bird_ringing.db into the volume via the File Manager — it will
+# appear at /home/appuser/data/bird_ringing.db inside the container.
+ENV DUCKDB_PATH=/home/appuser/data/bird_ringing.db
 
 # ── Gunicorn / Dash settings ──────────────────────────────────────────────────
 ENV PYTHONUNBUFFERED=1

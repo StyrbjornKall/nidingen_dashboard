@@ -56,6 +56,23 @@ app = dash.Dash(
 # Database path — override with DUCKDB_PATH env var for deployment
 DB_PATH = os.getenv("DUCKDB_PATH", "/data/bird_ringing.db")
 
+# Fail fast with a clear message if the database file is missing.
+# This surfaces immediately in the container logs instead of a cryptic
+# DuckDB traceback that is hard to interpret on SciLifeLab Serve.
+if not Path(DB_PATH).exists():
+    raise FileNotFoundError(
+        f"\n\n"
+        f"  DATABASE NOT FOUND: {DB_PATH!r}\n\n"
+        f"  Checklist:\n"
+        f"    1. Did you upload bird_ringing.db into the 'project-vol' folder\n"
+        f"       via the Serve File Manager?\n"
+        f"    2. Is the Storage mount path set to '/project-vol' in\n"
+        f"       Project Settings → Storage?\n"
+        f"    3. Did you select that mount path in the app's Storage field?\n"
+        f"    4. Is DUCKDB_PATH correct? Currently: {DB_PATH!r}\n"
+        f"       Expected layout inside the container: /project-vol/bird_ringing.db\n"
+    )
+
 # Load initial data for filters
 with BirdRingingDB(DB_PATH, read_only=True) as db:
     # Get available species
