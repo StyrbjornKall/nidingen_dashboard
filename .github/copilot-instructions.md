@@ -39,11 +39,14 @@ root/
 │   │   ├── initialize_database.py  # Database setup script
 │   │   ├── preprocess_raw_data.py  # Raw data preprocessing
 │   │   ├── fetch_smhi_weather.py   # SMHI weather downloader (CLI script)
-│   │   └── scrape_artfakta.py      # Selenium scraper for species metadata
+│   │   ├── fetch_observation_data.py  # Artdatabanken SOS observation fetcher (CLI)
+│   │   ├── db_manager.py               # DuckDB database operations (modified: added observations schema)
+│   │   └── scrape_artfakta.py          # Selenium scraper for species metadata
 ├── notebooks/                  # Jupyter notebooks for analysis
 ├── figures/                     # Generated HTML visualization exports
 ├── data/
 │   ├── bird_ringing.db          # DuckDB database (generated)
+│   ├── bird_observations.db     # DuckDB database for Artdatabanken observation exports (generated)
 │   ├── processed/               # Processed CSV files
 │   │   ├── processed_nidingen_data.csv
 │   │   └── weather.csv          # SMHI weather export (300K+ rows, 1982–present)
@@ -61,7 +64,8 @@ root/
     ├── test_setup.py
     ├── test_heatmap.py
     ├── test_phenology_patterns.py
-    └── test_phenology_visualizations.py
+    ├── test_phenology_visualizations.py
+    └── test_fetch_observations.py   # Tests for `fetch_observation_data.py`
 ```
 
 ## Data Schema

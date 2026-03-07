@@ -515,6 +515,78 @@ class BirdRingingDB:
         
         return stats
         
+    def initialize_observations_schema(self) -> None:
+        """
+        Create the ``observations`` table (and its indexes) in the connected
+        database.  This table stores bird observations downloaded from the
+        Artdatabanken SOS API via ``src/fetch_observation_data.py``.
+
+        The schema mirrors the ``Extended`` field set returned by
+        ``/Exports/Download/Csv``.  Calling this method on an already-current
+        database is safe (all statements use IF NOT EXISTS).
+        """
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS observations (
+                OccurrenceId          VARCHAR PRIMARY KEY,
+                DatasetName           VARCHAR,
+                StartDate             TIMESTAMP,
+                EndDate               TIMESTAMP,
+                DecimalLatitude       DOUBLE,
+                DecimalLongitude      DOUBLE,
+                CoordinateUncertaintyInMeters DOUBLE,
+                Municipality          VARCHAR,
+                County                VARCHAR,
+                Locality              VARCHAR,
+                Province              VARCHAR,
+                DyntaxaTaxonId        INTEGER,
+                ScientificName        VARCHAR,
+                VernacularName        VARCHAR,
+                OrganismGroup         VARCHAR,
+                Family                VARCHAR,
+                "Order"               VARCHAR,
+                Class                 VARCHAR,
+                Kingdom               VARCHAR,
+                RedlistCategory       VARCHAR,
+                IndividualCount       VARCHAR,
+                OrganismQuantity      VARCHAR,
+                OrganismQuantityInt   INTEGER,
+                OrganismQuantityUnit  VARCHAR,
+                OccurrenceStatus      VARCHAR,
+                RecordedBy            VARCHAR,
+                ReportedBy            VARCHAR,
+                Sex                   VARCHAR,
+                LifeStage             VARCHAR,
+                Activity              VARCHAR,
+                Behavior              VARCHAR,
+                Biotope               VARCHAR,
+                OccurrenceRemarks     VARCHAR,
+                Weight                INTEGER,
+                Length                INTEGER,
+                Verified              BOOLEAN,
+                UncertainIdentification BOOLEAN,
+                VerificationStatus    VARCHAR,
+                BasisOfRecord         VARCHAR,
+                DataProviderId        INTEGER,
+                Modified              TIMESTAMP,
+                Url                   VARCHAR,
+                Projects              VARCHAR,
+                fetched_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_obs_start_date
+            ON observations(CAST(StartDate AS DATE))
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_obs_taxon
+            ON observations(DyntaxaTaxonId)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_obs_species
+            ON observations(ScientificName)
+        """)
+        print("Observations schema initialized.")
+
     def optimize_database(self):
         """Run database optimization operations."""
         print("Optimizing database...")
