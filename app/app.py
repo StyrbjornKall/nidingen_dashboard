@@ -427,63 +427,7 @@ app.layout = dbc.Container([
                                 "supplemented by Vinga A (station 71380) where Nidingen lacks data.",
                                 className="text-center text-muted mb-3"
                             ),
-                            # Data source legend
-                            dbc.Row([
-                                dbc.Col([
-                                    dbc.Alert([
-                                        dbc.Row([
-                                            dbc.Col([
-                                                html.Strong("🏝️ Nidingen A (71190) · primary station"),
-                                                html.Br(),
-                                                html.Small(
-                                                    "Temperature, wind, humidity, cloud cover, gust wind: full archive 1980–present. "
-                                                    "Precipitation: 1980–2007. Pressure: 1980–1995. Visibility: 1980–2007.",
-                                                    className="text-muted"
-                                                ),
-                                            ], md=6),
-                                            dbc.Col([
-                                                html.Strong("⚓ Vinga A (71380) · supplementary station"),
-                                                html.Br(),
-                                                html.Small(
-                                                    "Precipitation: 2007–present (gap-fills Nidingen). "
-                                                    "Pressure: 1996–present (gap-fills Nidingen). "
-                                                    "Visibility: 2007–present (gap-fills Nidingen). "
-                                                    "Full Vinga archive stored separately in weather_data_vinga.",
-                                                    className="text-muted"
-                                                ),
-                                            ], md=6),
-                                        ])
-                                    ], color="light", className="mb-3 py-2 px-3",
-                                       style={"borderRadius": "8px", "fontSize": "0.88rem"})
-                                ], md=12)
-                            ]),
                         ], className="mt-3"),
-
-                        # Variable selector
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label(
-                                    "Select variables to display",
-                                    className="fw-bold mb-2",
-                                    style={"color": "#6c757d"}
-                                ),
-                                dbc.Checklist(
-                                    id="weather-variable-checklist",
-                                    options=[
-                                        {"label": "🌡️ Temperature (mean / min / max) — Nidingen A",    "value": "temperature"},
-                                        {"label": "💨 Wind speed & gusts — Nidingen A",                 "value": "wind"},
-                                        {"label": "🌧️ Precipitation — Nidingen A (≤2007) + Vinga A (2007→)", "value": "precipitation"},
-                                        {"label": "☁️ Cloud cover — Nidingen A",                       "value": "cloud"},
-                                        {"label": "💧 Humidity — Nidingen A",                           "value": "humidity"},
-                                        {"label": "🔵 Pressure — Nidingen A (≤1995) + Vinga A (1996→)", "value": "pressure"},
-                                        {"label": "👁️ Visibility (m) — Nidingen A (≤2007) + Vinga A (2007→)", "value": "visibility"},
-                                    ],
-                                    value=["temperature", "wind", "precipitation"],
-                                    inline=False,
-                                    className="mb-3",
-                                ),
-                            ], md=12),
-                        ]),
 
                         # Time series plot
                         html.Div([
@@ -498,6 +442,33 @@ app.layout = dbc.Container([
                                 spinner_style={"width": "3rem", "height": "3rem"}
                             ),
                         ], className="mb-4"),
+
+                        # Variable selector
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label(
+                                    "Select variables to display",
+                                    className="fw-bold mb-2",
+                                    style={"color": "#6c757d"}
+                                ),
+                                dbc.Checklist(
+                                    id="weather-variable-checklist",
+                                    options=[
+                                        {"label": "Temperature (mean / min / max) — Nidingen A",    "value": "temperature"},
+                                        {"label": "Wind speed & gusts — Nidingen A",                 "value": "wind"},
+                                        {"label": "Precipitation — Nidingen A (≤2007) + Vinga A (2007→)", "value": "precipitation"},
+                                        {"label": "Cloud cover — Nidingen A",                       "value": "cloud"},
+                                        {"label": "Humidity — Nidingen A",                           "value": "humidity"},
+                                        {"label": "Pressure — Nidingen A (≤1995) + Vinga A (1996→)", "value": "pressure"},
+                                        {"label": "Visibility (m) — Nidingen A (≤2007) + Vinga A (2007→)", "value": "visibility"},
+                                    ],
+                                    value=["temperature", "wind", "precipitation", "visibility", "humidity", "cloud", "pressure"],
+                                    inline=False,
+                                    className="mb-3",
+                                ),
+                            ], md=12),
+                        ]),
+
                     ], className="p-3")
                 ]),
 
