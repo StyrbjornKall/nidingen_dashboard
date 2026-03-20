@@ -73,6 +73,20 @@ if not Path(DB_PATH).exists():
         f"       Expected layout inside the container: /project-vol/bird_ringing.db\n"
     )
 
+# Ensure 'TOTAL' aggregate species exists
+try:
+    # We must use read_only=False to write changes
+    # This runs once on app startup to materialize the TOTAL species
+    # so all downstream queries work without modification
+    print("Checking for TOTAL species...")
+    with BirdRingingDB(DB_PATH, read_only=False) as db:
+        # Check if table exists
+        if db.conn.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = 'ring_records'").fetchone()[0] > 0:
+            db.ensure_total_species()
+except Exception as e:
+    # Log but don't crash app if this fails (e.g. permission issues)
+    print(f"WARNING: Failed to ensure TOTAL species: {e}")
+
 # Load initial data for filters
 with BirdRingingDB(DB_PATH, read_only=True) as db:
     # Get available species
@@ -101,6 +115,12 @@ species_options = [
     {"label": f"{code} - {name}", "value": code} 
     for code, name in species_list
 ]
+
+# Move TOTAL to the top if present so it's the default selection
+total_option = next((opt for opt in species_options if opt["value"] == "TOTAL"), None)
+if total_option:
+    species_options.remove(total_option)
+    species_options.insert(0, total_option)
 
 # Year options for heatmap (including "All Years" option)
 year_options = [{"label": "Average (All Years)", "value": "all"}] + [
@@ -190,8 +210,8 @@ app.layout = dbc.Container([
     dbc.Card([
         dbc.CardBody([
             dbc.Tabs([
-                # Time Series Tab
-                dbc.Tab(label="📈 Time Series", tab_id="tab-timeseries", children=[
+                # Summary Tab (formerly Time Series)
+                dbc.Tab(label="� Summary", tab_id="tab-summary-timeseries", children=[
                     html.Div([
                         dbc.Row([
                             dbc.Col([
@@ -214,7 +234,10 @@ app.layout = dbc.Container([
                             color="primary",
                             type="border",
                             spinner_style={"width": "3rem", "height": "3rem"}
-                        )
+                        ),
+                        
+                        # Summary statistics div moved here
+                        html.Div(id="summary-stats", className="mt-4 p-2")
                     ], className="p-3")
                 ]),
                 
@@ -478,11 +501,8 @@ app.layout = dbc.Container([
                     ], className="p-3")
                 ]),
 
-                # Summary Tab
-                dbc.Tab(label="📋 Summary", tab_id="tab-summary", children=[
-                    html.Div(id="summary-stats", className="p-4")
-                ])
-            ], id="tabs", active_tab="tab-timeseries")
+                # Summary Tab (Original removed)
+            ], id="tabs", active_tab="tab-summary-timeseries")
         ])
     ], className="shadow-sm", style={"borderRadius": "10px", "border": "none"}),
     
@@ -1527,16 +1547,40 @@ def update_summary(species_codes, start_date, end_date):
             df = df.filter(
                 (pl.col("date") >= start_date_obj) & (pl.col("date") <= end_date_obj)
             )
+            
+            # Special handling for TOTAL species to show correct unique species count
+            if len(species_codes) == 1 and species_codes[0] == "TOTAL":
+                # When only TOTAL is selected, we want to show the count of actual species
+                # that contribute to this total, not just "1" (which is the TOTAL species itself)
+                start_str = start_date if isinstance(start_date, str) else start_date.strftime("%Y-%m-%d")
+                end_str = end_date if isinstance(end_date, str) else end_date.strftime("%Y-%m-%d")
+                
+                unique_species = db.conn.execute(f"""
+                    SELECT COUNT(DISTINCT species_code) 
+                    FROM ring_records 
+                    WHERE species_code != 'TOTAL' 
+                    AND date >= '{start_str}' AND date <= '{end_str}'
+                """).fetchone()[0]
+            else:
+                unique_species = df["species_code"].n_unique()
         else:
+            # If no species selected, fetch all but exclude TOTAL to avoid double counting
             df = db.get_data_as_polars()
+            df = df.filter(pl.col("species_code") != "TOTAL")
+            
             df = df.filter(
                 (pl.col("date") >= start_date_obj) & (pl.col("date") <= end_date_obj)
             )
+            unique_species = df["species_code"].n_unique()
         
         total_records = len(df)
-        unique_species = df["species_code"].n_unique()
         unique_individuals = df["ring_number"].n_unique()
-        date_range_str = f"{df['date'].min()} to {df['date'].max()}"
+        
+        # Handle empty df possibility for min/max
+        if len(df) > 0:
+            date_range_str = f"{df['date'].min()} to {df['date'].max()}"
+        else:
+            date_range_str = "No data"
     
     return dbc.Row([
         dbc.Col([

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This project is a web-based dashboard application for visualizing and analyzing bird ringing data from Nidingen ringing station in Sweden. The application uses **Plotly Dash** for the frontend, **DuckDB** for the database, and **Polars** for high-performance data processing.
+This project is a web-based dashboard application for visualizing and analyzing bird ringing data from Nidingen ringing station in Sweden. The application uses **Plotly Dash** for the frontend, **DuckDB** for the database, and **Polars** for high-performance data processing. Always update this file whenever you make significant changes to the codebase, especially if they affect how data is loaded, processed, or visualized.
 
 **Key Features:**
 - Interactive time series visualizations of bird observations (bar and line charts)
@@ -42,6 +42,12 @@ root/
 │   │   ├── fetch_observation_data.py  # Artdatabanken SOS observation fetcher (CLI)
 │   │   ├── db_manager.py               # DuckDB database operations (modified: added observations schema)
 │   │   └── scrape_artfakta.py          # Selenium scraper for species metadata
+│   ├── tests/                      # Test files
+│   ├── test_setup.py
+│   ├── test_heatmap.py
+│   ├── test_phenology_patterns.py
+│   ├── test_phenology_visualizations.py
+│   └── test_fetch_observations.py   # Tests for `fetch_observation_data.py`
 ├── notebooks/                  # Jupyter notebooks for analysis
 ├── figures/                     # Generated HTML visualization exports
 ├── data/
@@ -58,14 +64,8 @@ root/
 │           ├── meta_locations.txt
 │           ├── meta_ringer_initials.txt
 │           └── meta_station.txt
-├── notebooks/                   # Jupyter notebooks for exploration
-│   └── exploration.ipynb
-└── tests/                      # Test files
-    ├── test_setup.py
-    ├── test_heatmap.py
-    ├── test_phenology_patterns.py
-    ├── test_phenology_visualizations.py
-    └── test_fetch_observations.py   # Tests for `fetch_observation_data.py`
+└── notebooks/                   # Jupyter notebooks for exploration
+    └── exploration.ipynb
 ```
 
 ## Data Schema

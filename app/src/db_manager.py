@@ -629,3 +629,65 @@ class BirdRingingDB:
             """)
             
         print(f"Exported {table_name} to {output_path}")
+        
+    def ensure_total_species(self):
+        """
+        Ensures a 'TOTAL' species exists in the database, representing the aggregate of all observations.
+        This effectively duplicates all observation records but with species_code='TOTAL'.
+        This allows all existing queries (filtering, aggregation, etc.) to work seamlessly
+        for the 'Total' aggregate without modification.
+        """
+        try:
+            # Check counts to see if update is needed
+            # We use a fast count
+            counts = self.conn.execute("""
+                SELECT 
+                    SUM(CASE WHEN species_code = 'TOTAL' THEN 1 ELSE 0 END) as total_recs,
+                    SUM(CASE WHEN species_code != 'TOTAL' THEN 1 ELSE 0 END) as other_recs
+                FROM ring_records
+            """).fetchone()
+            
+            total_recs = counts[0] if counts[0] is not None else 0
+            other_recs = counts[1] if counts[1] is not None else 0
+            
+            # If we have data and the counts match, we are good
+            # If other_recs is 0, we might be in an empty DB, do nothing
+            if other_recs > 0 and total_recs == other_recs:
+                return
+
+            print(f"Generating TOTAL species records (Target: {other_recs} records)...")
+            
+            # Use a transaction for safety
+            self.conn.execute("BEGIN TRANSACTION")
+            
+            # Remove existing TOTAL records to ensure clean state
+            self.conn.execute("DELETE FROM ring_records WHERE species_code = 'TOTAL'")
+            
+            # Insert aggregated copies
+            # We copy all analytic columns. Identity columns changed to 'TOTAL'.
+            # record_id is auto-generated.
+            self.conn.execute("""
+                INSERT INTO ring_records (
+                    date, time, record_type, ring_number, age_code,
+                    species_code, ringer, age, wing_length, weight,
+                    fat_score, muscle_score, brood_patch, moult_score,
+                    notes, scientific_name, swedish_name, taxon_id,
+                    data_source, created_at, updated_at
+                )
+                SELECT 
+                    date, time, record_type, ring_number, age_code,
+                    'TOTAL', ringer, age, wing_length, weight,
+                    fat_score, muscle_score, brood_patch, moult_score,
+                    notes, 'Total', 'Total', NULL,
+                    data_source, created_at, updated_at
+                FROM ring_records
+                WHERE species_code != 'TOTAL'
+            """)
+            
+            self.conn.execute("COMMIT")
+            print("Successfully generated TOTAL species records.")
+            
+        except Exception as e:
+            self.conn.execute("ROLLBACK")
+            print(f"Error generating TOTAL species: {e}")
+            # Don't raise, just log, so app can still start without TOTAL if something fails
