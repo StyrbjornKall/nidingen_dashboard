@@ -6,9 +6,10 @@ It provides interactive visualizations for exploring bird observation data.
 """
 
 import os
+import json
 
 import dash
-from dash import dcc, html, Input, Output, callback
+from dash import dcc, html, Input, Output, callback, State
 import dash_bootstrap_components as dbc
 import plotly.express as px
 import plotly.graph_objects as go
@@ -19,6 +20,11 @@ from datetime import datetime, date
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Load translation locales
+locales_path = Path(__file__).parent / "assets" / "locales.json"
+with open(locales_path, "r", encoding="utf-8") as f:
+    LOCALES = json.load(f)
 
 # Add src to path
 src_path = Path(__file__).parent / "src"
@@ -129,20 +135,37 @@ year_options = [{"label": "Average (All Years)", "value": "all"}] + [
 
 # App Layout
 app.layout = dbc.Container([
-    # Header
+    # Language store (hidden, stores current language state)
+    dcc.Store(id="language-store", data="sv"),
+    
+    # Header with Language Toggle
     dbc.Row([
         dbc.Col([
             html.Div([
-                html.H1([
-                    html.I(className="fas fa-dove me-3"),
-                    "Nidingen Bird Ringing Station"
-                ], className="text-center mb-3", style={
+                # Language toggle button in top right
+                dbc.Button(
+                    "SV/EN",
+                    id="language-toggle-btn",
+                    className="btn-sm",
+                    color="#ebe8c6",
+                    style={
+                        "position": "fixed",
+                        "top": "20px",
+                        "right": "20px",
+                        "zIndex": "1000",
+                        "fontSize": "0.9rem",
+                        "fontWeight": "bold",
+                        "padding": "0.5rem 1rem"
+                    }
+                ),
+                
+                html.H1(id="page-title", className="text-center mb-3", style={
                     "color": "#2c3e50",
                     "fontWeight": "600",
                     "fontSize": "2.5rem"
                 }),
                 html.P(
-                    f"Monitoring bird migration patterns · Data from {date_range[0]} to {date_range[1]}", 
+                    id="page-subtitle",
                     className="text-center text-muted mb-0",
                     style={"fontSize": "1.1rem"}
                 ),
@@ -157,13 +180,13 @@ app.layout = dbc.Container([
     # Filters Card
     dbc.Card([
         dbc.CardBody([
-            html.H5([
+            html.H5(id="filters-title", className="mb-4", style={"color": "#495057"}, children=[
                 html.I(className="fas fa-filter me-2"),
                 "Data Filters"
-            ], className="mb-4", style={"color": "#495057"}),
+            ]),
             dbc.Row([
                 dbc.Col([
-                    html.Label("Select Species", className="fw-bold mb-2", style={"color": "#6c757d"}),
+                    html.Label(id="label-select-species", className="fw-bold mb-2", style={"color": "#6c757d"}, children="Select Species"),
                     dcc.Dropdown(
                         id="species-dropdown",
                         options=species_options,
@@ -175,7 +198,7 @@ app.layout = dbc.Container([
                 ], md=6),
                 
                 dbc.Col([
-                    html.Label("Time Aggregation", className="fw-bold mb-2", style={"color": "#6c757d"}),
+                    html.Label(id="label-time-agg", className="fw-bold mb-2", style={"color": "#6c757d"}, children="Time Aggregation"),
                     dcc.Dropdown(
                         id="aggregation-dropdown",
                         options=[
@@ -193,13 +216,13 @@ app.layout = dbc.Container([
             
             dbc.Row([
                 dbc.Col([
-                    html.Label("Date Range", className="fw-bold mb-2", style={"color": "#6c757d"}),
+                    html.Label(id="label-date-range", className="fw-bold mb-2", style={"color": "#6c757d"}, children="Date Range"),
                     dcc.DatePickerRange(
                         id="date-range-picker",
                         start_date=date_range[0],
                         end_date=date_range[1],
                         display_format="YYYY-MM-DD",
-                        style={"width": "100%"}
+                        style={"width": "50%"}
                     )
                 ], md=12),
             ])
@@ -211,16 +234,16 @@ app.layout = dbc.Container([
         dbc.CardBody([
             dbc.Tabs([
                 # Summary Tab (formerly Time Series)
-                dbc.Tab(label="� Summary", tab_id="tab-summary-timeseries", children=[
+                dbc.Tab(label="Summary", tab_id="tab-summary-timeseries", children=[
                     html.Div([
                         dbc.Row([
                             dbc.Col([
-                                html.Label("Plot Type", className="fw-bold me-3", style={"color": "#6c757d"}),
+                                html.Label(id="label-plot-type", className="fw-bold me-3", style={"color": "#6c757d"}),
                                 dbc.RadioItems(
                                     id="plot-type-toggle",
                                     options=[
-                                        {"label": "Bar Chart", "value": "bar"},
-                                        {"label": "Line Chart", "value": "line"}
+                                        {"label": html.Span(id="opt-bar-chart"), "value": "bar"},
+                                        {"label": html.Span(id="opt-line-chart"), "value": "line"}
                                     ],
                                     value="bar",
                                     inline=True,
@@ -286,14 +309,14 @@ app.layout = dbc.Container([
 
                         # Third row: Weekly weight over the year
                         html.Div([
-                            html.H5([
+                            html.H5(id="header-weekly-weight", children=[
                                 html.I(className="fas fa-weight-hanging me-2"),
                                 "Weekly Weight Over the Year"
                             ], className="mb-3", style={"color": "#495057"}),
                             dbc.Row([
                                 dbc.Col([
                                     html.Label(
-                                        "Select Year",
+                                        id="label-select-year",
                                         className="fw-bold mb-2",
                                         style={"color": "#6c757d"}
                                     ),
@@ -315,7 +338,7 @@ app.layout = dbc.Container([
 
                         # Fourth row: Yearly mean weight trend
                         html.Div([
-                            html.H5([
+                            html.H5(id="header-yearly-weight", children=[
                                 html.I(className="fas fa-chart-line me-2"),
                                 "Yearly Mean Weight Trend"
                             ], className="mb-3", style={"color": "#495057"}),
@@ -330,21 +353,17 @@ app.layout = dbc.Container([
                 ]),
                 
                 # Phenology Tab
-                dbc.Tab(label="🌸 Phenology", tab_id="tab-phenology", children=[
+                dbc.Tab(label="⏱️ Phenology", tab_id="tab-phenology", children=[
                     html.Div([
                         html.Div([
-                            html.H4("Migration Phenology Analysis", className="text-center mb-2"),
-                            html.P(
-                                "Explore migration patterns throughout the year. Birds are captured during spring (northward) and autumn (southward) migration periods.",
-                                className="text-center text-muted mb-4"
-                            ),
+                            html.H4(id="header-pheno-main"),
+                            html.P(id="desc-pheno", className="text-muted mb-4"),
                         ], className="mt-3"),
                         
                         # Weekly Distribution
                         html.Div([
-                            html.H5([
+                            html.H5(id="header-pheno-weekly", children=[
                                 html.I(className="fas fa-chart-area me-2"),
-                                "Weekly Observation Pattern"
                             ], className="mb-3", style={"color": "#495057"}),
                             dbc.Spinner(
                                 dcc.Graph(id="phenology-weekly-plot", style={"height": "450px"}),
@@ -355,9 +374,8 @@ app.layout = dbc.Container([
                         
                         # Ridgeline Plot
                         html.Div([
-                            html.H5([
+                            html.H5(id="header-pheno-daily", children=[
                                 html.I(className="fas fa-layer-group me-2"),
-                                "Daily Distribution by Species"
                             ], className="mb-3", style={"color": "#495057"}),
                             dbc.Spinner(
                                 dcc.Graph(id="phenology-ridgeline-plot"),
@@ -368,9 +386,8 @@ app.layout = dbc.Container([
                         
                         # Seasonal Comparison
                         html.Div([
-                            html.H5([
+                            html.H5(id="header-pheno-seasonal", children=[
                                 html.I(className="fas fa-exchange-alt me-2"),
-                                "Spring vs Autumn Migration Windows"
                             ], className="mb-3", style={"color": "#495057"}),
                             dbc.Spinner(
                                 dcc.Graph(id="phenology-seasonal-plot", style={"height": "450px"}),
@@ -378,24 +395,11 @@ app.layout = dbc.Container([
                                 type="border"
                             )
                         ], className="mb-4"),
-                        
-                        # Year-over-Year
-                        html.Div([
-                            html.H5([
-                                html.I(className="fas fa-calendar-alt me-2"),
-                                "Year-over-Year Comparison"
-                            ], className="mb-3", style={"color": "#495057"}),
-                            dbc.Spinner(
-                                dcc.Graph(id="phenology-yearly-plot"),
-                                color="primary",
-                                type="border"
-                            )
-                        ], className="mb-4")
                     ], className="p-3")
                 ]),
                 
                 # Weekly Heatmap Tab
-                dbc.Tab(label="🔥 Weekly Heatmap", tab_id="tab-heatmap", children=[
+                dbc.Tab(label="📈 Weekly Heatmap", tab_id="tab-heatmap", children=[
                     html.Div([
                         dbc.Row([
                             dbc.Col([
@@ -421,19 +425,14 @@ app.layout = dbc.Container([
                 dbc.Tab(label="🌤️ Weather Analysis", tab_id="tab-weather", children=[
                     html.Div([
                         html.Div([
-                            html.H4("Weather Analysis", className="text-center mb-2"),
-                            html.P(
-                                "Meteorological observations from SMHI Nidingen A (station 71190) "
-                                "supplemented by Vinga A (station 71380) where Nidingen lacks data.",
-                                className="text-center text-muted mb-3"
-                            ),
+                            html.H4(id="header-weather-main"),
+                            html.P(id="desc-weather", className="text-muted mb-3"),
                         ], className="mt-3"),
 
                         # Time series plot
                         html.Div([
-                            html.H5([
+                            html.H5(id="header-weather-timeseries", children=[
                                 html.I(className="fas fa-chart-line me-2"),
-                                "Daily Weather Time Series"
                             ], className="mb-3", style={"color": "#495057"}),
                             dbc.Spinner(
                                 dcc.Graph(id="weather-timeseries-plot"),
@@ -481,11 +480,7 @@ app.layout = dbc.Container([
     dbc.Row([
         dbc.Col([
             html.Hr(className="my-4"),
-            html.P([
-                "Nidingen Bird Ringing Station Dashboard · ",
-                html.A("View on GitHub", href="#", className="text-decoration-none"),
-                " · Built with Dash & Plotly"
-            ], className="text-center text-muted small")
+            html.P(id="footer-text", className="text-muted small")
         ])
     ])
 ], fluid=True, className="py-4", style={"backgroundColor": "#f5f7fa"})
@@ -498,13 +493,16 @@ app.layout = dbc.Container([
      Input("aggregation-dropdown", "value"),
      Input("date-range-picker", "start_date"),
      Input("date-range-picker", "end_date"),
-     Input("plot-type-toggle", "value")]
+     Input("plot-type-toggle", "value"),
+     Input("language-store", "data")]
 )
-def update_time_series(species_codes, aggregation, start_date, end_date, plot_type):
+def update_time_series(species_codes, aggregation, start_date, end_date, plot_type, language):
     """Update time series plot based on filters."""
+    t = LOCALES[language]
+    
     if not species_codes:
         return go.Figure().add_annotation(
-            text="Please select at least one species",
+            text=t["please_select_species"],
             showarrow=False,
             font={"size": 20, "color": "#95a5a6"}
         )
@@ -521,13 +519,14 @@ def update_time_series(species_codes, aggregation, start_date, end_date, plot_ty
     # Create figure based on plot type
     if plot_type == "bar":
         # Bar chart with pastel colors
+        agg_text = t.get(f"agg_{aggregation}", aggregation.capitalize()).split(" ", 1)[1] if f"agg_{aggregation}" in t else aggregation.capitalize()
         fig = px.bar(
             df,
             x="period",
             y="count",
             color="swedish_name",
-            title=f"Species Observations Over Time ({aggregation.capitalize()})",
-            labels={"period": "Date", "count": "Number of Observations", "swedish_name": "Species"},
+            title=f"{t['species_obs_over_time']} ({agg_text})",
+            labels={"period": t["date_label"], "count": t["num_obs"], "swedish_name": t["species_label"]},
             barmode="group",
             color_discrete_sequence=PASTEL_COLORS
         )
@@ -576,8 +575,8 @@ def update_time_series(species_codes, aggregation, start_date, end_date, plot_ty
             y="count",
             color="swedish_name",
             markers=True if mode in ["markers", "lines+markers"] else False,
-            title=f"Species Observations Over Time ({aggregation.capitalize()})",
-            labels={"period": "Date", "count": "Number of Observations", "swedish_name": "Species"},
+            title=f"{t['species_obs_over_time']} ({agg_text})",
+            labels={"period": t["date_label"], "count": t["num_obs"], "swedish_name": t["species_label"]},
             color_discrete_sequence=PASTEL_COLORS
         )
         
@@ -612,892 +611,15 @@ def update_time_series(species_codes, aggregation, start_date, end_date, plot_ty
 
 
 @callback(
-    Output("weight-distribution", "figure"),
-    [Input("species-dropdown", "value"),
-     Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date")]
-)
-def update_weight_distribution(species_codes, start_date, end_date):
-    """Update weight distribution plot."""
-    if not species_codes:
-        return go.Figure()
-    
-    with BirdRingingDB(DB_PATH, read_only=True) as db:
-        df = db.get_data_as_polars(
-            filters={"species_code": species_codes}
-        ).to_pandas()
-    
-    # Filter by date
-    df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
-    # Remove NA and zero values (incorrect measurements)
-    df = df[(df["weight"].notna()) & (df["weight"] > 0)]
-    
-    # Create mapping from species_code to swedish_name
-    species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
-    
-    # Get species order based on dropdown selection order
-    species_order = [species_name_map[code] for code in species_codes if code in species_name_map]
-    
-    # Calculate sample sizes for each species
-    sample_sizes = df.groupby("swedish_name").size()
-    
-    # Create labels with sample sizes
-    df["species_label"] = df["swedish_name"].map(
-        lambda x: f"{x}<br>(n={sample_sizes[x]})"
-    )
-    
-    fig = px.box(
-        df,
-        x="species_label",
-        y="weight",
-        color="species_label",
-        title="Weight Distribution by Species",
-        labels={"species_label": "Species", "weight": "Weight (g)"},
-        color_discrete_sequence=PASTEL_COLORS,
-        category_orders={"species_label": [f"{s}<br>(n={sample_sizes[s]})" for s in species_order]}
-    )
-    
-    fig.update_layout(
-        template="plotly_white",
-        showlegend=False,
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
-        title_font=dict(size=18, color="#2c3e50")
-    )
-    
-    return fig
-
-
-@callback(
-    Output("wing-length-distribution", "figure"),
-    [Input("species-dropdown", "value"),
-     Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date")]
-)
-def update_wing_distribution(species_codes, start_date, end_date):
-    """Update wing length distribution plot."""
-    if not species_codes:
-        return go.Figure()
-    
-    with BirdRingingDB(DB_PATH, read_only=True) as db:
-        df = db.get_data_as_polars(
-            filters={"species_code": species_codes}
-        ).to_pandas()
-    
-    # Filter by date
-    df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
-    # Remove NA and zero values (incorrect measurements)
-    df = df[(df["wing_length"].notna()) & (df["wing_length"] > 0)]
-    
-    # Create mapping from species_code to swedish_name
-    species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
-    
-    # Get species order based on dropdown selection order
-    species_order = [species_name_map[code] for code in species_codes if code in species_name_map]
-    
-    # Calculate sample sizes for each species
-    sample_sizes = df.groupby("swedish_name").size()
-    
-    # Create labels with sample sizes
-    df["species_label"] = df["swedish_name"].map(
-        lambda x: f"{x}<br>(n={sample_sizes[x]})"
-    )
-    
-    fig = px.box(
-        df,
-        x="species_label",
-        y="wing_length",
-        color="species_label",
-        title="Wing Length Distribution by Species",
-        labels={"species_label": "Species", "wing_length": "Wing Length (mm)"},
-        color_discrete_sequence=PASTEL_COLORS,
-        category_orders={"species_label": [f"{s}<br>(n={sample_sizes[s]})" for s in species_order]}
-    )
-    
-    fig.update_layout(
-        template="plotly_white",
-        showlegend=False,
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
-        title_font=dict(size=18, color="#2c3e50")
-    )
-    
-    return fig
-
-
-@callback(
-    Output("age-distribution", "figure"),
-    [Input("species-dropdown", "value"),
-     Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date")]
-)
-def update_age_distribution(species_codes, start_date, end_date):
-    """Update age distribution plot showing percentage of age classes per species."""
-    if not species_codes:
-        return go.Figure()
-    
-    with BirdRingingDB(DB_PATH, read_only=True) as db:
-        df = db.get_data_as_polars(
-            filters={"species_code": species_codes}
-        ).to_pandas()
-    
-    # Filter by date
-    df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
-    # Remove NA values in age
-    df = df[df["age"].notna() & (df["age"] != "")]
-    
-    if len(df) == 0:
-        return go.Figure().add_annotation(
-            text="No age data available for selected filters",
-            showarrow=False,
-            font={"size": 16, "color": "#95a5a6"}
-        )
-    
-    # Create mapping from species_code to swedish_name
-    species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
-    
-    # Get species order based on dropdown selection order
-    species_order = [species_name_map[code] for code in species_codes if code in species_name_map]
-    
-    # Calculate percentages for each species and age combination
-    age_counts = df.groupby(['swedish_name', 'age']).size().reset_index(name='count')
-    totals = df.groupby('swedish_name').size().reset_index(name='total')
-    age_counts = age_counts.merge(totals, on='swedish_name')
-    age_counts['percentage'] = (age_counts['count'] / age_counts['total']) * 100
-    
-    # Create labels with sample sizes
-    species_labels = {row['swedish_name']: f"{row['swedish_name']}<br>(n={int(row['total'])})" 
-                     for _, row in totals.iterrows()}
-    
-    # Get unique ages for consistent coloring
-    unique_ages = sorted(df['age'].unique())
-    age_color_map = {age: PASTEL_COLORS[i % len(PASTEL_COLORS)] for i, age in enumerate(unique_ages)}
-    
-    fig = go.Figure()
-    
-    # Add traces for each age class
-    for age in unique_ages:
-        age_data = age_counts[age_counts['age'] == age].copy()
-        age_data['species_label'] = age_data['swedish_name'].map(species_labels)
-        
-        fig.add_trace(go.Bar(
-            x=age_data['species_label'],
-            y=age_data['percentage'],
-            name=age,
-            marker_color=age_color_map[age],
-            text=age_data['percentage'].round(1),
-            texttemplate='%{text}%',
-            textposition='inside',
-            hovertemplate='<b>%{x}</b><br>' +
-                         f'Age: {age}<br>' +
-                         'Percentage: %{y:.1f}%<br>' +
-                         '<extra></extra>'
-        ))
-    
-    # Create ordered category list for x-axis
-    ordered_labels = [species_labels[s] for s in species_order if s in species_labels]
-    
-    fig.update_layout(
-        barmode='stack',
-        title="Age Distribution by Species",
-        xaxis_title="Species",
-        yaxis_title="Percentage (%)",
-        template="plotly_white",
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
-        title_font=dict(size=18, color="#2c3e50"),
-        legend=dict(
-            title="Age Class",
-            orientation="v",
-            yanchor="top",
-            y=0.99,
-            xanchor="right",
-            x=0.99,
-            bgcolor="rgba(255,255,255,0.8)",
-            bordercolor="#dee2e6",
-            borderwidth=1
-        ),
-        yaxis=dict(range=[0, 100]),
-        xaxis=dict(categoryorder='array', categoryarray=ordered_labels)
-    )
-    
-    return fig
-
-
-@callback(
-    Output("fat-score-distribution", "figure"),
-    [Input("species-dropdown", "value"),
-     Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date")]
-)
-def update_fat_score_distribution(species_codes, start_date, end_date):
-    """Update fat score distribution plot."""
-    if not species_codes:
-        return go.Figure()
-    
-    with BirdRingingDB(DB_PATH, read_only=True) as db:
-        df = db.get_data_as_polars(
-            filters={"species_code": species_codes}
-        ).to_pandas()
-    
-    # Filter by date
-    df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
-    # Remove NA values in fat score and filter valid range (0-10)
-    df = df[df["fat_score"].notna() & (df["fat_score"] >= 0) & (df["fat_score"] <= 10)]
-    
-    if len(df) == 0:
-        return go.Figure().add_annotation(
-            text="No fat score data available for selected filters",
-            showarrow=False,
-            font={"size": 16, "color": "#95a5a6"}
-        )
-    
-    # Create mapping from species_code to swedish_name
-    species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
-    
-    # Get species order based on dropdown selection order
-    species_order = [species_name_map[code] for code in species_codes if code in species_name_map]
-    
-    # Calculate average fat score per species
-    fat_summary = df.groupby('swedish_name').agg({
-        'fat_score': ['mean', 'std', 'count']
-    }).reset_index()
-    fat_summary.columns = ['swedish_name', 'mean_fat_score', 'std_fat_score', 'count']
-    
-    # Create labels with sample sizes
-    fat_summary['species_label'] = fat_summary.apply(
-        lambda row: f"{row['swedish_name']}<br>(n={int(row['count'])})", axis=1
-    )
-    
-    fig = go.Figure()
-    
-    # Add bars in the order of species_order
-    for idx, species in enumerate(species_order):
-        if species in fat_summary['swedish_name'].values:
-            row = fat_summary[fat_summary['swedish_name'] == species].iloc[0]
-            color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
-            
-            fig.add_trace(go.Bar(
-                x=[row['species_label']],
-                y=[row['mean_fat_score']],
-                name=row['swedish_name'],
-                marker_color=color,
-                error_y=dict(
-                    type='data',
-                    array=[row['std_fat_score']],
-                    visible=True
-                ),
-                text=[f"{row['mean_fat_score']:.2f}"],
-                textposition='outside',
-                hovertemplate='<b>%{x}</b><br>' +
-                             'Mean fat score: %{y:.2f}<br>' +
-                             f"Std: {row['std_fat_score']:.2f}<br>" +
-                             f"n={int(row['count'])}<br>" +
-                             '<extra></extra>',
-                showlegend=False
-            ))
-    
-    # Create ordered category list for x-axis
-    ordered_labels = [f"{s}<br>(n={int(fat_summary[fat_summary['swedish_name']==s]['count'].iloc[0])})" 
-                     for s in species_order if s in fat_summary['swedish_name'].values]
-    
-    fig.update_layout(
-        title="Average Fat Score by Species<br><sub>Error bars show standard deviation</sub>",
-        xaxis_title="Species",
-        yaxis_title="Fat Score (0-10)",
-        template="plotly_white",
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
-        title_font=dict(size=18, color="#2c3e50"),
-        yaxis=dict(range=[0, 12]),
-        bargap=0.2,
-        xaxis=dict(categoryorder='array', categoryarray=ordered_labels)
-    )
-    
-    return fig
-
-
-@callback(
-    Output("weight-weekly-plot", "figure"),
-    [Input("species-dropdown", "value"),
-     Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date"),
-     Input("weight-weekly-year-dropdown", "value")]
-)
-def update_weight_weekly(species_codes, start_date, end_date, selected_year):
-    """Weekly mean weight over the year, one line per species."""
-    if not species_codes:
-        return go.Figure()
-
-    year_param = None if selected_year == "all" else int(selected_year)
-
-    with BirdRingingDB(DB_PATH, read_only=True) as db:
-        query = BirdRingingQueries.get_weekly_weight_by_species(
-            species_codes=species_codes,
-            year=year_param,
-            start_date=start_date if year_param is None else None,
-            end_date=end_date if year_param is None else None,
-        )
-        df = db.execute_query(query).pl().to_pandas()
-
-    if df.empty:
-        return go.Figure().add_annotation(
-            text="No weight data for the selected filters",
-            showarrow=False,
-            font={"size": 16, "color": "#95a5a6"},
-        )
-
-    year_label = str(year_param) if year_param else f"Average {start_date[:4]}–{end_date[:4]}"
-    title = f"Weekly Mean Weight by Species ({year_label})"
-
-    fig = go.Figure()
-
-    for idx, species_code in enumerate(species_codes):
-        sp_df = df[df["species_code"] == species_code]
-        if sp_df.empty:
-            continue
-
-        name = sp_df["swedish_name"].iloc[0]
-        color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
-        r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
-        fill_color = f"rgba({r},{g},{b},0.15)"
-
-        # Shaded min–max band
-        x_band = sp_df["week_of_year"].tolist() + sp_df["week_of_year"].tolist()[::-1]
-        y_band = sp_df["max_weight"].tolist() + sp_df["min_weight"].tolist()[::-1]
-        fig.add_trace(go.Scatter(
-            x=x_band,
-            y=y_band,
-            fill="toself",
-            fillcolor=fill_color,
-            line=dict(color="rgba(0,0,0,0)"),
-            showlegend=False,
-            hoverinfo="skip",
-            name=f"{name} range",
-        ))
-
-        # Mean line
-        fig.add_trace(go.Scatter(
-            x=sp_df["week_of_year"],
-            y=sp_df["mean_weight"],
-            mode="lines+markers",
-            name=name,
-            line=dict(color=color, width=2.5),
-            marker=dict(size=5, color=color),
-            hovertemplate=(
-                f"<b>{name}</b><br>"
-                "Week: %{x}<br>"
-                "Mean weight: %{y:.2f} g<br>"
-                "<extra></extra>"
-            ),
-        ))
-
-    fig.update_layout(
-        title=title,
-        xaxis_title="Week of Year",
-        yaxis_title="Mean Weight (g)",
-        template="plotly_white",
-        hovermode="x unified",
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
-        title_font=dict(size=18, color="#2c3e50"),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-            bgcolor="rgba(255,255,255,0.8)",
-            bordercolor="#dee2e6",
-            borderwidth=1,
-        ),
-    )
-    return fig
-
-
-@callback(
-    Output("weight-yearly-plot", "figure"),
-    [Input("species-dropdown", "value"),
-     Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date")]
-)
-def update_weight_yearly(species_codes, start_date, end_date):
-    """Yearly mean (± min/max) weight trend per species."""
-    if not species_codes:
-        return go.Figure()
-
-    with BirdRingingDB(DB_PATH, read_only=True) as db:
-        query = BirdRingingQueries.get_yearly_weight_by_species(
-            species_codes=species_codes,
-            start_date=start_date,
-            end_date=end_date,
-        )
-        df = db.execute_query(query).pl().to_pandas()
-
-    if df.empty:
-        return go.Figure().add_annotation(
-            text="No weight data for the selected filters",
-            showarrow=False,
-            font={"size": 16, "color": "#95a5a6"},
-        )
-
-    fig = go.Figure()
-
-    for idx, species_code in enumerate(species_codes):
-        sp_df = df[df["species_code"] == species_code].sort_values("year")
-        if sp_df.empty:
-            continue
-
-        name = sp_df["swedish_name"].iloc[0]
-        color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
-        r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
-        fill_color = f"rgba({r},{g},{b},0.15)"
-
-        # Shaded min–max band
-        x_band = sp_df["year"].tolist() + sp_df["year"].tolist()[::-1]
-        y_band = sp_df["max_weight"].tolist() + sp_df["min_weight"].tolist()[::-1]
-        fig.add_trace(go.Scatter(
-            x=x_band,
-            y=y_band,
-            fill="toself",
-            fillcolor=fill_color,
-            line=dict(color="rgba(0,0,0,0)"),
-            showlegend=False,
-            hoverinfo="skip",
-            name=f"{name} range",
-        ))
-
-        # Mean line with markers
-        fig.add_trace(go.Scatter(
-            x=sp_df["year"],
-            y=sp_df["mean_weight"],
-            mode="lines+markers",
-            name=name,
-            line=dict(color=color, width=2.5),
-            marker=dict(size=8, color=color, line=dict(width=1.5, color="white")),
-            text=sp_df["n"].map(lambda v: f"n={v:,}"),
-            hovertemplate=(
-                f"<b>{name}</b><br>"
-                "Year: %{x}<br>"
-                "Mean: %{y:.2f} g<br>"
-                "%{text}<extra></extra>"
-            ),
-        ))
-
-    fig.update_layout(
-        title=(
-            f"Yearly Mean Weight by Species ({start_date[:4]}–{end_date[:4]})"
-            "<br><sub>Shaded band = full min–max range per year</sub>"
-        ),
-        xaxis_title="Year",
-        yaxis_title="Weight (g)",
-        template="plotly_white",
-        hovermode="x unified",
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
-        title_font=dict(size=18, color="#2c3e50"),
-        xaxis=dict(dtick=1, tickformat="d"),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-            bgcolor="rgba(255,255,255,0.8)",
-            bordercolor="#dee2e6",
-            borderwidth=1,
-        ),
-    )
-    return fig
-
-
-@callback(
-    Output("phenology-weekly-plot", "figure"),
-    [Input("species-dropdown", "value"),
-     Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date")]
-)
-def update_phenology_weekly(species_codes, start_date, end_date):
-    """Update weekly phenology plot showing migration patterns."""
-    if not species_codes:
-        return go.Figure()
-    
-    with BirdRingingDB(DB_PATH, read_only=True) as db:
-        start_year = int(start_date[:4])
-        end_year = int(end_date[:4])
-        
-        query = BirdRingingQueries.get_phenology_weekly_distribution(
-            species_codes=species_codes,
-            start_year=start_year,
-            end_year=end_year,
-            aggregate_years=True
-        )
-        df = db.execute_query(query).pl().to_pandas()
-    
-    fig = go.Figure()
-    
-    for idx, species in enumerate(df['swedish_name'].unique()):
-        species_df = df[df['swedish_name'] == species]
-        color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
-        
-        # Convert hex color to rgba with opacity
-        r = int(color[1:3], 16)
-        g = int(color[3:5], 16)
-        b = int(color[5:7], 16)
-        fill_color = f'rgba({r}, {g}, {b}, 0.3)'  # 30% opacity for fill
-        line_color = f'rgba({r}, {g}, {b}, 0.9)'  # 90% opacity for line
-        
-        fig.add_trace(go.Scatter(
-            x=species_df['week_of_year'],
-            y=species_df['avg_count'],
-            mode='lines',
-            name=species,
-            fill='tozeroy',
-            line=dict(width=3, color=line_color),
-            fillcolor=fill_color,
-            hovertemplate='<b>%{fullData.name}</b><br>' +
-                         'Week: %{x}<br>' +
-                         'Avg observations: %{y:.1f}<br>' +
-                         '<extra></extra>'
-        ))
-    
-    # Add season markers with pastel colors
-    fig.add_vrect(
-        x0=9, x1=22, 
-        fillcolor="rgba(144, 238, 144, 0.15)", 
-        line_width=0,
-        annotation_text="Spring Migration",
-        annotation_position="top left",
-        annotation=dict(font_size=11, font_color="#6c757d")
-    )
-    fig.add_vrect(
-        x0=31, x1=43,
-        fillcolor="rgba(255, 218, 185, 0.15)",
-        line_width=0,
-        annotation_text="Autumn Migration",
-        annotation_position="top left",
-        annotation=dict(font_size=11, font_color="#6c757d")
-    )
-    
-    fig.update_layout(
-        title=f"Weekly Observation Pattern ({start_year}-{end_year} average)<br>" +
-              "<sub>Shows both spring and autumn migration peaks</sub>",
-        xaxis_title="Week of Year",
-        yaxis_title="Average Weekly Observations",
-        template="plotly_white",
-        hovermode="x unified",
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
-        title_font=dict(size=18, color="#2c3e50"),
-        legend=dict(
-            orientation="v",
-            yanchor="top",
-            y=0.99,
-            xanchor="right",
-            x=0.99,
-            bgcolor="rgba(255,255,255,0.8)",
-            bordercolor="#dee2e6",
-            borderwidth=1
-        )
-    )
-    
-    return fig
-
-
-@callback(
-    Output("phenology-ridgeline-plot", "figure"),
-    [Input("species-dropdown", "value"),
-     Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date")]
-)
-def update_phenology_ridgeline(species_codes, start_date, end_date):
-    """Update ridgeline plot showing daily distribution by species."""
-    if not species_codes:
-        return go.Figure()
-    
-    with BirdRingingDB(DB_PATH, read_only=True) as db:
-        start_year = int(start_date[:4])
-        end_year = int(end_date[:4])
-        
-        query = BirdRingingQueries.get_phenology_daily_distribution(
-            species_codes=species_codes,
-            start_year=start_year,
-            end_year=end_year,
-            aggregate_years=True
-        )
-        df = db.execute_query(query).pl().to_pandas()
-    
-    from plotly.subplots import make_subplots
-    
-    species_list = df['swedish_name'].unique()
-    n_species = len(species_list)
-    
-    # Increase vertical spacing to prevent overlap
-    spacing = 0.08 if n_species > 3 else 0.05
-    
-    fig = make_subplots(
-        rows=n_species, 
-        cols=1,
-        subplot_titles=[f"<b>{sp}</b>" for sp in species_list],
-        vertical_spacing=spacing,
-        shared_xaxes=True
-    )
-    
-    for idx, species in enumerate(species_list, start=1):
-        species_df = df[df['swedish_name'] == species]
-        color = PASTEL_COLORS[(idx - 1) % len(PASTEL_COLORS)]
-        
-        # Convert hex to rgba for transparency
-        r = int(color[1:3], 16)
-        g = int(color[3:5], 16)
-        b = int(color[5:7], 16)
-        fill_color = f'rgba({r}, {g}, {b}, 0.4)'
-        line_color = f'rgba({r}, {g}, {b}, 0.9)'
-        
-        fig.add_trace(
-            go.Scatter(
-                x=species_df['day_of_year'],
-                y=species_df['avg_count'],
-                mode='lines',
-                fill='tozeroy',
-                line=dict(width=2, color=line_color),
-                fillcolor=fill_color,
-                showlegend=False,
-                hovertemplate='Day: %{x}<br>Avg count: %{y:.2f}<extra></extra>'
-            ),
-            row=idx,
-            col=1
-        )
-        
-        # Update y-axis for each subplot
-        fig.update_yaxes(
-            title_text="Count",
-            title_standoff=5,
-            title_font_size=10,
-            row=idx,
-            col=1
-        )
-    
-    fig.update_xaxes(title_text="Day of Year", row=n_species, col=1)
-    
-    fig.update_layout(
-        height=220 * n_species,  # Increased height per species
-        title_text=f"Daily Observation Distribution ({start_year}-{end_year})<br>" +
-                   "<sub>Each row shows the temporal distribution for one species</sub>",
-        template="plotly_white",
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
-        title_font=dict(size=18, color="#2c3e50")
-    )
-    
-    return fig
-
-
-@callback(
-    Output("phenology-seasonal-plot", "figure"),
-    [Input("species-dropdown", "value"),
-     Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date")]
-)
-def update_phenology_seasonal(species_codes, start_date, end_date):
-    """Update spring vs autumn migration comparison plot."""
-    if not species_codes:
-        return go.Figure()
-    
-    with BirdRingingDB(DB_PATH, read_only=True) as db:
-        start_year = int(start_date[:4])
-        end_year = int(end_date[:4])
-        
-        query = BirdRingingQueries.get_phenology_migration_windows(
-            species_codes=species_codes,
-            start_year=start_year,
-            end_year=end_year
-        )
-        df = db.execute_query(query).pl().to_pandas()
-    
-    # Calculate average across years for each species/season
-    seasonal_avg = df.groupby(['swedish_name', 'season']).agg({
-        'median': 'mean',
-        'q25': 'mean',
-        'q75': 'mean',
-        'n_observations': 'sum'
-    }).reset_index()
-    
-    fig = go.Figure()
-    
-    for season, color, symbol in [
-        ('spring', '#C5E1B5', 'circle'),  # Pastel green
-        ('autumn', '#FFD4B8', 'square')   # Pastel orange
-    ]:
-        season_df = seasonal_avg[seasonal_avg['season'] == season]
-        
-        if len(season_df) > 0:
-            fig.add_trace(go.Scatter(
-                x=season_df['swedish_name'],
-                y=season_df['median'],
-                error_y=dict(
-                    type='data',
-                    symmetric=False,
-                    array=season_df['q75'] - season_df['median'],
-                    arrayminus=season_df['median'] - season_df['q25']
-                ),
-                mode='markers',
-                name=season.capitalize(),
-                marker=dict(
-                    size=14,
-                    symbol=symbol,
-                    color=color,
-                    line=dict(width=2, color='white')
-                ),
-                text=[f"n={int(n)}" for n in season_df['n_observations']],
-                hovertemplate='<b>%{x}</b><br>' +
-                             season.capitalize() + ' migration<br>' +
-                             'Median day: %{y:.0f}<br>' +
-                             'IQR: %{error_y.array:.0f} days<br>' +
-                             '%{text}<br>' +
-                             '<extra></extra>'
-            ))
-    
-    # Add month labels on y-axis
-    months = [(1, "Jan"), (32, "Feb"), (60, "Mar"), (91, "Apr"), (121, "May"), 
-              (152, "Jun"), (182, "Jul"), (213, "Aug"), (244, "Sep"), (274, "Oct"), 
-              (305, "Nov"), (335, "Dec")]
-    
-    fig.update_layout(
-        title=f"Spring vs Autumn Migration Timing ({start_year}-{end_year})<br>" +
-              "<sub>Points show median day of year, error bars show interquartile range</sub>",
-        xaxis_title="Species",
-        yaxis_title="Day of Year",
-        template="plotly_white",
-        hovermode="closest",
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
-        title_font=dict(size=18, color="#2c3e50"),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-            bgcolor="rgba(255,255,255,0.8)",
-            bordercolor="#dee2e6",
-            borderwidth=1
-        )
-    )
-    
-    fig.update_yaxes(
-        tickmode='array',
-        tickvals=[m[0] for m in months],
-        ticktext=[m[1] for m in months]
-    )
-    
-    return fig
-
-
-@callback(
-    Output("phenology-yearly-plot", "figure"),
-    [Input("species-dropdown", "value"),
-     Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date")]
-)
-def update_phenology_yearly(species_codes, start_date, end_date):
-    """Update year-over-year comparison plot."""
-    if not species_codes:
-        return go.Figure()
-    
-    with BirdRingingDB(DB_PATH, read_only=True) as db:
-        start_year = int(start_date[:4])
-        end_year = int(end_date[:4])
-        
-        query = BirdRingingQueries.get_phenology_weekly_distribution(
-            species_codes=species_codes,
-            start_year=start_year,
-            end_year=end_year,
-            aggregate_years=False  # Keep years separate
-        )
-        df = db.execute_query(query).pl().to_pandas()
-    
-    from plotly.subplots import make_subplots
-    
-    species_list = df['swedish_name'].unique()
-    n_species = len(species_list)
-    
-    fig = make_subplots(
-        rows=n_species,
-        cols=1,
-        subplot_titles=[f"<b>{sp}</b>" for sp in species_list],
-        vertical_spacing=0.05,
-        shared_xaxes=True
-    )
-    
-    for idx, species in enumerate(species_list, start=1):
-        species_df = df[df['swedish_name'] == species]
-        
-        for year_idx, year in enumerate(sorted(species_df['year'].unique())):
-            year_df = species_df[species_df['year'] == year]
-            color = PASTEL_COLORS[year_idx % len(PASTEL_COLORS)]
-            
-            fig.add_trace(
-                go.Scatter(
-                    x=year_df['week_of_year'],
-                    y=year_df['count'],
-                    mode='lines',
-                    name=str(year),
-                    line=dict(width=3, color=color),
-                    showlegend=(idx == 1),  # Only show legend for first subplot
-                    legendgroup=str(year),
-                    hovertemplate=f'{year}<br>Week: %{{x}}<br>Count: %{{y}}<extra></extra>'
-                ),
-                row=idx,
-                col=1
-            )
-        
-        fig.update_yaxes(title_text="Count", row=idx, col=1)
-    
-    fig.update_xaxes(title_text="Week of Year", row=n_species, col=1)
-    
-    fig.update_layout(
-        height=250 * n_species,
-        title_text=f"Year-over-Year Weekly Patterns ({start_year}-{end_year})<br>" +
-                   "<sub>Compare migration timing shifts between years</sub>",
-        template="plotly_white",
-        hovermode="x unified",
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
-        title_font=dict(size=18, color="#2c3e50"),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-            bgcolor="rgba(255,255,255,0.8)",
-            bordercolor="#dee2e6",
-            borderwidth=1
-        )
-    )
-    
-    return fig
-
-
-@callback(
     Output("summary-stats", "children"),
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date")]
+     Input("date-range-picker", "end_date"),
+     Input("language-store", "data")]
 )
-def update_summary(species_codes, start_date, end_date):
+def update_summary(species_codes, start_date, end_date, language):
     """Update summary statistics."""
+    t = LOCALES[language]
     # Convert date strings to proper date format for comparison
     if isinstance(start_date, str):
         start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
@@ -1563,7 +685,7 @@ def update_summary(species_codes, start_date, end_date):
                         html.H2(f"{total_records:,}", 
                                className="mb-2",
                                style={"color": "#2c3e50", "fontWeight": "600"}),
-                        html.P("Total Observations", 
+                        html.P(t["summary_total_obs"], 
                               className="text-muted mb-0",
                               style={"fontSize": "0.95rem"})
                     ], className="text-center")
@@ -1584,7 +706,7 @@ def update_summary(species_codes, start_date, end_date):
                         html.H2(f"{unique_species}", 
                                className="mb-2",
                                style={"color": "#2c3e50", "fontWeight": "600"}),
-                        html.P("Unique Species", 
+                        html.P(t["summary_unique_species"], 
                               className="text-muted mb-0",
                               style={"fontSize": "0.95rem"})
                     ], className="text-center")
@@ -1605,7 +727,7 @@ def update_summary(species_codes, start_date, end_date):
                         html.H2(f"{unique_individuals:,}", 
                                className="mb-2",
                                style={"color": "#2c3e50", "fontWeight": "600"}),
-                        html.P("Unique Individuals", 
+                        html.P(t["summary_unique_inds"], 
                               className="text-muted mb-0",
                               style={"fontSize": "0.95rem"})
                     ], className="text-center")
@@ -1626,7 +748,7 @@ def update_summary(species_codes, start_date, end_date):
                         html.H4(date_range_str, 
                                className="mb-2",
                                style={"color": "#2c3e50", "fontWeight": "600", "fontSize": "1.1rem"}),
-                        html.P("Date Range", 
+                        html.P(t["summary_date_range"], 
                               className="text-muted mb-0",
                               style={"fontSize": "0.95rem"})
                     ], className="text-center")
@@ -1641,16 +763,832 @@ def update_summary(species_codes, start_date, end_date):
 
 
 @callback(
-    Output("weekly-heatmap", "figure"),
-    Input("heatmap-year-dropdown", "value")
+    Output("weight-distribution", "figure"),
+    [Input("species-dropdown", "value"),
+     Input("date-range-picker", "start_date"),
+     Input("date-range-picker", "end_date"),
+     Input("language-store", "data")]
 )
-def update_weekly_heatmap(selected_year):
+def update_weight_distribution(species_codes, start_date, end_date, language):
+    """Update weight distribution plot."""
+    t = LOCALES[language]
+    
+    if not species_codes:
+        return go.Figure()
+    
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        df = db.get_data_as_polars(
+            filters={"species_code": species_codes}
+        ).to_pandas()
+    
+    # Filter by date
+    df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
+    # Remove NA and zero values (incorrect measurements)
+    df = df[(df["weight"].notna()) & (df["weight"] > 0)]
+    
+    # Create mapping from species_code to swedish_name
+    species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
+    
+    # Get species order based on dropdown selection order
+    species_order = [species_name_map[code] for code in species_codes if code in species_name_map]
+    
+    # Calculate sample sizes for each species
+    sample_sizes = df.groupby("swedish_name").size()
+    
+    # Create labels with sample sizes
+    df["species_label"] = df["swedish_name"].map(
+        lambda x: f"{x}<br>(n={sample_sizes[x]})"
+    )
+    
+    fig = px.box(
+        df,
+        x="species_label",
+        y="weight",
+        color="species_label",
+        title=t["weight_dist_title"],
+        labels={"species_label": t["species_label"], "weight": t["weight_g"]},
+        color_discrete_sequence=PASTEL_COLORS,
+        category_orders={"species_label": [f"{s}<br>(n={sample_sizes[s]})" for s in species_order]}
+    )
+    
+    fig.update_layout(
+        template="plotly_white",
+        showlegend=False,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50")
+    )
+    
+    return fig
+
+
+@callback(
+    Output("wing-length-distribution", "figure"),
+    [Input("species-dropdown", "value"),
+     Input("date-range-picker", "start_date"),
+     Input("date-range-picker", "end_date"),
+     Input("language-store", "data")]
+)
+def update_wing_distribution(species_codes, start_date, end_date, language):
+    """Update wing length distribution plot."""
+    t = LOCALES[language]
+    
+    if not species_codes:
+        return go.Figure()
+    
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        df = db.get_data_as_polars(
+            filters={"species_code": species_codes}
+        ).to_pandas()
+    
+    # Filter by date
+    df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
+    # Remove NA and zero values (incorrect measurements)
+    df = df[(df["wing_length"].notna()) & (df["wing_length"] > 0)]
+    
+    # Create mapping from species_code to swedish_name
+    species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
+    
+    # Get species order based on dropdown selection order
+    species_order = [species_name_map[code] for code in species_codes if code in species_name_map]
+    
+    # Calculate sample sizes for each species
+    sample_sizes = df.groupby("swedish_name").size()
+    
+    # Create labels with sample sizes
+    df["species_label"] = df["swedish_name"].map(
+        lambda x: f"{x}<br>(n={sample_sizes[x]})"
+    )
+    
+    fig = px.box(
+        df,
+        x="species_label",
+        y="wing_length",
+        color="species_label",
+        title=t["wing_dist_title"],
+        labels={"species_label": t["species_label"], "wing_length": t["wing_mm"]},
+        color_discrete_sequence=PASTEL_COLORS,
+        category_orders={"species_label": [f"{s}<br>(n={sample_sizes[s]})" for s in species_order]}
+    )
+    
+    fig.update_layout(
+        template="plotly_white",
+        showlegend=False,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50")
+    )
+    
+    return fig
+
+
+@callback(
+    Output("age-distribution", "figure"),
+    [Input("species-dropdown", "value"),
+     Input("date-range-picker", "start_date"),
+     Input("date-range-picker", "end_date"),
+     Input("language-store", "data")]
+)
+def update_age_distribution(species_codes, start_date, end_date, language):
+    """Update age distribution plot showing percentage of age classes per species."""
+    t = LOCALES[language]
+    
+    if not species_codes:
+        return go.Figure()
+    
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        df = db.get_data_as_polars(
+            filters={"species_code": species_codes}
+        ).to_pandas()
+    
+    # Filter by date
+    df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
+    # Remove NA values in age
+    df = df[df["age"].notna() & (df["age"] != "")]
+    
+    if len(df) == 0:
+        return go.Figure().add_annotation(
+            text=t.get("no_data", "No data available"),
+            showarrow=False,
+            font={"size": 16, "color": "#95a5a6"}
+        )
+    
+    # Create mapping from species_code to swedish_name
+    species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
+    
+    # Get species order based on dropdown selection order
+    species_order = [species_name_map[code] for code in species_codes if code in species_name_map]
+    
+    # Calculate percentages for each species and age combination
+    age_counts = df.groupby(['swedish_name', 'age']).size().reset_index(name='count')
+    totals = df.groupby('swedish_name').size().reset_index(name='total')
+    age_counts = age_counts.merge(totals, on='swedish_name')
+    age_counts['percentage'] = (age_counts['count'] / age_counts['total']) * 100
+    
+    # Create labels with sample sizes
+    species_labels = {row['swedish_name']: f"{row['swedish_name']}<br>(n={int(row['total'])})" 
+                     for _, row in totals.iterrows()}
+    
+    # Get unique ages for consistent coloring
+    unique_ages = sorted(df['age'].unique())
+    age_color_map = {age: PASTEL_COLORS[i % len(PASTEL_COLORS)] for i, age in enumerate(unique_ages)}
+    
+    fig = go.Figure()
+    
+    # Add traces for each age class
+    for age in unique_ages:
+        age_data = age_counts[age_counts['age'] == age].copy()
+        age_data['species_label'] = age_data['swedish_name'].map(species_labels)
+        
+        fig.add_trace(go.Bar(
+            x=age_data['species_label'],
+            y=age_data['percentage'],
+            name=age,
+            marker_color=age_color_map[age],
+            text=age_data['percentage'].round(1),
+            texttemplate='%{text}%',
+            textposition='inside',
+            hovertemplate='<b>%{x}</b><br>' +
+                         f'Age: {age}<br>' +
+                         f'{t["percentage"]}: %{{y:.1f}}%<br>' +
+                         '<extra></extra>'
+        ))
+    
+    # Create ordered category list for x-axis
+    ordered_labels = [species_labels[s] for s in species_order if s in species_labels]
+    
+    fig.update_layout(
+        barmode='stack',
+        title=t["age_dist_title"],
+        xaxis_title=t["species_label"],
+        yaxis_title=t["percentage"],
+        template="plotly_white",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50"),
+        legend=dict(
+            title=t["age_class"],
+            orientation="v",
+            yanchor="top",
+            y=0.99,
+            xanchor="right",
+            x=0.99,
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="#dee2e6",
+            borderwidth=1
+        ),
+        yaxis=dict(range=[0, 100]),
+        xaxis=dict(categoryorder='array', categoryarray=ordered_labels)
+    )
+    
+    return fig
+
+
+@callback(
+    Output("fat-score-distribution", "figure"),
+    [Input("species-dropdown", "value"),
+     Input("date-range-picker", "start_date"),
+     Input("date-range-picker", "end_date"),
+     Input("language-store", "data")]
+)
+def update_fat_score_distribution(species_codes, start_date, end_date, language):
+    """Update fat score distribution plot."""
+    t = LOCALES[language]
+    
+    if not species_codes:
+        return go.Figure()
+    
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        df = db.get_data_as_polars(
+            filters={"species_code": species_codes}
+        ).to_pandas()
+    
+    # Filter by date
+    df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
+    # Remove NA values in fat score and filter valid range (0-10)
+    df = df[df["fat_score"].notna() & (df["fat_score"] >= 0) & (df["fat_score"] <= 10)]
+    
+    if len(df) == 0:
+        return go.Figure().add_annotation(
+            text=t.get("no_data", "No data available"),
+            showarrow=False,
+            font={"size": 16, "color": "#95a5a6"}
+        )
+    
+    # Create mapping from species_code to swedish_name
+    species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
+    
+    # Get species order based on dropdown selection order
+    species_order = [species_name_map[code] for code in species_codes if code in species_name_map]
+    
+    # Calculate average fat score per species
+    fat_summary = df.groupby('swedish_name').agg({
+        'fat_score': ['mean', 'std', 'count']
+    }).reset_index()
+    fat_summary.columns = ['swedish_name', 'mean_fat_score', 'std_fat_score', 'count']
+    
+    # Create labels with sample sizes
+    fat_summary['species_label'] = fat_summary.apply(
+        lambda row: f"{row['swedish_name']}<br>(n={int(row['count'])})", axis=1
+    )
+    
+    fig = go.Figure()
+    
+    # Add bars in the order of species_order
+    for idx, species in enumerate(species_order):
+        if species in fat_summary['swedish_name'].values:
+            row = fat_summary[fat_summary['swedish_name'] == species].iloc[0]
+            color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
+            
+            fig.add_trace(go.Bar(
+                x=[row['species_label']],
+                y=[row['mean_fat_score']],
+                name=row['swedish_name'],
+                marker_color=color,
+                error_y=dict(
+                    type='data',
+                    array=[row['std_fat_score']],
+                    visible=True
+                ),
+                text=[f"{row['mean_fat_score']:.2f}"],
+                textposition='outside',
+                hovertemplate='<b>%{x}</b><br>' +
+                             f'{t["fat_score"]}: %{{y:.2f}}<br>' +
+                             f"Std: {row['std_fat_score']:.2f}<br>" +
+                             f"n={int(row['count'])}<br>" +
+                             '<extra></extra>',
+                showlegend=False
+            ))
+    
+    # Create ordered category list for x-axis
+    ordered_labels = [f"{s}<br>(n={int(fat_summary[fat_summary['swedish_name']==s]['count'].iloc[0])})" 
+                     for s in species_order if s in fat_summary['swedish_name'].values]
+    
+    fig.update_layout(
+        title=t["fat_dist_title"],
+        xaxis_title=t["species_label"],
+        yaxis_title=t["fat_score"],
+        template="plotly_white",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50"),
+        yaxis=dict(range=[0, 12]),
+        bargap=0.2,
+        xaxis=dict(categoryorder='array', categoryarray=ordered_labels)
+    )
+    
+    return fig
+
+
+@callback(
+    Output("weight-weekly-plot", "figure"),
+    [Input("species-dropdown", "value"),
+     Input("date-range-picker", "start_date"),
+     Input("date-range-picker", "end_date"),
+     Input("weight-weekly-year-dropdown", "value"),
+     Input("language-store", "data")]
+)
+def update_weight_weekly(species_codes, start_date, end_date, selected_year, language):
+    """Weekly mean weight over the year, one line per species."""
+    t = LOCALES[language]
+    
+    if not species_codes:
+        return go.Figure()
+
+    year_param = None if selected_year == "all" else int(selected_year)
+
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        query = BirdRingingQueries.get_weekly_weight_by_species(
+            species_codes=species_codes,
+            year=year_param,
+            start_date=start_date if year_param is None else None,
+            end_date=end_date if year_param is None else None,
+        )
+        df = db.execute_query(query).pl().to_pandas()
+
+    if df.empty:
+        return go.Figure().add_annotation(
+            text=t.get("no_data", "No data available"),
+            showarrow=False,
+            font={"size": 16, "color": "#95a5a6"},
+        )
+
+    year_label = str(year_param) if year_param else f"{t['avg_all_years']} {start_date[:4]}–{end_date[:4]}"
+    title = f"{t['weekly_weight_title']} ({year_label})"
+
+    fig = go.Figure()
+
+    for idx, species_code in enumerate(species_codes):
+        sp_df = df[df["species_code"] == species_code]
+        if sp_df.empty:
+            continue
+
+        name = sp_df["swedish_name"].iloc[0]
+        color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
+        r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+        fill_color = f"rgba({r},{g},{b},0.15)"
+
+        # Shaded min–max band
+        x_band = sp_df["week_of_year"].tolist() + sp_df["week_of_year"].tolist()[::-1]
+        y_band = sp_df["max_weight"].tolist() + sp_df["min_weight"].tolist()[::-1]
+        fig.add_trace(go.Scatter(
+            x=x_band,
+            y=y_band,
+            fill="toself",
+            fillcolor=fill_color,
+            line=dict(color="rgba(0,0,0,0)"),
+            showlegend=False,
+            hoverinfo="skip",
+            name=f"{name} range",
+        ))
+
+        # Mean line
+        fig.add_trace(go.Scatter(
+            x=sp_df["week_of_year"],
+            y=sp_df["mean_weight"],
+            mode="lines+markers",
+            name=name,
+            line=dict(color=color, width=2.5),
+            marker=dict(size=5, color=color),
+            hovertemplate=(
+                f"<b>{name}</b><br>"
+                f"{t['week_of_year']}: %{{x}}<br>"
+                f"{t['weight_g']}: %{{y:.2f}}<br>"
+                "<extra></extra>"
+            ),
+        ))
+
+    fig.update_layout(
+        title=title,
+        xaxis_title=f"{t['week_of_year']}",
+        yaxis_title=t["weight_g"],
+        template="plotly_white",
+        hovermode="x unified",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50"),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="#dee2e6",
+            borderwidth=1,
+        ),
+    )
+    return fig
+
+
+@callback(
+    Output("weight-yearly-plot", "figure"),
+    [Input("species-dropdown", "value"),
+     Input("date-range-picker", "start_date"),
+     Input("date-range-picker", "end_date"),
+     Input("language-store", "data")]
+)
+def update_weight_yearly(species_codes, start_date, end_date, language):
+    """Yearly mean (± min/max) weight trend per species."""
+    t = LOCALES[language]
+    
+    if not species_codes:
+        return go.Figure()
+
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        query = BirdRingingQueries.get_yearly_weight_by_species(
+            species_codes=species_codes,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        df = db.execute_query(query).pl().to_pandas()
+
+    if df.empty:
+        return go.Figure().add_annotation(
+            text=t.get("no_data", "No data available"),
+            showarrow=False,
+            font={"size": 16, "color": "#95a5a6"},
+        )
+
+    fig = go.Figure()
+
+    for idx, species_code in enumerate(species_codes):
+        sp_df = df[df["species_code"] == species_code].sort_values("year")
+        if sp_df.empty:
+            continue
+
+        name = sp_df["swedish_name"].iloc[0]
+        color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
+        r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+        fill_color = f"rgba({r},{g},{b},0.15)"
+
+        # Shaded min–max band
+        x_band = sp_df["year"].tolist() + sp_df["year"].tolist()[::-1]
+        y_band = sp_df["max_weight"].tolist() + sp_df["min_weight"].tolist()[::-1]
+        fig.add_trace(go.Scatter(
+            x=x_band,
+            y=y_band,
+            fill="toself",
+            fillcolor=fill_color,
+            line=dict(color="rgba(0,0,0,0)"),
+            showlegend=False,
+            hoverinfo="skip",
+            name=f"{name} range",
+        ))
+
+        # Mean line with markers
+        fig.add_trace(go.Scatter(
+            x=sp_df["year"],
+            y=sp_df["mean_weight"],
+            mode="lines+markers",
+            name=name,
+            line=dict(color=color, width=2.5),
+            marker=dict(size=8, color=color, line=dict(width=1.5, color="white")),
+            text=sp_df["n"].map(lambda v: f"n={v:,}"),
+            hovertemplate=(
+                f"<b>{name}</b><br>"
+                f"{t['year_label']}: %{{x}}<br>"
+                f"{t['weight_g']}: %{{y:.2f}}<br>"
+                "%{text}<extra></extra>"
+            ),
+        ))
+
+    fig.update_layout(
+        title=t["yearly_weight_title"].format(start=start_date[:4], end=end_date[:4]),
+        xaxis_title=t["year_label"],
+        yaxis_title=t["weight_g"],
+        template="plotly_white",
+        hovermode="x unified",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50"),
+        xaxis=dict(dtick=1, tickformat="d"),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="#dee2e6",
+            borderwidth=1,
+        ),
+    )
+    return fig
+
+
+@callback(
+    Output("phenology-weekly-plot", "figure"),
+    [Input("species-dropdown", "value"),
+     Input("date-range-picker", "start_date"),
+     Input("date-range-picker", "end_date"),
+     Input("language-store", "data")]
+)
+def update_phenology_weekly(species_codes, start_date, end_date, language):
+    """Update weekly phenology plot showing migration patterns."""
+    t = LOCALES[language]
+    
+    if not species_codes:
+        return go.Figure()
+    
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        start_year = int(start_date[:4])
+        end_year = int(end_date[:4])
+        
+        query = BirdRingingQueries.get_phenology_weekly_distribution(
+            species_codes=species_codes,
+            start_year=start_year,
+            end_year=end_year,
+            aggregate_years=True
+        )
+        df = db.execute_query(query).pl().to_pandas()
+    
+    fig = go.Figure()
+    
+    for idx, species in enumerate(df['swedish_name'].unique()):
+        species_df = df[df['swedish_name'] == species]
+        color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
+        
+        # Convert hex color to rgba with opacity
+        r = int(color[1:3], 16)
+        g = int(color[3:5], 16)
+        b = int(color[5:7], 16)
+        fill_color = f'rgba({r}, {g}, {b}, 0.3)'  # 30% opacity for fill
+        line_color = f'rgba({r}, {g}, {b}, 0.9)'  # 90% opacity for line
+        
+        fig.add_trace(go.Scatter(
+            x=species_df['week_of_year'],
+            y=species_df['avg_count'],
+            mode='lines',
+            name=species,
+            fill='tozeroy',
+            line=dict(width=3, color=line_color),
+            fillcolor=fill_color,
+            hovertemplate='<b>%{fullData.name}</b><br>' +
+                         f'{t["week_of_year"]}: %{{x}}<br>' +
+                         f'{t["avg_weekly_obs"]}: %{{y:.1f}}<br>' +
+                         '<extra></extra>'
+        ))
+    
+    # Add season markers with pastel colors
+    fig.add_vrect(
+        x0=9, x1=22, 
+        fillcolor="rgba(144, 238, 144, 0.15)", 
+        line_width=0,
+        annotation_text=t["spring_mig"],
+        annotation_position="top left",
+        annotation=dict(font_size=11, font_color="#6c757d")
+    )
+    fig.add_vrect(
+        x0=31, x1=43,
+        fillcolor="rgba(255, 218, 185, 0.15)",
+        line_width=0,
+        annotation_text=t["autumn_mig"],
+        annotation_position="top left",
+        annotation=dict(font_size=11, font_color="#6c757d")
+    )
+    
+    fig.update_layout(
+        title=t["weekly_obs_pattern"].format(start=start_year, end=end_year),
+        xaxis_title=f"{t['week_of_year']}",
+        yaxis_title=t["avg_weekly_obs"],
+        template="plotly_white",
+        hovermode="x unified",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50"),
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=0.99,
+            xanchor="right",
+            x=0.99,
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="#dee2e6",
+            borderwidth=1
+        )
+    )
+    
+    return fig
+
+
+@callback(
+    Output("phenology-ridgeline-plot", "figure"),
+    [Input("species-dropdown", "value"),
+     Input("date-range-picker", "start_date"),
+     Input("date-range-picker", "end_date"),
+     Input("language-store", "data")]
+)
+def update_phenology_ridgeline(species_codes, start_date, end_date, language):
+    """Update ridgeline plot showing daily distribution by species."""
+    t = LOCALES[language]
+    
+    if not species_codes:
+        return go.Figure()
+    
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        start_year = int(start_date[:4])
+        end_year = int(end_date[:4])
+        
+        query = BirdRingingQueries.get_phenology_daily_distribution(
+            species_codes=species_codes,
+            start_year=start_year,
+            end_year=end_year,
+            aggregate_years=True
+        )
+        df = db.execute_query(query).pl().to_pandas()
+    
+    from plotly.subplots import make_subplots
+    
+    species_list = df['swedish_name'].unique()
+    n_species = len(species_list)
+    
+    # Increase vertical spacing to prevent overlap
+    spacing = 0.08 if n_species > 3 else 0.05
+    
+    fig = make_subplots(
+        rows=n_species, 
+        cols=1,
+        subplot_titles=[f"<b>{sp}</b>" for sp in species_list],
+        vertical_spacing=spacing,
+        shared_xaxes=True
+    )
+    
+    for idx, species in enumerate(species_list, start=1):
+        species_df = df[df['swedish_name'] == species]
+        color = PASTEL_COLORS[(idx - 1) % len(PASTEL_COLORS)]
+        
+        # Convert hex to rgba for transparency
+        r = int(color[1:3], 16)
+        g = int(color[3:5], 16)
+        b = int(color[5:7], 16)
+        fill_color = f'rgba({r}, {g}, {b}, 0.4)'
+        line_color = f'rgba({r}, {g}, {b}, 0.9)'
+        
+        fig.add_trace(
+            go.Scatter(
+                x=species_df['day_of_year'],
+                y=species_df['avg_count'],
+                mode='lines',
+                fill='tozeroy',
+                line=dict(width=2, color=line_color),
+                fillcolor=fill_color,
+                showlegend=False,
+                hovertemplate=f'{t["day_of_year"]}: %{{x}}<br>{t["count_label"]}: %{{y:.2f}}<extra></extra>'
+            ),
+            row=idx,
+            col=1
+        )
+        
+        # Update y-axis for each subplot
+        fig.update_yaxes(
+            title_text=t["count_label"],
+            title_standoff=5,
+            title_font_size=10,
+            row=idx,
+            col=1
+        )
+    
+    fig.update_xaxes(title_text=t["day_of_year"], row=n_species, col=1)
+    
+    fig.update_layout(
+        height=220 * n_species,  # Increased height per species
+        title_text=t["daily_obs_dist"].format(start=start_year, end=end_year),
+        template="plotly_white",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50")
+    )
+    
+    return fig
+
+
+@callback(
+    Output("phenology-seasonal-plot", "figure"),
+    [Input("species-dropdown", "value"),
+     Input("date-range-picker", "start_date"),
+     Input("date-range-picker", "end_date"),
+     Input("language-store", "data")]
+)
+def update_phenology_seasonal(species_codes, start_date, end_date, language):
+    """Update spring vs autumn migration comparison plot."""
+    t = LOCALES[language]
+    
+    if not species_codes:
+        return go.Figure()
+    
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        start_year = int(start_date[:4])
+        end_year = int(end_date[:4])
+        
+        query = BirdRingingQueries.get_phenology_migration_windows(
+            species_codes=species_codes,
+            start_year=start_year,
+            end_year=end_year
+        )
+        df = db.execute_query(query).pl().to_pandas()
+    
+    # Calculate average across years for each species/season
+    seasonal_avg = df.groupby(['swedish_name', 'season']).agg({
+        'median': 'mean',
+        'q25': 'mean',
+        'q75': 'mean',
+        'n_observations': 'sum'
+    }).reset_index()
+    
+    fig = go.Figure()
+    
+    for season, color, symbol in [
+        ('spring', '#C5E1B5', 'circle'),  # Pastel green
+        ('autumn', '#FFD4B8', 'square')   # Pastel orange
+    ]:
+        season_df = seasonal_avg[seasonal_avg['season'] == season]
+        
+        if len(season_df) > 0:
+            fig.add_trace(go.Scatter(
+                y=season_df['swedish_name'],
+                x=season_df['median'],
+                error_x=dict(
+                    type='data',
+                    symmetric=False,
+                    array=season_df['q75'] - season_df['median'],
+                    arrayminus=season_df['median'] - season_df['q25']
+                ),
+                mode='markers',
+                name=season.capitalize(),
+                marker=dict(
+                    size=14,
+                    symbol=symbol,
+                    color=color,
+                    line=dict(width=2, color='white')
+                ),
+                text=[f"n={int(n)}" for n in season_df['n_observations']],
+                hovertemplate='<b>%{y}</b><br>' +
+                             f'{season_df["season"].iloc[0].capitalize()} migration<br>' +
+                             f'{t["day_of_year"]}: %{{x:.0f}}<br>' +
+                             f'IQR: %{{error_x.array:.0f}} days<br>' +
+                             '%{text}<br>' +
+                             '<extra></extra>'
+            ))
+    
+    # Add month labels on y-axis
+    months = [(1, t["month_jan"]), (32, t["month_feb"]), (60, t["month_mar"]), (91, t["month_apr"]), (121, t["month_may"]), 
+              (152, t["month_jun"]), (182, t["month_jul"]), (213, t["month_aug"]), (244, t["month_sep"]), (274, t["month_oct"]), 
+              (305, t["month_nov"]), (335, t["month_dec"])]
+    
+    fig.update_layout(
+        title=t["spring_vs_autumn"].format(start=start_year, end=end_year),
+        yaxis_title=t["species_label"],
+        xaxis_title=t["day_of_year"],
+        template="plotly_white",
+        hovermode="closest",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50"),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="#dee2e6",
+            borderwidth=1
+        )
+    )
+    
+    fig.update_xaxes(
+        tickmode='array',
+        tickvals=[m[0] for m in months],
+        ticktext=[m[1] for m in months]
+    )
+    
+    return fig
+
+
+@callback(
+    Output("weekly-heatmap", "figure"),
+    [Input("heatmap-year-dropdown", "value"),
+     Input("language-store", "data")]
+)
+def update_weekly_heatmap(selected_year, language):
     """Update weekly heatmap showing normalized observations per species."""
+    t = LOCALES[language]
+    
     with BirdRingingDB(DB_PATH, read_only=True) as db:
         # Determine if we're showing all years or a specific year
         if selected_year == "all":
             year_param = None
-            title_suffix = "(Average Across All Years)"
+            title_suffix = t["avg_all_years"]
         else:
             year_param = int(selected_year)
             title_suffix = f"({selected_year})"
@@ -1664,7 +1602,7 @@ def update_weekly_heatmap(selected_year):
     
     if len(df) == 0:
         return go.Figure().add_annotation(
-            text="No data available for selected year",
+            text=t.get("no_data", "No data available"),
             showarrow=False,
             font={"size": 20, "color": "#95a5a6"}
         )
@@ -1699,27 +1637,27 @@ def update_weekly_heatmap(selected_year):
         colorscale='bupu',
         colorbar=dict(
             title=dict(
-                text="% of Total<br>Observations",
+                text=t["heatmap_legend"],
                 side="right"
             ),
             thickness=15,
             len=0.7
         ),
         hoverongaps=False,
-        hovertemplate='<b>%{y}</b><br>Week %{x}<br>%{z:.1f}% of observations<extra></extra>'
+        hovertemplate=f'<b>%{{y}}</b><br>{t["week_of_year"]} %{{x}}<br>%{{z:.1f}}%<extra></extra>'
     ))
     
     fig.update_layout(
-        title=f"Weekly Observation Patterns - Top 30 Species {title_suffix}",
+        title=t["weekly_heatmap_title"].format(suffix=title_suffix),
         xaxis=dict(
-            title="Week of Year",
+            title=f"{t['week_of_year']}",
             tickmode='linear',
             tick0=1,
             dtick=2,
             side='bottom'
         ),
         yaxis=dict(
-            title="Species (Swedish Name)",
+            title=t["species_label"],
             tickfont=dict(size=10)
         ),
         height=800,
@@ -1737,14 +1675,17 @@ def update_weekly_heatmap(selected_year):
     Output("weather-timeseries-plot", "figure"),
     [Input("date-range-picker", "start_date"),
      Input("date-range-picker", "end_date"),
-     Input("weather-variable-checklist", "value")]
+     Input("weather-variable-checklist", "value"),
+     Input("language-store", "data")]
 )
-def update_weather_timeseries(start_date, end_date, selected_vars):
+def update_weather_timeseries(start_date, end_date, selected_vars, language):
     """Update the weather time series plot for the selected date range and variables."""
+    t = LOCALES[language]
+    
     if not selected_vars:
         fig = go.Figure()
         fig.add_annotation(
-            text="Please select at least one variable",
+            text=t.get("please_select_species", "Please select at least one variable"),
             showarrow=False,
             font={"size": 16, "color": "#95a5a6"},
             xref="paper", yref="paper", x=0.5, y=0.5
@@ -1762,7 +1703,7 @@ def update_weather_timeseries(start_date, end_date, selected_vars):
     if df.empty:
         fig = go.Figure()
         fig.add_annotation(
-            text="No weather data available for the selected period",
+            text=t.get("no_data", "No data available"),
             showarrow=False,
             font={"size": 16, "color": "#95a5a6"},
             xref="paper", yref="paper", x=0.5, y=0.5
@@ -2015,6 +1956,75 @@ def update_weather_timeseries(start_date, end_date, selected_vars):
         annotation.update(font=dict(size=13, color="#495057"), xanchor="left", x=0)
 
     return fig
+
+
+# Language Toggle Callback
+@callback(
+    Output("language-store", "data"),
+    Input("language-toggle-btn", "n_clicks"),
+    State("language-store", "data"),
+    prevent_initial_call=True
+)
+def toggle_language(n_clicks, current_language):
+    """Toggle between Swedish and English."""
+    return "en" if current_language == "sv" else "sv"
+
+
+# Update Page Title and Subtitle
+@callback(
+    [Output("page-title", "children"),
+     Output("page-subtitle", "children"),
+     Output("filters-title", "children"),
+     Output("label-select-species", "children"),
+     Output("label-time-agg", "children"),
+     Output("label-date-range", "children"),
+     Output("species-dropdown", "placeholder"),
+     Output("label-plot-type", "children"),
+     Output("opt-bar-chart", "children"),
+     Output("opt-line-chart", "children"),
+     Output("header-weekly-weight", "children"),
+     Output("label-select-year", "children"),
+     Output("header-yearly-weight", "children"),
+     Output("header-pheno-main", "children"),
+     Output("desc-pheno", "children"),
+     Output("header-pheno-weekly", "children"),
+     Output("header-pheno-daily", "children"),
+     Output("header-pheno-seasonal", "children"),
+     Output("header-weather-main", "children"),
+     Output("desc-weather", "children"),
+     Output("header-weather-timeseries", "children"),
+     Output("footer-text", "children")],
+    Input("language-store", "data")
+)
+def update_header_and_filters(language):
+    """Update all static text elements based on language."""
+    t = LOCALES[language]
+    subtitle = t["subtitle"].format(start=date_range[0], end=date_range[1])
+    
+    return (
+        [html.I(className="fas fa-dove me-3"), t["title"]],
+        subtitle,
+        [html.I(className="fas fa-filter me-2"), t["filters_title"]],
+        t["select_species"],
+        t["time_aggregation"],
+        t["date_range"],
+        t["species_placeholder"],
+        t.get("plot_type", "Plot Type"),
+        t.get("plot_bar", "Bar Chart"),
+        t.get("plot_line", "Line Chart"),
+        [html.I(className="fas fa-weight-hanging me-2"), t.get("weekly_weight_header", "Weekly Weight Over the Year")],
+        t.get("select_year", "Select Year"),
+        [html.I(className="fas fa-chart-line me-2"), t.get("yearly_weight_header", "Yearly Mean Weight Trend")],
+        t.get("pheno_header", "Migration Phenology Analysis"),
+        t.get("pheno_desc", "Explore migration patterns throughout the year. Birds are captured during spring (northward) and autumn (southward) migration periods."),
+        [html.I(className="fas fa-chart-area me-2"), t.get("pheno_weekly_header", "Weekly Observation Pattern")],
+        [html.I(className="fas fa-layer-group me-2"), t.get("pheno_daily_header", "Daily Distribution by Species")],
+        [html.I(className="fas fa-exchange-alt me-2"), t.get("pheno_seasonal_header", "Spring vs Autumn Migration Windows")],
+        t.get("weather_header", "Weather Analysis"),
+        t.get("weather_desc", "Meteorological observations from SMHI Nidingen A (station 71190) supplemented by Vinga A (station 71380) where Nidingen lacks data."),
+        [html.I(className="fas fa-chart-line me-2"), t.get("weather_timeseries_header", "Daily Weather Time Series")],
+        f"{t.get('dashboard', 'Nidingen Bird Ringing Station Dashboard')} · {html.A(t.get('view_github', 'View on GitHub'), href='#', className='text-decoration-none')} · {t.get('built_with', 'Built with Dash & Plotly')}"
+    )
 
 
 # Expose Flask server for gunicorn: `gunicorn app:server`
