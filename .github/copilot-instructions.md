@@ -32,6 +32,8 @@ root/
 │   ├── Dockerfile                  # Dockerfile for creating image
 │   ├── start-script.sh             # Shell script required for docker images that run on Scilifelab serve
 │   ├── requirements.txt            # Python dependencies
+│   ├── assets/
+│   │   └── locales.json            # Translation strings for Swedish (sv) and English (en)
 │   ├── src/
 │   │   ├── db_manager.py           # DuckDB database operations
 │   │   ├── data_processor.py       # Polars data processing utilities
@@ -397,6 +399,77 @@ with BirdRingingDB("data/bird_ringing.db") as db:
 3. **Register a `@callback`** following the callback pattern above
 4. **Use `PASTEL_COLORS`** and the standard `update_layout` kwargs for visual consistency
 
+## Multi-Language Support (Swedish/English)
+
+The dashboard supports **Swedish (sv)** and **English (en)** with dynamic language switching.
+
+### Translation Architecture
+
+**Translations are stored in** `assets/locales.json` — a JSON file with all UI strings organized by language:
+
+```json
+{
+  "en": { "title": "Nidingen Bird Ringing Station", ... },
+  "sv": { "title": "Nidingens Fågelstation", ... }
+}
+```
+
+### How It Works
+
+1. **Language Store**: A hidden `dcc.Store(id="language-store", data="sv")` maintains the current language state (default: Swedish).
+
+2. **Language Toggle Button**: A button in the top-right corner (`"🇸🇪 SV/EN 🇬🇧"`) allows users to instantly switch languages.
+
+3. **Callbacks**: When the language store changes, callbacks update all text elements by retrieving values from `LOCALES[language]`.
+
+### Implementation Details
+
+**In `app.py`:**
+- Load translations at startup:
+  ```python
+  with open("assets/locales.json", "r", encoding="utf-8") as f:
+      LOCALES = json.load(f)
+  ```
+
+- Add a `dcc.Store` component to the layout (with default `data="sv"`).
+
+- Add language toggle callback:
+  ```python
+  @callback(
+      Output("language-store", "data"),
+      Input("language-toggle-btn", "n_clicks"),
+      State("language-store", "data"),
+      prevent_initial_call=True
+  )
+  def toggle_language(n_clicks, current_language):
+      return "en" if current_language == "sv" else "sv"
+  ```
+
+- Add text update callbacks for each component with an `id`:
+  ```python
+  @callback(
+      [Output("page-title", "children"), ...],
+      Input("language-store", "data")
+  )
+  def update_header(language):
+      t = LOCALES[language]
+      return [html.I(...), t["title"]], ...
+  ```
+
+### Adding New Translated Strings
+
+1. Add the key and values to `assets/locales.json` (both `"en"` and `"sv"` sections).
+2. Add or update a callback to fetch the string from `LOCALES[language]` and update the component's `children` or relevant property.
+3. Ensure the component has a unique `id` so it can be targeted by the callback.
+
+### Default Language
+
+The app defaults to **Swedish** (`data="sv"`). To change this, modify the `dcc.Store` initialization in `app.layout`:
+
+```python
+dcc.Store(id="language-store", data="sv")  # Change "sv" to "en" for English default
+```
+
 ## Performance Best Practices
 
 ### Database Operations
@@ -608,6 +681,6 @@ with BirdRingingDB("data/bird_ringing.db") as db:
 
 ---
 
-**Last Updated**: 2026-02-20
+**Last Updated**: 2026-03-20
 **Database Version**: 1.0
 **Schema Version**: 1.1

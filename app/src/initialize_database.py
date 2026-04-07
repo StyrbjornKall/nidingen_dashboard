@@ -20,7 +20,7 @@ def main():
     """Initialize database and load existing data."""
     
     # Define paths
-    project_dir = Path(__file__).parent.parent
+    project_dir = Path(__file__).parent.parent.parent
     data_dir = project_dir / "data"
     processed_dir = data_dir / "processed"
     db_path = data_dir / "bird_ringing.db"

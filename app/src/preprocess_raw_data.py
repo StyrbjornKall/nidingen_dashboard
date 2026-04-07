@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import pandas as pd
 from typing import List
+from tqdm import tqdm
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -74,7 +75,7 @@ def preprocess_nidingen_raw_data(file_path: Path) -> pd.DataFrame:
     pd.DataFrame: A cleaned and preprocessed DataFrame.
     """
 
-    df = pd.read_csv(file_path, sep='|', header=None)
+    df = pd.read_csv(file_path, sep='|', header=None, low_memory=False)
 
     # Rename columns
     rename_dict = {
@@ -221,7 +222,7 @@ if __name__ == "__main__":
         os.makedirs(METADATA_DIR)
 
     # Preprocess yearly reports and divide into metadata and data files
-    for year in range(2010, 2026, 1):
+    for year in tqdm(range(1975, 2050, 1), desc="Preprocessing yearly reports"):
         preprocess_yearly_report(Path(f'{RAW_DATA_DIR}/0016år-{year}.txt'))
 
     # Get all directories in the processed data directory
