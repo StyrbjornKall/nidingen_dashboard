@@ -116,17 +116,37 @@ with BirdRingingDB(DB_PATH, read_only=True) as db:
     """).fetchall()
     available_years = [int(row[0]) for row in years_list]
 
-# Prepare options for dropdowns
-species_options = [
-    {"label": f"{code} - {name}", "value": code} 
-    for code, name in species_list
-]
+    # Build taxonomy sort order lookup: species_code -> sort_key
+    # Uses taxon_order from eBird (global numeric ranking).
+    # Subspecies without taxon_order are placed near their parent via
+    # scientific_name alphabetical fallback within a large bucket (999999).
+    _taxon_rows = db.execute_query("""
+        SELECT r.species_code, r.swedish_name,
+               COALESCE(m.taxon_order, 999999) AS sort_key,
+               COALESCE(m.scientific_name, r.swedish_name, r.species_code) AS sci_name
+        FROM (SELECT DISTINCT species_code, swedish_name FROM ring_records) r
+        LEFT JOIN species_metadata m ON r.swedish_name = m.swedish_name
+        ORDER BY sort_key, sci_name
+    """).fetchall()
+    # TOTAL always first (-1); others get their taxon_order (or 999999)
+    TAXON_SORT_ORDER = {}
+    _SPECIES_SWEDISH = {}
+    for code, swe_name, sort_key, sci_name in _taxon_rows:
+        TAXON_SORT_ORDER[code] = -1.0 if code == "TOTAL" else sort_key
+        _SPECIES_SWEDISH[code] = swe_name
 
-# Move TOTAL to the top if present so it's the default selection
-total_option = next((opt for opt in species_options if opt["value"] == "TOTAL"), None)
-if total_option:
-    species_options.remove(total_option)
-    species_options.insert(0, total_option)
+
+def sort_species_by_taxonomy(species_codes):
+    """Return *species_codes* sorted by taxonomic order (TOTAL always first)."""
+    return sorted(species_codes, key=lambda c: (TAXON_SORT_ORDER.get(c, 999999), c))
+
+
+# Prepare options for dropdowns – sorted taxonomically
+_sorted_codes = sort_species_by_taxonomy([code for code, _ in species_list])
+species_options = [
+    {"label": f"{code} - {_SPECIES_SWEDISH.get(code, '')}", "value": code}
+    for code in _sorted_codes
+]
 
 # Year options for heatmap (including "All Years" option)
 year_options = [{"label": "Average (All Years)", "value": "all"}] + [
@@ -414,7 +434,7 @@ app.layout = dbc.Container([
                             ])
                         ], className="mt-3 mb-3"),
                         dbc.Spinner(
-                            dcc.Graph(id="weekly-heatmap", style={"height": "800px"}),
+                            dcc.Graph(id="weekly-heatmap"),
                             color="primary",
                             type="border"
                         )
@@ -789,8 +809,9 @@ def update_weight_distribution(species_codes, start_date, end_date, language):
     # Create mapping from species_code to swedish_name
     species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
     
-    # Get species order based on dropdown selection order
-    species_order = [species_name_map[code] for code in species_codes if code in species_name_map]
+    # Sort species by taxonomy (TOTAL first, then taxonomic order)
+    sorted_codes = sort_species_by_taxonomy([c for c in species_codes if c in species_name_map])
+    species_order = [species_name_map[code] for code in sorted_codes]
     
     # Calculate sample sizes for each species
     sample_sizes = df.groupby("swedish_name").size()
@@ -850,8 +871,9 @@ def update_wing_distribution(species_codes, start_date, end_date, language):
     # Create mapping from species_code to swedish_name
     species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
     
-    # Get species order based on dropdown selection order
-    species_order = [species_name_map[code] for code in species_codes if code in species_name_map]
+    # Sort species by taxonomy (TOTAL first, then taxonomic order)
+    sorted_codes = sort_species_by_taxonomy([c for c in species_codes if c in species_name_map])
+    species_order = [species_name_map[code] for code in sorted_codes]
     
     # Calculate sample sizes for each species
     sample_sizes = df.groupby("swedish_name").size()
@@ -918,8 +940,9 @@ def update_age_distribution(species_codes, start_date, end_date, language):
     # Create mapping from species_code to swedish_name
     species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
     
-    # Get species order based on dropdown selection order
-    species_order = [species_name_map[code] for code in species_codes if code in species_name_map]
+    # Sort species by taxonomy (TOTAL first, then taxonomic order)
+    sorted_codes = sort_species_by_taxonomy([c for c in species_codes if c in species_name_map])
+    species_order = [species_name_map[code] for code in sorted_codes]
     
     # Calculate percentages for each species and age combination
     age_counts = df.groupby(['swedish_name', 'age']).size().reset_index(name='count')
@@ -1021,8 +1044,9 @@ def update_fat_score_distribution(species_codes, start_date, end_date, language)
     # Create mapping from species_code to swedish_name
     species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
     
-    # Get species order based on dropdown selection order
-    species_order = [species_name_map[code] for code in species_codes if code in species_name_map]
+    # Sort species by taxonomy (TOTAL first, then taxonomic order)
+    sorted_codes = sort_species_by_taxonomy([c for c in species_codes if c in species_name_map])
+    species_order = [species_name_map[code] for code in sorted_codes]
     
     # Calculate average fat score per species
     fat_summary = df.groupby('swedish_name').agg({
@@ -1122,7 +1146,8 @@ def update_weight_weekly(species_codes, start_date, end_date, selected_year, lan
 
     fig = go.Figure()
 
-    for idx, species_code in enumerate(species_codes):
+    sorted_codes = sort_species_by_taxonomy(species_codes)
+    for idx, species_code in enumerate(sorted_codes):
         sp_df = df[df["species_code"] == species_code]
         if sp_df.empty:
             continue
@@ -1217,7 +1242,8 @@ def update_weight_yearly(species_codes, start_date, end_date, language):
 
     fig = go.Figure()
 
-    for idx, species_code in enumerate(species_codes):
+    sorted_codes = sort_species_by_taxonomy(species_codes)
+    for idx, species_code in enumerate(sorted_codes):
         sp_df = df[df["species_code"] == species_code].sort_values("year")
         if sp_df.empty:
             continue
@@ -1311,8 +1337,15 @@ def update_phenology_weekly(species_codes, start_date, end_date, language):
     
     fig = go.Figure()
     
-    for idx, species in enumerate(df['swedish_name'].unique()):
+    # Sort species by taxonomy
+    code_to_name = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
+    sorted_codes = sort_species_by_taxonomy([c for c in code_to_name if c in TAXON_SORT_ORDER])
+    sorted_names = [code_to_name[c] for c in sorted_codes if c in code_to_name]
+    
+    for idx, species in enumerate(sorted_names):
         species_df = df[df['swedish_name'] == species]
+        if species_df.empty:
+            continue
         color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
         
         # Convert hex color to rgba with opacity
@@ -1407,7 +1440,10 @@ def update_phenology_ridgeline(species_codes, start_date, end_date, language):
     
     from plotly.subplots import make_subplots
     
-    species_list = df['swedish_name'].unique()
+    # Sort species by taxonomy
+    code_to_name = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
+    sorted_codes = sort_species_by_taxonomy([c for c in code_to_name if c in TAXON_SORT_ORDER])
+    species_list = [code_to_name[c] for c in sorted_codes if c in code_to_name]
     n_species = len(species_list)
     
     # Increase vertical spacing to prevent overlap
@@ -1496,6 +1532,11 @@ def update_phenology_seasonal(species_codes, start_date, end_date, language):
         )
         df = db.execute_query(query).pl().to_pandas()
     
+    # Sort species by taxonomy for y-axis ordering
+    code_to_name = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
+    sorted_codes = sort_species_by_taxonomy(list(code_to_name.keys()))
+    sorted_names = [code_to_name[c] for c in sorted_codes if c in code_to_name]
+
     # Calculate average across years for each species/season
     seasonal_avg = df.groupby(['swedish_name', 'season']).agg({
         'median': 'mean',
@@ -1548,6 +1589,7 @@ def update_phenology_seasonal(species_codes, start_date, end_date, language):
         title=t["spring_vs_autumn"].format(start=start_year, end=end_year),
         yaxis_title=t["species_label"],
         xaxis_title=t["day_of_year"],
+        yaxis=dict(categoryorder='array', categoryarray=list(reversed(sorted_names))),
         template="plotly_white",
         hovermode="closest",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -1596,7 +1638,7 @@ def update_weekly_heatmap(selected_year, language):
         # Get heatmap data
         query = BirdRingingQueries.get_weekly_heatmap_data(
             year=year_param,
-            top_n_species=30
+            top_n_species=50
         )
         df = db.execute_query(query).pl()
     
@@ -1618,8 +1660,11 @@ def update_weekly_heatmap(selected_year, language):
         fill_value=0
     )
     
-    # Sort species by total observations (preserved from query order)
-    species_order = df_pd.groupby('swedish_name')['percent_of_total'].sum().sort_values(ascending=False).index
+    # Sort species by taxonomy (TOTAL first, then taxonomic order)
+    # Build code -> name mapping from the heatmap data
+    heatmap_code_to_name = df_pd[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
+    sorted_heatmap_codes = sort_species_by_taxonomy(list(heatmap_code_to_name.keys()))
+    species_order = [heatmap_code_to_name[c] for c in sorted_heatmap_codes if c in heatmap_code_to_name]
     pivot_data = pivot_data.reindex(species_order)
     
     # Ensure all weeks 1-52 are present
@@ -1629,12 +1674,27 @@ def update_weekly_heatmap(selected_year, language):
             pivot_data[week] = 0
     pivot_data = pivot_data[sorted(pivot_data.columns)]
     
+    # Build a matching pivot of raw observation counts for hover info
+    count_col = 'count' if 'count' in df_pd.columns else 'avg_count'
+    pivot_counts = df_pd.pivot_table(
+        index='swedish_name',
+        columns='week_of_year',
+        values=count_col,
+        fill_value=0
+    ).reindex(species_order)
+    for week in all_weeks:
+        if week not in pivot_counts.columns:
+            pivot_counts[week] = 0
+    pivot_counts = pivot_counts[sorted(pivot_counts.columns)]
+    
     # Create heatmap with pastel color scheme
+    count_label = 'n' if count_col == 'count' else 'avg n'
     fig = go.Figure(data=go.Heatmap(
         z=pivot_data.values,
         x=pivot_data.columns,
         y=pivot_data.index,
-        colorscale='bupu',
+        customdata=pivot_counts.values,
+        colorscale='viridis',
         colorbar=dict(
             title=dict(
                 text=t["heatmap_legend"],
@@ -1644,7 +1704,7 @@ def update_weekly_heatmap(selected_year, language):
             len=0.7
         ),
         hoverongaps=False,
-        hovertemplate=f'<b>%{{y}}</b><br>{t["week_of_year"]} %{{x}}<br>%{{z:.1f}}%<extra></extra>'
+        hovertemplate=f'<b>%{{y}}</b><br>{t["week_of_year"]} %{{x}}<br>%{{z:.1f}}%<br>{count_label}=%{{customdata:.0f}}<extra></extra>'
     ))
     
     fig.update_layout(
@@ -1658,11 +1718,11 @@ def update_weekly_heatmap(selected_year, language):
         ),
         yaxis=dict(
             title=t["species_label"],
-            tickfont=dict(size=10)
+            tickfont=dict(size=13)
         ),
-        height=800,
+        height=200 + 20 * len(pivot_data),  # Dynamic height based on number of species
         template="plotly_white",
-        font=dict(size=11, family="Arial, sans-serif", color="#495057"),
+        font=dict(size=14, family="Arial, sans-serif", color="#495057"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         title_font=dict(size=18, color="#2c3e50")
