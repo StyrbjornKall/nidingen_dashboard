@@ -190,7 +190,7 @@ app.layout = dbc.Container([
                     dcc.Dropdown(
                         id="species-dropdown",
                         options=species_options,
-                        value=[species_options[0]["value"]] if species_options else [],
+                        value=[opt["value"] for opt in species_options if opt["value"] in ("TOTAL", "RÖHAK", "LÖSÅN")][:3] or [],
                         multi=True,
                         placeholder="Select one or more species...",
                         className="mb-3"
@@ -207,7 +207,7 @@ app.layout = dbc.Container([
                             {"label": "📈 Monthly", "value": "monthly"},
                             {"label": "📆 Yearly", "value": "yearly"}
                         ],
-                        value="monthly",
+                        value="yearly",
                         clearable=False,
                         className="mb-3"
                     )
