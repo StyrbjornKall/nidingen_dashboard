@@ -99,11 +99,45 @@ root/
 | created_at | TIMESTAMP | Record creation timestamp |
 | updated_at | TIMESTAMP | Last update timestamp |
 
-**Indexes:** date, species_code, (date, species_code), ring_number
+**Indexes:** date, species_code, (date, species_code), ring_number, swedish_name
 
-### Supporting Tables
+### `species_metadata` Table Schema
 
-- `species_metadata`: Extended species information
+Combined taxonomic metadata from Artfakta (Swedish) and eBird. Joined with `ring_records` via `swedish_name`.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| swedish_name | VARCHAR(100) PK | Swedish species name (join key to ring_records) |
+| species_code | VARCHAR(20) | eBird species code (e.g., eurrob1) |
+| scientific_name | VARCHAR(200) | Full scientific name |
+| english_name | VARCHAR(100) | English common name |
+| taxon_id | DOUBLE | Artdatabanken taxonomic ID |
+| taxon_order | DOUBLE | eBird taxonomic sort order |
+| category | VARCHAR(50) | Taxonomic category (species, subspecies, etc.) |
+| order_scientific_name | VARCHAR(100) | Order (e.g., Passeriformes) |
+| family_english_name | VARCHAR(100) | Family English name |
+| family_scientific_name | VARCHAR(100) | Family scientific name |
+| family_code | VARCHAR(50) | eBird family code |
+| auktor | VARCHAR(200) | Taxonomic authority |
+| taxonkategori | VARCHAR(50) | Swedish taxonomic category |
+| extinct | BOOLEAN | Whether species is extinct |
+| extinct_year | DOUBLE | Year declared extinct |
+| com_name_codes | VARCHAR(100) | eBird common name codes |
+| sci_name_codes | VARCHAR(20) | eBird scientific name codes |
+| banding_codes | VARCHAR(20) | eBird banding codes |
+| report_as | VARCHAR(50) | eBird report-as species |
+
+**Indexes:** swedish_name, order_scientific_name, family_scientific_name
+
+**Join pattern:**
+```sql
+SELECT r.*, m.english_name, m.order_scientific_name, m.family_english_name
+FROM ring_records r
+LEFT JOIN species_metadata m ON r.swedish_name = m.swedish_name
+```
+
+### Other Supporting Tables
+
 - `weather_data`: SMHI hourly meteorological observations — see full schema below
 - `ringer_info`: Ringer contact information
 

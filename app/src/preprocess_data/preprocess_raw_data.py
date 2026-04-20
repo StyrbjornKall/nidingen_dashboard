@@ -11,6 +11,8 @@ PROJECT_DIR = os.getenv('PROJECT_DIR')
 RAW_DATA_DIR = os.getenv('RAW_DATA_DIR')
 PROCESSED_DATA_DIR = os.getenv('PROCESSED_DATA_DIR')
 METADATA_DIR = os.getenv('METADATA_DIR')
+ARTFAKTA_DIR = os.getenv('ARTFAKTA_DIR')
+EBIRD_DIR = os.getenv('EBIRD_DIR')
 
 def preprocess_yearly_report(file_path: Path) -> None:
     """Preprocess a yearly report text file from the Nidingen dataset.
@@ -42,10 +44,12 @@ def preprocess_yearly_report(file_path: Path) -> None:
     }
 
     data_file = save_to.joinpath("ring_records.txt")
+    other_file = save_to.joinpath("other_records.txt")  # For lines that don't match known prefixes
 
     # Open output files
     meta_outputs = {k: open(v, "w", encoding="utf-8") for k, v in meta_files.items()}
     data_out = open(data_file, "w", encoding="utf-8")
+    other_out = open(other_file, "w", encoding="utf-8")
 
     with open(file_path, encoding="utf-8") as f:
         for line in f:
@@ -56,11 +60,16 @@ def preprocess_yearly_report(file_path: Path) -> None:
                 meta_outputs[prefix].write(line)
             elif prefix in ("C", "R"):
                 data_out.write(line)
+            elif prefix in ("H"):
+                continue  # Skip lines starting with H, we don't save this information
+            else:
+                other_out.write(line)  # Write unrecognized lines to other file
 
     # Close all files
     for f in meta_outputs.values():
         f.close()
     data_out.close()
+    other_out.close()
 
     print("Done. Metadata and data files written.")
 
@@ -101,11 +110,13 @@ def preprocess_nidingen_raw_data(file_path: Path) -> pd.DataFrame:
 
     df = df.rename(columns=rename_dict)
 
-    # Drop the other columns
-    df = df[list(rename_dict.values())]
+    # Columns that were not renamed gets a prefix "col_"
+    df = df.rename(columns={col: f"col_{col}" for col in df.columns if col not in rename_dict.values()})
 
-    # Filter out columns that have >70% NA values
-    threshold = 0.7 * len(df)
+    # Filter out columns that have >80% NA values
+    threshold = 0.8 * len(df)
+    print("Filtering out following columns with more than 80% NA values:\n")
+    print(f"    {df.loc[:, df.isna().sum() >= threshold].columns.tolist()}")
     df = df.loc[:, df.isna().sum() < threshold]
 
     # Convert column dtypes
@@ -165,7 +176,7 @@ def get_species_metadata_from_codes(species_codes: List[str], metadata_file: Pat
     """
     metadata_df = pd.read_csv(metadata_file)
     metadata_df['Sökträff'] = metadata_df.Sökträff.str.upper()  # Ensure Sökträff is lowercase
-    metadata_df = metadata_df.rename(columns={'Svenskt namn': 'swedish_name', 'Vetenskapligt namn': 'scientific_name'})  # Rename for merging
+    metadata_df = metadata_df.rename(columns={'Svenskt namn': 'swedish_name', 'Vetenskapligt namn': 'scientific_name', "TaxonID": "taxon_id"})  # Rename for merging
     # Ensure codes are lowercase
     queries = pd.DataFrame(data=species_codes, columns=['species_code'])
     
@@ -199,7 +210,7 @@ def collate_and_preprocess_nidingen_data(file_paths: List[Path]) -> pd.DataFrame
     # Get metadata from species codes
     combined_df = pd.concat([
         combined_df,
-        get_species_metadata_from_codes(combined_df.species_code.tolist(), metadata_file=Path(f'{RAW_DATA_DIR}/species_metadata.csv')).drop(
+        get_species_metadata_from_codes(combined_df.species_code.tolist(), metadata_file=Path(ARTFAKTA_DIR)).drop(
             columns=['species_code']),
         ],
         axis=1
@@ -233,3 +244,17 @@ if __name__ == "__main__":
 
     # Save the combined DataFrame to a new CSV file
     df.to_csv(f'{PROCESSED_DATA_DIR}/processed_nidingen_data.csv', index=False)
+
+    # Combine metadata from ebird and artfakta and save to a new CSV file
+    artfakta_metadata = pd.read_csv(ARTFAKTA_DIR)
+    ebird_metadata = pd.read_csv(EBIRD_DIR)
+    # set all columns to lowercase
+    artfakta_metadata.columns = artfakta_metadata.columns.str.lower()
+    ebird_metadata.columns = ebird_metadata.columns.str.lower()
+    combined_metadata = pd.merge(
+        artfakta_metadata.rename(columns={'svenskt namn': 'swedish_name', 'vetenskapligt namn': 'scientific_name', "taxonid": "taxon_id"}),
+        ebird_metadata.rename(columns={'common_name': 'english_name', 'order': 'order_scientific_name', "family_sci_name": "family_scientific_name", "family_com_name": "family_english_name"}),
+        on=['scientific_name'],
+        how='outer',
+        suffixes=('_artfakta', '_ebird')
+    ).to_csv(f'{PROCESSED_DATA_DIR}/combined_species_metadata.csv', index=False)

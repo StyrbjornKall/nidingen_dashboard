@@ -1343,3 +1343,57 @@ class BirdRingingQueries:
         FROM joined
         ORDER BY date, time, species_code
         """
+
+    # ------------------------------------------------------------------
+    # Taxonomy / metadata queries
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def get_species_with_taxonomy(
+        species_codes: Optional[List[str]] = None,
+    ) -> str:
+        """
+        Return species list enriched with taxonomic metadata.
+
+        Joins ``ring_records`` with ``species_metadata`` on ``swedish_name``
+        to provide order, family, English name, and taxonomic sort order.
+
+        Parameters
+        ----------
+        species_codes : list of str, optional
+            Filter to specific species codes.
+
+        Returns
+        -------
+        str
+            SQL query returning: species_code, swedish_name, english_name,
+            scientific_name, order_scientific_name, family_english_name,
+            family_scientific_name, taxon_order, total_records.
+        """
+        query = """
+        SELECT
+            r.species_code,
+            r.swedish_name,
+            m.english_name,
+            m.scientific_name,
+            m.order_scientific_name,
+            m.family_english_name,
+            m.family_scientific_name,
+            m.taxon_order,
+            COUNT(*) AS total_records
+        FROM ring_records r
+        LEFT JOIN species_metadata m ON r.swedish_name = m.swedish_name
+        WHERE 1=1
+        """
+        if species_codes:
+            species_list = "', '".join(species_codes)
+            query += f"\n  AND r.species_code IN ('{species_list}')"
+
+        query += """
+        GROUP BY r.species_code, r.swedish_name, m.english_name,
+                 m.scientific_name, m.order_scientific_name,
+                 m.family_english_name, m.family_scientific_name,
+                 m.taxon_order
+        ORDER BY m.taxon_order NULLS LAST, r.species_code
+        """
+        return query

@@ -45,7 +45,7 @@ def extract_results(url):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python scrape_artfakta.py <search_url>")
+        print("Usage: python scrape_artfakta.py <search_url>, e.g. https://artfakta.se/sok/namn/lista")
         sys.exit(1)
 
     search_url = sys.argv[1]

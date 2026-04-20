@@ -105,22 +105,12 @@ class BirdRingingDB:
         self.conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_ring_number ON ring_records(ring_number)
         """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_swedish_name ON ring_records(swedish_name)
+        """)
         
         # Species metadata table
-        self.conn.execute("""
-            CREATE TABLE IF NOT EXISTS species_metadata (
-                species_code VARCHAR(20) PRIMARY KEY,
-                scientific_name VARCHAR(100),
-                swedish_name VARCHAR(100),
-                english_name VARCHAR(100),
-                taxon_id DOUBLE,
-                family VARCHAR(100),
-                order_name VARCHAR(100),
-                additional_info TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
+        self.initialize_species_metadata_schema()
         
         # Weather data table — populated by src/fetch_smhi_weather.py
         # Uses observation_time as the primary key so the table can be safely
@@ -175,6 +165,66 @@ class BirdRingingDB:
         """)
         
         print("Database schema initialized successfully.")
+
+    def initialize_species_metadata_schema(self):
+        """
+        Create the species_metadata table for taxonomic information.
+
+        This table stores combined metadata from Artfakta (Swedish species
+        database) and eBird, and is designed to be joined with ``ring_records``
+        via the ``swedish_name`` column.
+
+        Columns come from ``data/processed/combined_species_metadata.csv``.
+        Safe to call repeatedly.  If an old schema is detected (e.g. one that
+        used ``species_code`` as PK), the table is dropped and recreated.
+        """
+        # Detect old schema and migrate if needed
+        existing_cols = {
+            row[0]
+            for row in self.conn.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'species_metadata'"
+            ).fetchall()
+        }
+        if existing_cols and "order_scientific_name" not in existing_cols:
+            print("  Dropping old species_metadata table (schema migration) …")
+            self.conn.execute("DROP TABLE IF EXISTS species_metadata")
+
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS species_metadata (
+                swedish_name VARCHAR(100) PRIMARY KEY,
+                species_code VARCHAR(20),
+                scientific_name VARCHAR(200),
+                english_name VARCHAR(100),
+                taxon_id DOUBLE,
+                taxon_order DOUBLE,
+                category VARCHAR(50),
+                order_scientific_name VARCHAR(100),
+                family_english_name VARCHAR(100),
+                family_scientific_name VARCHAR(100),
+                family_code VARCHAR(50),
+                auktor VARCHAR(200),
+                taxonkategori VARCHAR(50),
+                extinct BOOLEAN,
+                extinct_year DOUBLE,
+                com_name_codes VARCHAR(100),
+                sci_name_codes VARCHAR(20),
+                banding_codes VARCHAR(20),
+                report_as VARCHAR(50)
+            )
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_meta_swedish_name
+            ON species_metadata(swedish_name)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_meta_order
+            ON species_metadata(order_scientific_name)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_meta_family
+            ON species_metadata(family_scientific_name)
+        """)
 
     def initialize_weather_schema(self):
         """
@@ -339,7 +389,8 @@ class BirdRingingDB:
     ):
         """
         Load data from CSV file into database table using Polars for preprocessing.
-        
+        Automatically adds any missing columns to the table schema with inferred dtypes.
+
         Parameters:
         -----------
         csv_path : str or Path
@@ -350,12 +401,12 @@ class BirdRingingDB:
             What to do if table exists: 'append', 'replace', or 'fail'
         """
         csv_path = Path(csv_path)
-        
+
         if not csv_path.exists():
             raise FileNotFoundError(f"CSV file not found: {csv_path}")
-            
+
         print(f"Loading data from {csv_path.name}...")
-        
+
         # Read CSV with Polars for efficient processing
         # Force notes column to be string to handle mixed content
         df = pl.read_csv(
@@ -363,27 +414,111 @@ class BirdRingingDB:
             infer_schema_length=10000,
             schema_overrides={"notes": pl.Utf8}
         )
-        
-        # Clean and prepare data
-        df = self._prepare_ring_records(df)
-        
+
+        # Clean and prepare data (only for ring_records)
+        if table_name == "ring_records":
+            df = self._prepare_ring_records(df)
+
         # Convert to DuckDB
         if if_exists == "replace":
             self.conn.execute(f"DROP TABLE IF EXISTS {table_name}")
-            self.initialize_schema()
-            
-        # Insert data efficiently - list columns explicitly (excluding record_id which auto-generates)
-        columns = [col for col in df.columns if col != 'record_id']
+            if table_name == "ring_records":
+                self.initialize_schema()
+            elif table_name == "species_metadata":
+                self.initialize_species_metadata_schema()
+
+        # Get existing table columns
+        table_cols_result = self.conn.execute("""
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = ?
+            ORDER BY ordinal_position
+        """, [table_name]).fetchall()
+        table_cols = {row[0] for row in table_cols_result}
+
+        # Find columns in CSV that don't exist in table
+        csv_cols = set(df.columns)
+        missing_cols = csv_cols - table_cols
+
+        # Add missing columns with inferred dtypes
+        if missing_cols:
+            print(f"Adding {len(missing_cols)} missing columns to table...")
+            for col_name in sorted(missing_cols):
+                # Map Polars dtype to DuckDB dtype
+                polars_dtype = df[col_name].dtype
+                duckdb_dtype = self._polars_to_duckdb_dtype(polars_dtype)
+
+                print(f"  Adding column: {col_name} ({duckdb_dtype})")
+                self.conn.execute(f"""
+                    ALTER TABLE {table_name}
+                    ADD COLUMN {col_name} {duckdb_dtype}
+                """)
+
+        # Insert data - use only columns that now exist in the table
+        columns = [col for col in df.columns if col in (table_cols | missing_cols) and col != 'record_id']
         columns_str = ", ".join(columns)
-        
+
         self.conn.execute(f"""
             INSERT INTO {table_name} ({columns_str})
             SELECT {columns_str} FROM df
         """)
-        
+
         row_count = self.conn.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0]
         print(f"Successfully loaded {len(df)} records. Total records in table: {row_count}")
-        
+
+    @staticmethod
+    def _polars_to_duckdb_dtype(polars_dtype) -> str:
+        """
+        Convert Polars dtype to DuckDB dtype string.
+
+        Parameters:
+        -----------
+        polars_dtype : pl.DataType
+            Polars data type
+
+        Returns:
+        --------
+        str
+            DuckDB dtype string
+        """
+        dtype_map = {
+            pl.Utf8: "VARCHAR",
+            pl.String: "VARCHAR",
+            pl.Int8: "TINYINT",
+            pl.Int16: "SMALLINT",
+            pl.Int32: "INTEGER",
+            pl.Int64: "BIGINT",
+            pl.UInt8: "UTINYINT",
+            pl.UInt16: "USMALLINT",
+            pl.UInt32: "UINTEGER",
+            pl.UInt64: "UBIGINT",
+            pl.Float32: "FLOAT",
+            pl.Float64: "DOUBLE",
+            pl.Boolean: "BOOLEAN",
+            pl.Date: "DATE",
+            pl.Datetime: "TIMESTAMP",
+            pl.Time: "TIME",
+        }
+
+        # Handle generic types by checking the type's string representation
+        dtype_str = str(polars_dtype)
+
+        # Try direct lookup first
+        if polars_dtype in dtype_map:
+            return dtype_map[polars_dtype]
+
+        # Fallback based on string representation
+        if "String" in dtype_str or "Utf8" in dtype_str:
+            return "VARCHAR"
+        elif "Int" in dtype_str:
+            return "BIGINT"
+        elif "Float" in dtype_str or "Double" in dtype_str:
+            return "DOUBLE"
+        elif "Boolean" in dtype_str:
+            return "BOOLEAN"
+        else:
+            # Default to TEXT for unknown types
+            return "TEXT"
+
     def _prepare_ring_records(self, df: pl.DataFrame) -> pl.DataFrame:
         """
         Prepare and clean ring records data for insertion.
