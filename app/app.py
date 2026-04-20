@@ -517,9 +517,9 @@ def update_time_series(species_codes, aggregation, start_date, end_date, plot_ty
         df = db.execute_query(query).pl().to_pandas()
     
     # Create figure based on plot type
+    agg_text = t.get(f"agg_{aggregation}", aggregation.capitalize()).split(" ", 1)[1] if f"agg_{aggregation}" in t else aggregation.capitalize()
     if plot_type == "bar":
         # Bar chart with pastel colors
-        agg_text = t.get(f"agg_{aggregation}", aggregation.capitalize()).split(" ", 1)[1] if f"agg_{aggregation}" in t else aggregation.capitalize()
         fig = px.bar(
             df,
             x="period",

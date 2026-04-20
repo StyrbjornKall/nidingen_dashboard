@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 from typing import List
 from tqdm import tqdm
+import numpy as np
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -121,12 +122,13 @@ def preprocess_nidingen_raw_data(file_path: Path) -> pd.DataFrame:
 
     # Convert column dtypes
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
-    df['wing_length'] = pd.to_numeric(df['wing_length'], errors='coerce')
-    df['weight'] = pd.to_numeric(df['weight'], errors='coerce')
-    df['fat_score'] = pd.to_numeric(df['fat_score'], errors='coerce')
-    df['muscle_score'] = pd.to_numeric(df['muscle_score'], errors='coerce')
-    df['brood_patch'] = pd.to_numeric(df['brood_patch'], errors='coerce')
-    df['moult_score'] = pd.to_numeric(df['moult_score'], errors='coerce')
+    df['wing_length'] = pd.to_numeric(df['wing_length'], errors='coerce').replace(0, np.nan)  # Replace 0 with NA in wing_length column
+    df['weight'] = pd.to_numeric(df['weight'], errors='coerce').replace(0, np.nan)  # Replace 0 with NA in weight column
+    df['fat_score'] = pd.to_numeric(df['fat_score'], errors='coerce').replace(0, np.nan).replace(10, np.nan)  # Replace 0 and 10 with NA in fat_score column
+    df['muscle_score'] = pd.to_numeric(df['muscle_score'], errors='coerce').replace(0, np.nan).replace(10, np.nan) # Replace 0 and 10 with NA in muscle_score column
+    df['brood_patch'] = pd.to_numeric(df['brood_patch'], errors='coerce').replace(0, np.nan).replace(10, np.nan) # Replace 0 and 10 with NA in brood_patch column
+    df['moult_score'] = pd.to_numeric(df['moult_score'], errors='coerce').replace(0, np.nan).replace(10, np.nan) # Replace 0 and 10 with NA in moult_score column
+    df['notes'] = df['notes'].astype(str).replace('nan', np.nan)  # Convert notes to string and replace 'nan' with actual NA
 
     # Place date and time at the beginning
     df = df[['date', 'time'] + [col for col in df.columns if col not in ['date', 'time']]]
