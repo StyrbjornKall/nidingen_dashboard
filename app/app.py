@@ -8,6 +8,7 @@ It provides interactive visualizations for exploring bird observation data.
 import os
 import json
 
+import pandas  # noqa: F401 – must be imported first to avoid partial-init errors with pandas 3.x
 import dash
 from dash import dcc, html, Input, Output, callback, State
 import dash_bootstrap_components as dbc
@@ -78,20 +79,6 @@ if not Path(DB_PATH).exists():
         f"    4. Is DUCKDB_PATH correct? Currently: {DB_PATH!r}\n"
         f"       Expected layout inside the container: /project-vol/bird_ringing.db\n"
     )
-
-# Ensure 'TOTAL' aggregate species exists
-try:
-    # We must use read_only=False to write changes
-    # This runs once on app startup to materialize the TOTAL species
-    # so all downstream queries work without modification
-    print("Checking for TOTAL species...")
-    with BirdRingingDB(DB_PATH, read_only=False) as db:
-        # Check if table exists
-        if db.conn.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = 'ring_records'").fetchone()[0] > 0:
-            db.ensure_total_species()
-except Exception as e:
-    # Log but don't crash app if this fails (e.g. permission issues)
-    print(f"WARNING: Failed to ensure TOTAL species: {e}")
 
 # Load initial data for filters
 with BirdRingingDB(DB_PATH, read_only=True) as db:
@@ -382,9 +369,6 @@ app.layout = dbc.Container([
                         
                         # Weekly Distribution
                         html.Div([
-                            html.H5(id="header-pheno-weekly", children=[
-                                html.I(className="fas fa-chart-area me-2"),
-                            ], className="mb-3", style={"color": "#495057"}),
                             dbc.Spinner(
                                 dcc.Graph(id="phenology-weekly-plot", style={"height": "450px"}),
                                 color="primary",
@@ -394,9 +378,6 @@ app.layout = dbc.Container([
                         
                         # Ridgeline Plot
                         html.Div([
-                            html.H5(id="header-pheno-daily", children=[
-                                html.I(className="fas fa-layer-group me-2"),
-                            ], className="mb-3", style={"color": "#495057"}),
                             dbc.Spinner(
                                 dcc.Graph(id="phenology-ridgeline-plot"),
                                 color="primary",
@@ -406,9 +387,6 @@ app.layout = dbc.Container([
                         
                         # Seasonal Comparison
                         html.Div([
-                            html.H5(id="header-pheno-seasonal", children=[
-                                html.I(className="fas fa-exchange-alt me-2"),
-                            ], className="mb-3", style={"color": "#495057"}),
                             dbc.Spinner(
                                 dcc.Graph(id="phenology-seasonal-plot", style={"height": "450px"}),
                                 color="primary",
@@ -431,8 +409,24 @@ app.layout = dbc.Container([
                                     clearable=False,
                                     style={"width": "300px"}
                                 )
-                            ])
-                        ], className="mt-3 mb-3"),
+                            ], width="auto"),
+                            dbc.Col([
+                                html.Label("Number of species", className="fw-bold mb-2", style={"color": "#6c757d"}),
+                                dcc.Dropdown(
+                                    id="heatmap-top-n-dropdown",
+                                    options=[
+                                        {"label": "10",  "value": 10},
+                                        {"label": "30",  "value": 30},
+                                        {"label": "50",  "value": 50},
+                                        {"label": "100", "value": 100},
+                                        {"label": "All", "value": 0},
+                                    ],
+                                    value=50,
+                                    clearable=False,
+                                    style={"width": "200px"}
+                                )
+                            ], width="auto"),
+                        ], className="mt-3 mb-3", align="end"),
                         dbc.Spinner(
                             dcc.Graph(id="weekly-heatmap"),
                             color="primary",
@@ -451,9 +445,6 @@ app.layout = dbc.Container([
 
                         # Time series plot
                         html.Div([
-                            html.H5(id="header-weather-timeseries", children=[
-                                html.I(className="fas fa-chart-line me-2"),
-                            ], className="mb-3", style={"color": "#495057"}),
                             dbc.Spinner(
                                 dcc.Graph(id="weather-timeseries-plot"),
                                 color="primary",
@@ -675,6 +666,9 @@ def update_summary(species_codes, start_date, end_date, language):
                     AND date >= '{start_str}' AND date <= '{end_str}'
                 """).fetchone()[0]
             else:
+                # When more than one species is selected we first try to remove TOTAL if it's in the selection to avoid double counting, then count unique species
+                if "TOTAL" in species_codes:
+                    df = df.filter(pl.col("species_code") != "TOTAL")
                 unique_species = df["species_code"].n_unique()
         else:
             # If no species selected, fetch all but exclude TOTAL to avoid double counting
@@ -1620,9 +1614,10 @@ def update_phenology_seasonal(species_codes, start_date, end_date, language):
 @callback(
     Output("weekly-heatmap", "figure"),
     [Input("heatmap-year-dropdown", "value"),
+     Input("heatmap-top-n-dropdown", "value"),
      Input("language-store", "data")]
 )
-def update_weekly_heatmap(selected_year, language):
+def update_weekly_heatmap(selected_year, top_n, language):
     """Update weekly heatmap showing normalized observations per species."""
     t = LOCALES[language]
     
@@ -1636,9 +1631,10 @@ def update_weekly_heatmap(selected_year, language):
             title_suffix = f"({selected_year})"
         
         # Get heatmap data
+        top_n_species = None if top_n == 0 else top_n
         query = BirdRingingQueries.get_weekly_heatmap_data(
             year=year_param,
-            top_n_species=50
+            top_n_species=top_n_species
         )
         df = db.execute_query(query).pl()
     
@@ -2047,12 +2043,8 @@ def toggle_language(n_clicks, current_language):
      Output("header-yearly-weight", "children"),
      Output("header-pheno-main", "children"),
      Output("desc-pheno", "children"),
-     Output("header-pheno-weekly", "children"),
-     Output("header-pheno-daily", "children"),
-     Output("header-pheno-seasonal", "children"),
      Output("header-weather-main", "children"),
      Output("desc-weather", "children"),
-     Output("header-weather-timeseries", "children"),
      Output("footer-text", "children")],
     Input("language-store", "data")
 )
@@ -2077,12 +2069,8 @@ def update_header_and_filters(language):
         [html.I(className="fas fa-chart-line me-2"), t.get("yearly_weight_header", "Yearly Mean Weight Trend")],
         t.get("pheno_header", "Migration Phenology Analysis"),
         t.get("pheno_desc", "Explore migration patterns throughout the year. Birds are captured during spring (northward) and autumn (southward) migration periods."),
-        [html.I(className="fas fa-chart-area me-2"), t.get("pheno_weekly_header", "Weekly Observation Pattern")],
-        [html.I(className="fas fa-layer-group me-2"), t.get("pheno_daily_header", "Daily Distribution by Species")],
-        [html.I(className="fas fa-exchange-alt me-2"), t.get("pheno_seasonal_header", "Spring vs Autumn Migration Windows")],
         t.get("weather_header", "Weather Analysis"),
         t.get("weather_desc", "Meteorological observations from SMHI Nidingen A (station 71190) supplemented by Vinga A (station 71380) where Nidingen lacks data."),
-        [html.I(className="fas fa-chart-line me-2"), t.get("weather_timeseries_header", "Daily Weather Time Series")],
         f"{t.get('dashboard', 'Nidingen Bird Ringing Station Dashboard')} · {html.A(t.get('view_github', 'View on GitHub'), href='#', className='text-decoration-none')} · {t.get('built_with', 'Built with Dash & Plotly')}"
     )
 

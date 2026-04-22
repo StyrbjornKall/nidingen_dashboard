@@ -754,7 +754,7 @@ class BirdRingingQueries:
     @staticmethod
     def get_weekly_heatmap_data(
         year: Optional[int] = None,
-        top_n_species: int = 30
+        top_n_species: Optional[int] = 30
     ) -> str:
         """
         Generate SQL for weekly observation heatmap data.
@@ -771,6 +771,8 @@ class BirdRingingQueries:
         str
             SQL query string
         """
+        limit_clause = f"LIMIT {top_n_species}" if top_n_species is not None else ""
+
         if year is not None:
             # Query for specific year
             query = f"""
@@ -780,7 +782,7 @@ class BirdRingingQueries:
                 WHERE EXTRACT(YEAR FROM date) = {year}
                 GROUP BY species_code, swedish_name
                 ORDER BY total_obs DESC
-                LIMIT {top_n_species}
+                {limit_clause}
             ),
             weekly_counts AS (
                 SELECT 
@@ -820,7 +822,7 @@ class BirdRingingQueries:
                 FROM ring_records
                 GROUP BY species_code, swedish_name
                 ORDER BY total_obs DESC
-                LIMIT {top_n_species}
+                {limit_clause}
             ),
             weekly_counts AS (
                 SELECT 

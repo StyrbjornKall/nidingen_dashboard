@@ -112,8 +112,12 @@ def main():
         for species_code, swedish_name, count in stats['top_species']:
             print(f"  {species_code:8} ({swedish_name:25}): {count:6,} records")
         
-        # Step 4: Optimize database
-        print("\nStep 4: Optimizing database...")
+        # Step 4: Generate TOTAL aggregate species
+        print("\nStep 4: Generating TOTAL aggregate species...")
+        db.ensure_total_species()
+
+        # Step 5: Optimize database
+        print("\nStep 5: Optimizing database...")
         db.optimize_database()
     
     print("\n" + "=" * 60)
