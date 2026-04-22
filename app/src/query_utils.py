@@ -758,14 +758,19 @@ class BirdRingingQueries:
     ) -> str:
         """
         Generate SQL for weekly observation heatmap data.
-        
+
+        Top-N species are ALWAYS ranked by total observations across all years,
+        so the species set is stable regardless of which year is selected in the
+        UI.  A CROSS JOIN with weeks 1-52 ensures every (species, week) pair is
+        present in the result; missing observations are filled with 0.
+
         Parameters:
         -----------
         year : int, optional
-            Specific year to query. If None, averages across all years
-        top_n_species : int
-            Number of top species to include
-            
+            Specific year to display. If None, averages across all years.
+        top_n_species : int, optional
+            Number of top species to include. None means all species.
+
         Returns:
         --------
         str
@@ -774,88 +779,109 @@ class BirdRingingQueries:
         limit_clause = f"LIMIT {top_n_species}" if top_n_species is not None else ""
 
         if year is not None:
-            # Query for specific year
             query = f"""
             WITH top_species AS (
-                SELECT species_code, swedish_name, COUNT(*) as total_obs
+                -- Ranked by total observations across ALL years (year-independent)
+                SELECT species_code, swedish_name, COUNT(*) AS total_obs
                 FROM ring_records
-                WHERE EXTRACT(YEAR FROM date) = {year}
                 GROUP BY species_code, swedish_name
                 ORDER BY total_obs DESC
                 {limit_clause}
             ),
+            all_weeks AS (
+                SELECT generate_series AS week_of_year
+                FROM generate_series(1, 52)
+            ),
             weekly_counts AS (
-                SELECT 
+                SELECT
                     r.species_code,
-                    r.swedish_name,
-                    EXTRACT(WEEK FROM r.date) as week_of_year,
-                    COUNT(*) as count
+                    CAST(EXTRACT(WEEK FROM r.date) AS INTEGER) AS week_of_year,
+                    COUNT(*) AS count
                 FROM ring_records r
                 INNER JOIN top_species ts ON r.species_code = ts.species_code
                 WHERE EXTRACT(YEAR FROM r.date) = {year}
-                GROUP BY r.species_code, r.swedish_name, week_of_year
+                GROUP BY r.species_code, week_of_year
             ),
-            species_totals AS (
-                SELECT 
-                    species_code,
-                    swedish_name,
-                    SUM(count) as total_count
+            species_year_totals AS (
+                SELECT species_code, SUM(count) AS total_count
                 FROM weekly_counts
-                GROUP BY species_code, swedish_name
+                GROUP BY species_code
+            ),
+            grid AS (
+                SELECT ts.species_code, ts.swedish_name, ts.total_obs,
+                       CAST(aw.week_of_year AS INTEGER) AS week_of_year
+                FROM top_species ts
+                CROSS JOIN all_weeks aw
             )
-            SELECT 
-                wc.species_code,
-                wc.swedish_name,
-                wc.week_of_year,
-                wc.count,
-                st.total_count,
-                ROUND(100.0 * wc.count / st.total_count, 2) as percent_of_total
-            FROM weekly_counts wc
-            JOIN species_totals st ON wc.species_code = st.species_code
-            ORDER BY st.total_count DESC, wc.week_of_year
+            SELECT
+                g.species_code,
+                g.swedish_name,
+                g.week_of_year,
+                COALESCE(wc.count, 0) AS count,
+                COALESCE(syt.total_count, 0) AS total_count,
+                CASE WHEN COALESCE(syt.total_count, 0) = 0 THEN 0.0
+                     ELSE ROUND(100.0 * COALESCE(wc.count, 0) / syt.total_count, 2)
+                END AS percent_of_total
+            FROM grid g
+            LEFT JOIN weekly_counts wc
+                ON g.species_code = wc.species_code AND g.week_of_year = wc.week_of_year
+            LEFT JOIN species_year_totals syt ON g.species_code = syt.species_code
+            ORDER BY g.total_obs DESC, g.week_of_year
             """
         else:
-            # Query averaging across all years
             query = f"""
             WITH top_species AS (
-                SELECT species_code, swedish_name, COUNT(*) as total_obs
+                -- Ranked by total observations across ALL years
+                SELECT species_code, swedish_name, COUNT(*) AS total_obs
                 FROM ring_records
                 GROUP BY species_code, swedish_name
                 ORDER BY total_obs DESC
                 {limit_clause}
             ),
+            all_weeks AS (
+                SELECT generate_series AS week_of_year
+                FROM generate_series(1, 52)
+            ),
             weekly_counts AS (
-                SELECT 
+                SELECT
                     r.species_code,
-                    r.swedish_name,
-                    EXTRACT(WEEK FROM r.date) as week_of_year,
-                    COUNT(*) as count,
-                    COUNT(DISTINCT EXTRACT(YEAR FROM r.date)) as n_years
+                    CAST(EXTRACT(WEEK FROM r.date) AS INTEGER) AS week_of_year,
+                    COUNT(*) AS count,
+                    COUNT(DISTINCT EXTRACT(YEAR FROM r.date)) AS n_years
                 FROM ring_records r
                 INNER JOIN top_species ts ON r.species_code = ts.species_code
-                GROUP BY r.species_code, r.swedish_name, week_of_year
+                GROUP BY r.species_code, week_of_year
             ),
             species_totals AS (
-                SELECT 
-                    species_code,
-                    swedish_name,
-                    SUM(count) as total_count,
-                    AVG(n_years) as avg_years
+                SELECT species_code, SUM(count) AS total_count
                 FROM weekly_counts
-                GROUP BY species_code, swedish_name
+                GROUP BY species_code
+            ),
+            grid AS (
+                SELECT ts.species_code, ts.swedish_name, ts.total_obs,
+                       CAST(aw.week_of_year AS INTEGER) AS week_of_year
+                FROM top_species ts
+                CROSS JOIN all_weeks aw
             )
-            SELECT 
-                wc.species_code,
-                wc.swedish_name,
-                wc.week_of_year,
-                ROUND(wc.count / wc.n_years, 1) as avg_count,
-                st.total_count,
-                ROUND(100.0 * (wc.count / wc.n_years) / (st.total_count / st.avg_years), 2) as percent_of_total
-            FROM weekly_counts wc
-            JOIN species_totals st ON wc.species_code = st.species_code
-            ORDER BY st.total_count DESC, wc.week_of_year
+            SELECT
+                g.species_code,
+                g.swedish_name,
+                g.week_of_year,
+                COALESCE(
+                    ROUND(CAST(wc.count AS DOUBLE) / NULLIF(wc.n_years, 0), 1),
+                    0.0
+                ) AS avg_count,
+                COALESCE(st.total_count, 0) AS total_count,
+                CASE WHEN COALESCE(st.total_count, 0) = 0 THEN 0.0
+                     ELSE ROUND(100.0 * COALESCE(wc.count, 0) / st.total_count, 2)
+                END AS percent_of_total
+            FROM grid g
+            LEFT JOIN weekly_counts wc
+                ON g.species_code = wc.species_code AND g.week_of_year = wc.week_of_year
+            LEFT JOIN species_totals st ON g.species_code = st.species_code
+            ORDER BY g.total_obs DESC, g.week_of_year
             """
-        
+
         return query
 
     # ------------------------------------------------------------------

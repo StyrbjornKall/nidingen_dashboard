@@ -103,29 +103,37 @@ with BirdRingingDB(DB_PATH, read_only=True) as db:
     """).fetchall()
     available_years = [int(row[0]) for row in years_list]
 
-    # Build taxonomy sort order lookup: species_code -> sort_key
-    # Uses taxon_order from eBird (global numeric ranking).
-    # Subspecies without taxon_order are placed near their parent via
-    # scientific_name alphabetical fallback within a large bucket (999999).
+    # Build taxonomy sort order lookup: species_code -> (order, family, scientific_name)
+    # Sorts by the biological hierarchy: Order → Family → Scientific name.
+    # Unmatched species (no metadata join) are placed at the end via '~' sentinel.
     _taxon_rows = db.execute_query("""
         SELECT r.species_code, r.swedish_name,
-               COALESCE(m.taxon_order, 999999) AS sort_key,
+               COALESCE(m.order_scientific_name, '~') AS order_name,
+               COALESCE(m.family_scientific_name, '~') AS family_name,
                COALESCE(m.scientific_name, r.swedish_name, r.species_code) AS sci_name
         FROM (SELECT DISTINCT species_code, swedish_name FROM ring_records) r
         LEFT JOIN species_metadata m ON r.swedish_name = m.swedish_name
-        ORDER BY sort_key, sci_name
+        ORDER BY order_name, family_name, sci_name
     """).fetchall()
-    # TOTAL always first (-1); others get their taxon_order (or 999999)
+    # TOTAL always first (empty-string tuple sorts before anything); others by hierarchy
     TAXON_SORT_ORDER = {}
     _SPECIES_SWEDISH = {}
-    for code, swe_name, sort_key, sci_name in _taxon_rows:
-        TAXON_SORT_ORDER[code] = -1.0 if code == "TOTAL" else sort_key
+    for code, swe_name, order_name, family_name, sci_name in _taxon_rows:
+        if code == "TOTAL":
+            TAXON_SORT_ORDER[code] = ("", "", "")
+        else:
+            TAXON_SORT_ORDER[code] = (order_name, family_name, sci_name)
         _SPECIES_SWEDISH[code] = swe_name
 
 
 def sort_species_by_taxonomy(species_codes):
-    """Return *species_codes* sorted by taxonomic order (TOTAL always first)."""
-    return sorted(species_codes, key=lambda c: (TAXON_SORT_ORDER.get(c, 999999), c))
+    """Return *species_codes* sorted by taxonomic hierarchy (TOTAL always first).
+
+    Sort key is a tuple (order_scientific_name, family_scientific_name, scientific_name)
+    so species are grouped by Order, then Family, then alphabetically by scientific name.
+    Species with no metadata match fall to the end via the '~' sentinel.
+    """
+    return sorted(species_codes, key=lambda c: TAXON_SORT_ORDER.get(c, ("~", "~", c)))
 
 
 # Prepare options for dropdowns – sorted taxonomically
@@ -1645,50 +1653,62 @@ def update_weekly_heatmap(selected_year, top_n, language):
             font={"size": 20, "color": "#95a5a6"}
         )
     
-    # Convert to pandas for easier pivoting
+    # Convert to pandas for pivoting
     df_pd = df.to_pandas()
-    
-    # Create a pivot table: species (rows) x weeks (columns)
-    pivot_data = df_pd.pivot_table(
-        index='swedish_name',
-        columns='week_of_year',
-        values='percent_of_total',
-        fill_value=0
-    )
-    
-    # Sort species by taxonomy (TOTAL first, then taxonomic order)
-    # Build code -> name mapping from the heatmap data
-    heatmap_code_to_name = df_pd[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
-    sorted_heatmap_codes = sort_species_by_taxonomy(list(heatmap_code_to_name.keys()))
-    species_order = [heatmap_code_to_name[c] for c in sorted_heatmap_codes if c in heatmap_code_to_name]
-    pivot_data = pivot_data.reindex(species_order)
-    
-    # Ensure all weeks 1-52 are present
-    all_weeks = list(range(1, 53))
-    for week in all_weeks:
-        if week not in pivot_data.columns:
-            pivot_data[week] = 0
-    pivot_data = pivot_data[sorted(pivot_data.columns)]
-    
-    # Build a matching pivot of raw observation counts for hover info
+
+    # Determine which count column the query returned
+    # (specific year → 'count'; all-years average → 'avg_count')
     count_col = 'count' if 'count' in df_pd.columns else 'avg_count'
+    count_label = 'n' if count_col == 'count' else 'avg n'
+
+    # ── Step 1: single count pivot (source of truth) ─────────────────────
+    # aggfunc='sum' is safe because the SQL CROSS JOIN guarantees exactly one
+    # row per (species, week). Using 'sum' also prevents silent averaging if
+    # a swedish_name ever maps to more than one species_code.
     pivot_counts = df_pd.pivot_table(
         index='swedish_name',
         columns='week_of_year',
         values=count_col,
-        fill_value=0
-    ).reindex(species_order)
-    for week in all_weeks:
+        aggfunc='sum',
+        fill_value=0,
+    )
+
+    # ── Step 2: taxonomy-sorted species order ─────────────────────────────
+    heatmap_code_to_name = (
+        df_pd[['species_code', 'swedish_name']]
+        .drop_duplicates()
+        .set_index('species_code')['swedish_name']
+        .to_dict()
+    )
+    sorted_heatmap_codes = sort_species_by_taxonomy(list(heatmap_code_to_name.keys()))
+    species_order = [
+        heatmap_code_to_name[c]
+        for c in sorted_heatmap_codes
+        if c in heatmap_code_to_name
+    ]
+
+    # ── Step 3: reindex rows and ensure all 52 weeks are columns ──────────
+    pivot_counts = pivot_counts.reindex(species_order).fillna(0)
+    for week in range(1, 53):
         if week not in pivot_counts.columns:
-            pivot_counts[week] = 0
+            pivot_counts[week] = 0.0
     pivot_counts = pivot_counts[sorted(pivot_counts.columns)]
-    
-    # Create heatmap with pastel color scheme
-    count_label = 'n' if count_col == 'count' else 'avg n'
+
+    # ── Step 4: derive percent-of-row from counts ─────────────────────────
+    # Divide each cell by its row total; species with 0 observations stay 0.
+    row_sums = pivot_counts.sum(axis=1)
+    pivot_pct = (
+        pivot_counts
+        .div(row_sums.replace(0, float('nan')), axis=0)
+        .fillna(0)
+        * 100
+    )
+
+    # Create heatmap — z comes from pct, customdata from the same count pivot
     fig = go.Figure(data=go.Heatmap(
-        z=pivot_data.values,
-        x=pivot_data.columns,
-        y=pivot_data.index,
+        z=pivot_pct.values,
+        x=pivot_pct.columns.tolist(),
+        y=pivot_pct.index.tolist(),
         customdata=pivot_counts.values,
         colorscale='viridis',
         colorbar=dict(
@@ -1700,7 +1720,13 @@ def update_weekly_heatmap(selected_year, top_n, language):
             len=0.7
         ),
         hoverongaps=False,
-        hovertemplate=f'<b>%{{y}}</b><br>{t["week_of_year"]} %{{x}}<br>%{{z:.1f}}%<br>{count_label}=%{{customdata:.0f}}<extra></extra>'
+        hovertemplate=(
+            f'<b>%{{y}}</b><br>'
+            f'{t["week_of_year"]} %{{x}}<br>'
+            f'%{{z:.1f}}%<br>'
+            f'{count_label}=%{{customdata:.1f}}'
+            f'<extra></extra>'
+        ),
     ))
     
     fig.update_layout(
@@ -1716,7 +1742,7 @@ def update_weekly_heatmap(selected_year, top_n, language):
             title=t["species_label"],
             tickfont=dict(size=13)
         ),
-        height=200 + 20 * len(pivot_data),  # Dynamic height based on number of species
+        height=200 + 20 * len(pivot_counts),  # Dynamic height based on number of species
         template="plotly_white",
         font=dict(size=14, family="Arial, sans-serif", color="#495057"),
         plot_bgcolor="rgba(0,0,0,0)",
