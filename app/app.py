@@ -207,346 +207,356 @@ year_options = [{"label": "Genomsnitt (Alla år)", "value": "all"}] + [
 ]
 
 # App Layout
-app.layout = dbc.Container([
-    # Header
-    dbc.Row([
-        dbc.Col([
+app.layout = html.Div([
+
+    # ── TOP NAVIGATION (dbc.Tabs used as sticky nav bar only) ─────────────
+    dbc.Tabs([
+        dbc.Tab(label="Hem",            tab_id="tab-home"),
+        dbc.Tab(label="Sammanfattning", tab_id="tab-summary-timeseries"),
+        dbc.Tab(label="Morfometri",     tab_id="tab-morpho"),
+        dbc.Tab(label="Fenologi",       tab_id="tab-phenology"),
+        dbc.Tab(label="Värmekarta",     tab_id="tab-heatmap"),
+        dbc.Tab(label="Väderanalys",    tab_id="tab-weather"),
+    ], id="tabs", active_tab="tab-home", className="top-nav-tabs"),
+
+    # ── FILTER DROPDOWN PANEL (hidden on Hem + Väderanalys) ──────────────
+    html.Div([
+        dbc.Container([
+            dbc.Button(
+                [html.I(className="fas fa-sliders-h me-2"), "Datafilter ▾"],
+                id="filter-toggle-btn",
+                color="light",
+                size="sm",
+                className="my-2",
+            ),
+            dbc.Collapse(
+                dbc.Card([
+                    dbc.CardBody([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label("Välj art", className="fw-bold mb-1 small",
+                                           style={"color": "#6c757d"}),
+                                dcc.Dropdown(
+                                    id="species-dropdown",
+                                    options=species_options,
+                                    value=[opt["value"] for opt in species_options
+                                           if opt["value"] in ("TOTAL", "RÖHAK", "LÖSÅN")][:3] or [],
+                                    multi=True,
+                                    placeholder="Välj en eller flera arter...",
+                                )
+                            ], md=5),
+                            dbc.Col([
+                                html.Label("Tidsaggregering", className="fw-bold mb-1 small",
+                                           style={"color": "#6c757d"}),
+                                dcc.Dropdown(
+                                    id="aggregation-dropdown",
+                                    options=[
+                                        {"label": "📅 Dagligen",   "value": "daily"},
+                                        {"label": "📊 Veckovis",  "value": "weekly"},
+                                        {"label": "📈 Månadsvis", "value": "monthly"},
+                                        {"label": "📆 Årligen",   "value": "yearly"},
+                                    ],
+                                    value="yearly",
+                                    clearable=False,
+                                )
+                            ], md=3),
+                            dbc.Col([
+                                html.Label("Datumintervall", className="fw-bold mb-1 small",
+                                           style={"color": "#6c757d"}),
+                                dcc.DatePickerRange(
+                                    id="date-range-picker",
+                                    start_date=date_range[0],
+                                    end_date=date_range[1],
+                                    display_format="YYYY-MM-DD",
+                                )
+                            ], md=4),
+                        ], align="end", className="g-3")
+                    ])
+                ], className="border-0 shadow-sm"),
+                id="filter-collapse",
+                is_open=False,
+            ),
+        ], fluid=True, className="px-3")
+    ], id="filter-panel-outer", style={"display": "none"}),
+
+    # ── MAIN CONTENT AREA ─────────────────────────────────────────────────
+    html.Div([
+
+        # ── Hem tab – hero image ──────────────────────────────────────────
+        html.Div([
             html.Div([
                 html.H1(
-                    [html.I(className="fas fa-dove me-3"), "Nidingens Fågelstation"],
-                    className="text-center mb-3",
-                    style={"color": "#2c3e50", "fontWeight": "600", "fontSize": "2.5rem"}
+                    "NIDINGEN FÅGELSTATION DATA DASHBOARD",
+                    style={
+                        "color": "#000000",
+                        "fontWeight": "900",
+                        "fontSize": "clamp(2rem, 4.5vw, 5rem)",
+                        "textAlign": "left",
+                        "lineHeight": "1.05",
+                        "letterSpacing": "0.02em",
+                        "margin": "0",
+                    }
                 ),
-                html.P(
-                    f"Historisk Ringmärkningsdata från Nidingen Fågelstation · Data från {date_range[0]} till {date_range[1]}",
-                    className="text-center text-muted mb-0",
-                    style={"fontSize": "1.1rem"}
-                ),
-            ], className="py-4")
-        ])
-    ], className="mb-4", style={
-        "backgroundColor": "#f8f9fa",
-        "borderRadius": "10px",
-        "boxShadow": "0 2px 4px rgba(0,0,0,0.05)"
-    }),
-    
-    # Filters Card
-    dbc.Card([
-        dbc.CardBody([
-            html.H5([
-                html.I(className="fas fa-filter me-2"),
-                "Datafilter"
-            ], className="mb-4", style={"color": "#495057"}),
-            dbc.Row([
-                dbc.Col([
-                    html.Label("Välj art", className="fw-bold mb-2", style={"color": "#6c757d"}),
-                    dcc.Dropdown(
-                        id="species-dropdown",
-                        options=species_options,
-                        value=[opt["value"] for opt in species_options if opt["value"] in ("TOTAL", "RÖHAK", "LÖSÅN")][:3] or [],
-                        multi=True,
-                        placeholder="Välj en eller flera arter...",
-                        className="mb-3"
-                    )
-                ], md=6),
-                
-                dbc.Col([
-                    html.Label("Tidsaggregering", className="fw-bold mb-2", style={"color": "#6c757d"}),
-                    dcc.Dropdown(
-                        id="aggregation-dropdown",
-                        options=[
-                            {"label": "📅 Dagligen",   "value": "daily"},
-                            {"label": "📊 Veckovis",  "value": "weekly"},
-                            {"label": "📈 Månadsvis", "value": "monthly"},
-                            {"label": "📆 Årligen",   "value": "yearly"}
-                        ],
-                        value="yearly",
-                        clearable=False,
-                        className="mb-3"
-                    )
-                ], md=6),
-            ]),
-            
-            dbc.Row([
-                dbc.Col([
-                    html.Label("Datumintervall", className="fw-bold mb-2", style={"color": "#6c757d"}),
-                    dcc.DatePickerRange(
-                        id="date-range-picker",
-                        start_date=date_range[0],
-                        end_date=date_range[1],
-                        display_format="YYYY-MM-DD",
-                        style={"width": "50%"}
-                    )
-                ], md=12),
-            ])
-        ])
-    ], className="mb-4 shadow-sm", style={"borderRadius": "10px", "border": "none"}),
-    
-    # Main Content - Tabs
-    dbc.Card([
-        dbc.CardBody([
-            dbc.Tabs([
-                # Summary Tab (formerly Time Series)
-                dbc.Tab(label="📊 Sammanfattning", tab_id="tab-summary-timeseries", children=[
-                    html.Div([
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label("Diagramtyp", className="fw-bold me-3", style={"color": "#6c757d"}),
-                                dbc.RadioItems(
-                                    id="plot-type-toggle",
-                                    options=[
-                                        {"label": html.Span("Stapeldiagram"), "value": "bar"},
-                                        {"label": html.Span("Linjediagram"), "value": "line"}
-                                    ],
-                                    value="bar",
-                                    inline=True,
-                                    className="mb-3"
-                                )
-                            ])
-                        ], className="mt-3"),
-                        
-                        dbc.Spinner(
-                            dcc.Graph(id="time-series-plot", style={"height": "500px"}),
-                            color="primary",
-                            type="border",
-                            spinner_style={"width": "3rem", "height": "3rem"}
-                        ),
-                        
-                        # Summary statistics div moved here
-                        html.Div(id="summary-stats", className="mt-4 p-2")
-                    ], className="p-3")
-                ]),
-                
-                # Morphometrics Tab
-                dbc.Tab(label="📊 Morfometri", tab_id="tab-morpho", children=[
-                    html.Div([
-                        # First row: Weight and Wing Length distributions
-                        dbc.Row([
-                            dbc.Col([
-                                dbc.Spinner(
-                                    dcc.Graph(id="weight-distribution", style={"height": "450px"}),
-                                    color="primary",
-                                    type="border"
-                                )
-                            ], md=6),
-                            
-                            dbc.Col([
-                                dbc.Spinner(
-                                    dcc.Graph(id="wing-length-distribution", style={"height": "450px"}),
-                                    color="primary",
-                                    type="border"
-                                )
-                            ], md=6),
-                        ], className="mb-4"),
-                        
-                        # Second row: Age distribution and Fat score
-                        dbc.Row([
-                            dbc.Col([
-                                dbc.Spinner(
-                                    dcc.Graph(id="age-distribution", style={"height": "450px"}),
-                                    color="primary",
-                                    type="border"
-                                )
-                            ], md=6),
-                            
-                            dbc.Col([
-                                dbc.Spinner(
-                                    dcc.Graph(id="fat-score-distribution", style={"height": "450px"}),
-                                    color="primary",
-                                    type="border"
-                                )
-                            ], md=6),
-                        ]),
+            ], id="hero-text-block"),
+        ], id="content-tab-home"),
 
-                        html.Hr(className="my-4"),
-
-                        # Third row: Weekly weight over the year
-                        html.Div([
-                            html.H5([
-                                html.I(className="fas fa-weight-hanging me-2"),
-                                "Veckovikt över året"
-                            ], className="mb-3", style={"color": "#495057"}),
-                            dbc.Row([
-                                dbc.Col([
-                                    html.Label(
-                                        "Välj år",
-                                        className="fw-bold mb-2",
-                                        style={"color": "#6c757d"}
-                                    ),
-                                    dcc.Dropdown(
-                                        id="weight-weekly-year-dropdown",
-                                        options=year_options,
-                                        value="all",
-                                        clearable=False,
-                                        style={"width": "260px"}
-                                    ),
-                                ], width="auto"),
-                            ], className="mb-3"),
-                            dbc.Spinner(
-                                dcc.Graph(id="weight-weekly-plot", style={"height": "450px"}),
-                                color="primary",
-                                type="border"
-                            ),
-                        ], className="mt-4 mb-4"),
-
-                        # Fourth row: Yearly mean weight trend
-                        html.Div([
-                            html.H5([
-                                html.I(className="fas fa-chart-line me-2"),
-                                "Årlig medelviktstrend"
-                            ], className="mb-3", style={"color": "#495057"}),
-                            dbc.Spinner(
-                                dcc.Graph(id="weight-yearly-plot", style={"height": "450px"}),
-                                color="primary",
-                                type="border"
-                            ),
-                        ], className="mb-4"),
-
-                    ], className="p-3")
-                ]),
-                
-                # Phenology Tab
-                dbc.Tab(label="⏱️ Fenologi", tab_id="tab-phenology", children=[
-                    html.Div([
-                        html.Div([
-                            html.H4("Analys av flyttningsfenologi"),
-                            html.P("Utforska flyttningsmönster under året. Fåglar fångas under vår- (norrut) och höstflyttningen (söderut).", className="text-muted mb-4"),
-                        ], className="mt-3"),
-                        
-                        # Weekly Distribution
-                        html.Div([
-                            dbc.Spinner(
-                                dcc.Graph(id="phenology-weekly-plot", style={"height": "450px"}),
-                                color="primary",
-                                type="border"
-                            )
-                        ], className="mb-4"),
-                        
-                        # Ridgeline Plot
-                        html.Div([
-                            dbc.Spinner(
-                                dcc.Graph(id="phenology-ridgeline-plot"),
-                                color="primary",
-                                type="border"
-                            )
-                        ], className="mb-4"),
-                        
-                        # Seasonal Comparison
-                        html.Div([
-                            dbc.Spinner(
-                                dcc.Graph(id="phenology-seasonal-plot", style={"height": "450px"}),
-                                color="primary",
-                                type="border"
-                            )
-                        ], className="mb-4"),
-                    ], className="p-3")
-                ]),
-                
-                # Weekly Heatmap Tab
-                dbc.Tab(label="📈 Veckovis Värmekarta", tab_id="tab-heatmap", children=[
-                    html.Div([
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label("Välj år", className="fw-bold mb-2", style={"color": "#6c757d"}),
-                                dcc.Dropdown(
-                                    id="heatmap-year-dropdown",
-                                    options=year_options,
-                                    value="all",
-                                    clearable=False,
-                                    style={"width": "300px"}
-                                )
-                            ], width="auto"),
-                            dbc.Col([
-                                html.Label("Antal arter", className="fw-bold mb-2", style={"color": "#6c757d"}),
-                                dcc.Dropdown(
-                                    id="heatmap-top-n-dropdown",
-                                    options=[
-                                        {"label": "10",   "value": 10},
-                                        {"label": "30",   "value": 30},
-                                        {"label": "50",   "value": 50},
-                                        {"label": "100",  "value": 100},
-                                        {"label": "Alla", "value": 0},
-                                    ],
-                                    value=50,
-                                    clearable=False,
-                                    style={"width": "200px"}
-                                )
-                            ], width="auto"),
-                        ], className="mt-3 mb-3", align="end"),
-                        dbc.Spinner(
-                            dcc.Graph(id="weekly-heatmap"),
-                            color="primary",
-                            type="border"
+        # ── Sammanfattning tab ────────────────────────────────────────────
+        html.Div([
+            dbc.Container([
+                dbc.Row([
+                    dbc.Col([
+                        html.Label("Diagramtyp", className="fw-bold me-3",
+                                   style={"color": "#6c757d"}),
+                        dbc.RadioItems(
+                            id="plot-type-toggle",
+                            options=[
+                                {"label": html.Span("Stapeldiagram"), "value": "bar"},
+                                {"label": html.Span("Linjediagram"),  "value": "line"},
+                            ],
+                            value="bar",
+                            inline=True,
+                            className="mb-3",
                         )
-                    ], className="p-3")
-                ]),
-                
-                # Weather Analysis Tab
-                dbc.Tab(label="🌤️ Väderanalys", tab_id="tab-weather", children=[
-                    html.Div([
-                        html.Div([
-                            html.H4("Väderanalys"),
-                            html.P("Meteorologiska observationer från SMHI Nidingen A (station 71190) kompletterade med Vinga A (station 71380) där Nidingen saknar data.", className="text-muted mb-3"),
-                        ], className="mt-3"),
+                    ])
+                ], className="mt-3"),
+                dbc.Spinner(
+                    dcc.Graph(id="time-series-plot", style={"height": "500px"}),
+                    color="primary", type="border",
+                    spinner_style={"width": "3rem", "height": "3rem"},
+                ),
+                html.Div(id="summary-stats", className="mt-4 p-2"),
+            ], fluid=True, className="py-4"),
+        ], id="content-tab-summary-timeseries", style={"display": "none"}),
 
-                        # Time series plot
-                        html.Div([
-                            dbc.Spinner(
-                                dcc.Graph(id="weather-timeseries-plot"),
-                                color="primary",
-                                type="border",
-                                spinner_style={"width": "3rem", "height": "3rem"}
+        # ── Morfometri tab ────────────────────────────────────────────────
+        html.Div([
+            dbc.Container([
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Spinner(dcc.Graph(id="weight-distribution",
+                                              style={"height": "450px"}),
+                                    color="primary", type="border")
+                    ], md=6),
+                    dbc.Col([
+                        dbc.Spinner(dcc.Graph(id="wing-length-distribution",
+                                              style={"height": "450px"}),
+                                    color="primary", type="border")
+                    ], md=6),
+                ], className="mb-4"),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Spinner(dcc.Graph(id="age-distribution",
+                                              style={"height": "450px"}),
+                                    color="primary", type="border")
+                    ], md=6),
+                    dbc.Col([
+                        dbc.Spinner(dcc.Graph(id="fat-score-distribution",
+                                              style={"height": "450px"}),
+                                    color="primary", type="border")
+                    ], md=6),
+                ]),
+                html.Hr(className="my-4"),
+                html.Div([
+                    html.H5([html.I(className="fas fa-weight-hanging me-2"),
+                             "Veckovikt över året"],
+                            className="mb-3", style={"color": "#495057"}),
+                    dbc.Row([
+                        dbc.Col([
+                            html.Label("Välj år", className="fw-bold mb-2",
+                                       style={"color": "#6c757d"}),
+                            dcc.Dropdown(
+                                id="weight-weekly-year-dropdown",
+                                options=year_options,
+                                value="all",
+                                clearable=False,
+                                style={"width": "260px"},
                             ),
-                        ], className="mb-4"),
+                        ], width="auto"),
+                    ], className="mb-3"),
+                    dbc.Spinner(dcc.Graph(id="weight-weekly-plot",
+                                          style={"height": "450px"}),
+                                color="primary", type="border"),
+                ], className="mt-4 mb-4"),
+                html.Div([
+                    html.H5([html.I(className="fas fa-chart-line me-2"),
+                             "Årlig medelviktstrend"],
+                            className="mb-3", style={"color": "#495057"}),
+                    dbc.Spinner(dcc.Graph(id="weight-yearly-plot",
+                                          style={"height": "450px"}),
+                                color="primary", type="border"),
+                ], className="mb-4"),
+            ], fluid=True, className="py-4"),
+        ], id="content-tab-morpho", style={"display": "none"}),
 
-                        # Variable selector
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label(
-                                    "Välj variabler att visa",
-                                    className="fw-bold mb-2",
-                                    style={"color": "#6c757d"}
-                                ),
-                                dbc.Checklist(
-                                    id="weather-variable-checklist",
-                                    options=[
-                                        {"label": "🌡️ Temperatur (medel / min / max) — Nidingen A",              "value": "temperature"},
-                                        {"label": "💨 Vindhastighet & byvind — Nidingen A",                       "value": "wind"},
-                                        {"label": "🌧️ Nederbörd — Nidingen A (≤2007) + Vinga A (2007→)",      "value": "precipitation"},
-                                        {"label": "☁️ Molnighet — Nidingen A",                                    "value": "cloud"},
-                                        {"label": "💧 Luftfuktighet — Nidingen A",                               "value": "humidity"},
-                                        {"label": "🔵 Lufttryck — Nidingen A (≤1995) + Vinga A (1996→)",         "value": "pressure"},
-                                        {"label": "👁️ Sikt (m) — Nidingen A (≤2007) + Vinga A (2007→)",         "value": "visibility"},
-                                    ],
-                                    value=["temperature", "wind", "precipitation", "visibility", "humidity", "cloud", "pressure"],
-                                    inline=False,
-                                    className="mb-3",
-                                ),
-                            ], md=12),
-                        ]),
+        # ── Fenologi tab ──────────────────────────────────────────────────
+        html.Div([
+            dbc.Container([
+                html.H4("Analys av flyttningsfenologi", className="mt-3"),
+                html.P("Utforska flyttningsmönster under året. Fåglar fångas under "
+                       "vår- (norrut) och höstflyttningen (söderut).",
+                       className="text-muted mb-4"),
+                dbc.Spinner(dcc.Graph(id="phenology-weekly-plot",
+                                      style={"height": "450px"}),
+                            color="primary", type="border"),
+                html.Div(className="mb-4"),
+                dbc.Spinner(dcc.Graph(id="phenology-ridgeline-plot"),
+                            color="primary", type="border"),
+                html.Div(className="mb-4"),
+                dbc.Spinner(dcc.Graph(id="phenology-seasonal-plot",
+                                      style={"height": "450px"}),
+                            color="primary", type="border"),
+            ], fluid=True, className="py-4"),
+        ], id="content-tab-phenology", style={"display": "none"}),
 
-                    ], className="p-3")
+        # ── Värmekarta tab ────────────────────────────────────────────────
+        html.Div([
+            dbc.Container([
+                dbc.Row([
+                    dbc.Col([
+                        html.Label("Välj år", className="fw-bold mb-2",
+                                   style={"color": "#6c757d"}),
+                        dcc.Dropdown(
+                            id="heatmap-year-dropdown",
+                            options=year_options,
+                            value="all",
+                            clearable=False,
+                            style={"width": "300px"},
+                        )
+                    ], width="auto"),
+                    dbc.Col([
+                        html.Label("Antal arter", className="fw-bold mb-2",
+                                   style={"color": "#6c757d"}),
+                        dcc.Dropdown(
+                            id="heatmap-top-n-dropdown",
+                            options=[
+                                {"label": "10",   "value": 10},
+                                {"label": "30",   "value": 30},
+                                {"label": "50",   "value": 50},
+                                {"label": "100",  "value": 100},
+                                {"label": "Alla", "value": 0},
+                            ],
+                            value=50,
+                            clearable=False,
+                            style={"width": "200px"},
+                        )
+                    ], width="auto"),
+                ], className="mt-3 mb-3", align="end"),
+                dbc.Spinner(dcc.Graph(id="weekly-heatmap"),
+                            color="primary", type="border"),
+            ], fluid=True, className="py-4"),
+        ], id="content-tab-heatmap", style={"display": "none"}),
+
+        # ── Väderanalys tab ───────────────────────────────────────────────
+        html.Div([
+            dbc.Container([
+                html.H4("Väderanalys", className="mt-3"),
+                html.P("Meteorologiska observationer från SMHI Nidingen A (station 71190) "
+                       "kompletterade med Vinga A (station 71380) där Nidingen saknar data.",
+                       className="text-muted mb-3"),
+                dbc.Row([
+                    dbc.Col([
+                        html.Label("Datumintervall", className="fw-bold mb-2",
+                                   style={"color": "#6c757d"}),
+                        dcc.DatePickerRange(
+                            id="weather-date-picker",
+                            start_date=date_range[0],
+                            end_date=date_range[1],
+                            display_format="YYYY-MM-DD",
+                        ),
+                    ], md=6),
+                ], className="mb-3"),
+                dbc.Spinner(
+                    dcc.Graph(id="weather-timeseries-plot"),
+                    color="primary", type="border",
+                    spinner_style={"width": "3rem", "height": "3rem"},
+                ),
+                dbc.Row([
+                    dbc.Col([
+                        html.Label("Välj variabler att visa", className="fw-bold mb-2",
+                                   style={"color": "#6c757d"}),
+                        dbc.Checklist(
+                            id="weather-variable-checklist",
+                            options=[
+                                {"label": "🌡️ Temperatur (medel / min / max) — Nidingen A",         "value": "temperature"},
+                                {"label": "💨 Vindhastighet & byvind — Nidingen A",                  "value": "wind"},
+                                {"label": "🌧️ Nederbörd — Nidingen A (≤2007) + Vinga A (2007→)",  "value": "precipitation"},
+                                {"label": "☁️ Molnighet — Nidingen A",                               "value": "cloud"},
+                                {"label": "💧 Luftfuktighet — Nidingen A",                           "value": "humidity"},
+                                {"label": "🔵 Lufttryck — Nidingen A (≤1995) + Vinga A (1996→)",    "value": "pressure"},
+                                {"label": "👁️ Sikt (m) — Nidingen A (≤2007) + Vinga A (2007→)",    "value": "visibility"},
+                            ],
+                            value=["temperature", "wind", "precipitation",
+                                   "visibility", "humidity", "cloud", "pressure"],
+                            inline=False,
+                            className="mb-3",
+                        ),
+                    ], md=12),
                 ]),
+            ], fluid=True, className="py-4"),
+        ], id="content-tab-weather", style={"display": "none"}),
 
-                # Summary Tab (Original removed)
-            ], id="tabs", active_tab="tab-summary-timeseries")
-        ])
-    ], className="shadow-sm", style={"borderRadius": "10px", "border": "none"}),
-    
-    # Footer
-    dbc.Row([
-        dbc.Col([
-            html.Hr(className="my-4"),
-            html.P(
-                "Nidingens Fågelstations Dashboard",
-                className="text-muted small"
-            )
-        ])
-    ])
-], fluid=True, className="py-4", style={"backgroundColor": "#f5f7fa"})
+    ], id="main-content-area"),
+
+    # ── FOOTER ────────────────────────────────────────────────────────────
+    html.Div([
+        html.Hr(className="my-3"),
+        html.P("Nidingens Fågelstations Dashboard",
+               className="text-muted small text-center pb-2"),
+    ], style={"backgroundColor": "#f5f7fa"}),
+
+], style={"minHeight": "100vh", "backgroundColor": "#f5f7fa"})
 
 
 # Callbacks
+
+# ── Tab visibility + filter panel show/hide ───────────────────────────────
+@callback(
+    [Output("content-tab-home", "style"),
+     Output("content-tab-summary-timeseries", "style"),
+     Output("content-tab-morpho", "style"),
+     Output("content-tab-phenology", "style"),
+     Output("content-tab-heatmap", "style"),
+     Output("content-tab-weather", "style"),
+     Output("filter-panel-outer", "style")],
+    Input("tabs", "active_tab"),
+)
+def update_tab_visibility(active_tab):
+    """Show only the active tab content; show filter panel unless on Hem/Väderanalys."""
+    _TAB_IDS = [
+        "tab-home",
+        "tab-summary-timeseries",
+        "tab-morpho",
+        "tab-phenology",
+        "tab-heatmap",
+        "tab-weather",
+    ]
+    content_styles = [
+        {"display": "block"} if tid == active_tab else {"display": "none"}
+        for tid in _TAB_IDS
+    ]
+    # Home tab needs its background-image style preserved
+    if active_tab == "tab-home":
+        content_styles[0] = {"display": "flex"}
+
+    filter_style = (
+        {"display": "none"}
+        if active_tab in ("tab-home", "tab-weather")
+        else {"display": "block"}
+    )
+    return content_styles + [filter_style]
+
+
+@callback(
+    Output("filter-collapse", "is_open"),
+    Input("filter-toggle-btn", "n_clicks"),
+    State("filter-collapse", "is_open"),
+    prevent_initial_call=True,
+)
+def toggle_filter_collapse(n_clicks, is_open):
+    """Open / close the filter panel."""
+    return not is_open
+
+
 @callback(
     Output("time-series-plot", "figure"),
     [Input("species-dropdown", "value"),
@@ -845,7 +855,13 @@ def update_weight_distribution(species_codes, start_date, end_date):
     df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
     # Remove NA and zero values (incorrect measurements)
     df = df[(df["weight"].notna()) & (df["weight"] > 0)]
-    
+
+    # Clip each species to the 1.5×IQR fence to remove outlier tails
+    _q1 = df.groupby("swedish_name")["weight"].transform("quantile", 0.25)
+    _q3 = df.groupby("swedish_name")["weight"].transform("quantile", 0.75)
+    _iqr = _q3 - _q1
+    df = df[(df["weight"] >= _q1 - 1.5 * _iqr) & (df["weight"] <= _q3 + 1.5 * _iqr)]
+
     # Create mapping from species_code to swedish_name
     species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
     
@@ -861,16 +877,18 @@ def update_weight_distribution(species_codes, start_date, end_date):
         lambda x: f"{x}<br>(n={sample_sizes[x]})"
     )
     
-    fig = px.box(
+    fig = px.violin(
         df,
         x="species_label",
         y="weight",
         color="species_label",
+        points=False,
         title=t["weight_dist_title"],
         labels={"species_label": t["species_label"], "weight": t["weight_g"]},
         color_discrete_sequence=PASTEL_COLORS,
         category_orders={"species_label": [f"{s}<br>(n={sample_sizes[s]})" for s in species_order]}
     )
+    fig.update_traces(spanmode="hard")
     
     fig.update_layout(
         template="plotly_white",
@@ -906,7 +924,13 @@ def update_wing_distribution(species_codes, start_date, end_date):
     df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
     # Remove NA and zero values (incorrect measurements)
     df = df[(df["wing_length"].notna()) & (df["wing_length"] > 0)]
-    
+
+    # Clip each species to the 1.5×IQR fence to remove outlier tails
+    _q1 = df.groupby("swedish_name")["wing_length"].transform("quantile", 0.25)
+    _q3 = df.groupby("swedish_name")["wing_length"].transform("quantile", 0.75)
+    _iqr = _q3 - _q1
+    df = df[(df["wing_length"] >= _q1 - 1.5 * _iqr) & (df["wing_length"] <= _q3 + 1.5 * _iqr)]
+
     # Create mapping from species_code to swedish_name
     species_name_map = df[['species_code', 'swedish_name']].drop_duplicates().set_index('species_code')['swedish_name'].to_dict()
     
@@ -922,16 +946,18 @@ def update_wing_distribution(species_codes, start_date, end_date):
         lambda x: f"{x}<br>(n={sample_sizes[x]})"
     )
     
-    fig = px.box(
+    fig = px.violin(
         df,
         x="species_label",
         y="wing_length",
         color="species_label",
+        points=False,
         title=t["wing_dist_title"],
         labels={"species_label": t["species_label"], "wing_length": t["wing_mm"]},
         color_discrete_sequence=PASTEL_COLORS,
         category_orders={"species_label": [f"{s}<br>(n={sample_sizes[s]})" for s in species_order]}
     )
+    fig.update_traces(spanmode="hard")
     
     fig.update_layout(
         template="plotly_white",
@@ -1784,8 +1810,8 @@ def update_weekly_heatmap(selected_year, top_n):
 
 @callback(
     Output("weather-timeseries-plot", "figure"),
-    [Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date"),
+    [Input("weather-date-picker", "start_date"),
+     Input("weather-date-picker", "end_date"),
      Input("weather-variable-checklist", "value")]
 )
 def update_weather_timeseries(start_date, end_date, selected_vars):

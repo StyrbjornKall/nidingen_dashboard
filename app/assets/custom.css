@@ -1,0 +1,114 @@
+/* =========================================================
+   Nidingen Bird Ringing Dashboard – Custom Styles
+   ========================================================= */
+
+/* ─── Global reset ─────────────────────────────────────── */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f5f7fa;
+}
+
+/* ─── TOP NAVIGATION BAR (dbc.Tabs styled as navbar) ───── */
+
+/* Stick the entire tabs wrapper to the top of the viewport */
+.top-nav-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 1050;
+}
+
+/* The Bootstrap ul.nav-tabs bar itself */
+.top-nav-tabs > .nav-tabs {
+    background-color: #1c2b3a !important;
+    border-bottom: none !important;
+    padding: 0 28px !important;
+    margin: 0 !important;
+    flex-wrap: nowrap !important;
+    min-height: 54px !important;
+    align-items: stretch !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Individual tab nav-link items */
+.top-nav-tabs > .nav-tabs .nav-item .nav-link {
+    color: rgba(255, 255, 255, 0.65) !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    border-bottom: 3px solid transparent !important;
+    padding: 0 20px !important;
+    height: 54px !important;
+    display: flex !important;
+    align-items: center !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    transition: color 0.15s ease, border-bottom-color 0.15s ease !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+}
+
+.top-nav-tabs > .nav-tabs .nav-item .nav-link:hover {
+    color: rgba(255, 255, 255, 0.95) !important;
+    border-bottom-color: rgba(180, 212, 225, 0.5) !important;
+}
+
+.top-nav-tabs > .nav-tabs .nav-item .nav-link.active {
+    color: #ffffff !important;
+    background-color: transparent !important;
+    border-bottom-color: #B4D4E1 !important;
+    font-weight: 700 !important;
+}
+
+/* Hide the dbc.Tabs tab-content — we use our own content divs */
+.top-nav-tabs .tab-content {
+    display: none !important;
+}
+
+/* ─── FILTER PANEL ─────────────────────────────────────── */
+
+#filter-panel-outer {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+#filter-toggle-btn {
+    font-size: 0.82rem !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+    border-radius: 4px !important;
+}
+
+/* ─── HERO SECTION (Hem tab) ───────────────────────────── */
+
+#content-tab-home {
+    background-image: url('/assets/Nidingen-en-destination.jpg');
+    background-size: cover;
+    background-position: center;
+    min-height: calc(100vh - 54px);
+    display: flex;
+    align-items: flex-end;       /* anchor text to bottom */
+}
+
+#hero-text-block {
+    padding: 6vh 7vw 6vh;
+    max-width: 960px;
+}
+
+/* ─── MAIN CONTENT AREA ────────────────────────────────── */
+
+#main-content-area {
+    min-height: calc(100vh - 54px);
+}
+
+/* Remove outer container padding on content tabs so they fill width cleanly */
+#content-tab-summary-timeseries,
+#content-tab-morpho,
+#content-tab-phenology,
+#content-tab-heatmap,
+#content-tab-weather {
+    background-color: #f5f7fa;
+}
