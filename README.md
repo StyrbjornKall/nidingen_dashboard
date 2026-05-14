@@ -17,6 +17,7 @@ An interactive web dashboard for visualizing and analyzing bird ringing data fro
 
 - Python 3.9 or higher
 - pip package manager
+- For local development the repo uses uv
 
 ### Installation
 

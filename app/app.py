@@ -60,8 +60,10 @@ app = dash.Dash(
     ]
 )
 
-# Database path — override with DUCKDB_PATH env var for deployment
-DB_PATH = os.getenv("DUCKDB_PATH", "/data/bird_ringing.db")
+# Database path — override with DUCKDB_PATH env var for deployment.
+# Default points to the new MDB-sourced database created by
+# app/src/convert_mdb_to_duckdb.py.  The old bird_ringing.db is deprecated.
+DB_PATH = os.getenv("DUCKDB_PATH", "/data/bird_ringing_0016.duckdb")
 
 # Fail fast with a clear message if the database file is missing.
 # This surfaces immediately in the container logs instead of a cryptic
@@ -71,13 +73,14 @@ if not Path(DB_PATH).exists():
         f"\n\n"
         f"  DATABASE NOT FOUND: {DB_PATH!r}\n\n"
         f"  Checklist:\n"
-        f"    1. Did you upload bird_ringing.db into the 'project-vol' folder\n"
-        f"       via the Serve File Manager?\n"
-        f"    2. Is the Storage mount path set to '/project-vol' in\n"
+        f"    1. Run the conversion script to create the database:\n"
+        f"         uv run python app/src/convert_mdb_to_duckdb.py\n"
+        f"    2. Did you upload bird_ringing_0016.duckdb into the 'project-vol'\n"
+        f"       folder via the Serve File Manager?\n"
+        f"    3. Is the Storage mount path set to '/project-vol' in\n"
         f"       Project Settings → Storage?\n"
-        f"    3. Did you select that mount path in the app's Storage field?\n"
         f"    4. Is DUCKDB_PATH correct? Currently: {DB_PATH!r}\n"
-        f"       Expected layout inside the container: /project-vol/bird_ringing.db\n"
+        f"       Expected layout inside the container: /project-vol/bird_ringing_0016.duckdb\n"
     )
 
 # Load initial data for filters

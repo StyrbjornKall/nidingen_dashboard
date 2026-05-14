@@ -2,8 +2,30 @@
 Database manager for bird ringing data using DuckDB.
 
 This module provides functionality to initialize, populate, and manage
-a DuckDB database for bird ringing records. Designed to handle millions
-of records efficiently with support for incremental updates.
+a DuckDB database for bird ringing records.  As of 2026-05 the canonical
+database is **bird_ringing_0016.duckdb**, produced by
+``app/src/convert_mdb_to_duckdb.py`` from the authoritative Access file
+``RingDb0016.mdb``.  The old CSV-based pipeline (initialize_database.py +
+preprocess_raw_data.py) is deprecated.
+
+Key tables in bird_ringing_0016.duckdb
+--------------------------------------
+Native (read from MDB, snake_case columns)
+  ringon        — All new-ringed birds at Nidingen (location = 0016NID)
+  kontr         — Recaptures of Nidingen-ringed birds at Nidingen
+  fynd          — Recoveries reported from elsewhere
+  frring        — Foreign-ringed birds caught at Nidingen
+  signaturer    — Ringer code → full name
+  lokaler       — Location code → coordinates
+  artkod_lookup — RUBIN species code → Swedish common name
+
+Derived / metadata
+  ring_records      — Materialized ringon ∪ kontr with compatibility
+                      columns + TOTAL aggregate rows (used by all
+                      existing query_utils.py queries unchanged)
+  species_metadata  — Taxonomy from Artfakta + eBird
+  weather_data      — SMHI Nidingen A (populate with fetch_smhi_weather.py)
+  weather_data_vinga — SMHI Vinga A (gap-fill source)
 """
 
 import duckdb
@@ -48,10 +70,91 @@ class BirdRingingDB:
         if self.conn:
             self.conn.close()
             
+    def initialize_native_schema(
+        self,
+        mdb_path: Union[str, Path, None] = None,
+    ) -> None:
+        """
+        Ensure all expected tables exist in bird_ringing_0016.duckdb.
+
+        For a fresh database, delegate to ``convert_mdb_to_duckdb.py``
+        (which reads the Access file) rather than this method.  This
+        method is useful for:
+
+        * Adding missing auxiliary tables (species_metadata, weather) to
+          an existing database without re-running the full conversion.
+        * Verifying the database contents after conversion.
+
+        Parameters
+        ----------
+        mdb_path : path-like, optional
+            If provided and the native ringing tables (ringon, kontr …)
+            are absent, the conversion script is invoked automatically.
+        """
+        # ── check which native tables already exist ───────────────────
+        existing = {
+            row[0]
+            for row in self.conn.execute(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema = 'main'"
+            ).fetchall()
+        }
+
+        native_tables = {"ringon", "kontr", "fynd", "frring", "signaturer", "lokaler"}
+        missing_native = native_tables - existing
+
+        if missing_native:
+            if mdb_path is None:
+                print(
+                    "WARNING: Native ringing tables missing from database:\n"
+                    f"  {missing_native}\n"
+                    "Run app/src/convert_mdb_to_duckdb.py to populate them."
+                )
+            else:
+                import subprocess, sys
+                script = Path(__file__).parent / "convert_mdb_to_duckdb.py"
+                print(f"Running conversion script: {script}")
+                subprocess.run(
+                    [sys.executable, str(script),
+                     "--mdb", str(mdb_path),
+                     "--db", str(self.db_path)],
+                    check=True,
+                )
+                return  # conversion script rebuilt everything
+
+        # ── ensure auxiliary tables are present ───────────────────────
+        if "species_metadata" not in existing:
+            self.initialize_species_metadata_schema()
+        if "weather_data" not in existing:
+            self.initialize_weather_schema()
+        if "weather_data_vinga" not in existing:
+            self.initialize_vinga_schema()
+
+        # ── print summary ─────────────────────────────────────────────
+        print("\nDatabase contents:")
+        for tbl in sorted(
+            native_tables
+            | {"ring_records", "artkod_lookup", "species_metadata",
+               "weather_data", "weather_data_vinga"}
+        ):
+            if tbl in existing or tbl in {
+                "ring_records", "artkod_lookup", "species_metadata",
+                "weather_data", "weather_data_vinga",
+            }:
+                try:
+                    n = self.conn.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
+                    print(f"  {tbl:<25} {n:>10,} rows")
+                except Exception:
+                    print(f"  {tbl:<25}   (missing)")
+
     def initialize_schema(self):
         """
         Create the database schema with optimized table structures.
-        
+
+        .. deprecated::
+            This method was used by the old CSV-based pipeline.  For new
+            setups, run ``app/src/convert_mdb_to_duckdb.py`` instead.
+
         Creates tables for:
         - ring_records: Main ringing observations
         - species_metadata: Species information

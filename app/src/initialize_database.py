@@ -1,9 +1,24 @@
 """
-Example script demonstrating how to initialize the database and load data.
+.. deprecated::
+    This script was used to initialize a DuckDB database from preprocessed
+    CSV files (processed_nidingen_data.csv).  It is superseded by the
+    direct MDB → DuckDB conversion pipeline:
 
-This script shows the basic workflow for setting up the bird ringing database
-and loading existing CSV data into DuckDB.
+        uv run python app/src/convert_mdb_to_duckdb.py
+
+    That script reads directly from the authoritative Access database
+    (data/RingDb0016.mdb) and creates data/bird_ringing_0016.duckdb with
+    all original tables plus a compatibility ``ring_records`` table.
+
+    This file is retained for reference only and should not be executed.
 """
+import warnings
+warnings.warn(
+    "initialize_database.py is deprecated. "
+    "Use app/src/convert_mdb_to_duckdb.py instead.",
+    DeprecationWarning,
+    stacklevel=1,
+)
 
 from pathlib import Path
 import sys

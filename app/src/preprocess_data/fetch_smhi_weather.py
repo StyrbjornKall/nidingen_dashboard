@@ -337,14 +337,14 @@ def load_into_db_table(
     Existing rows with the same observation_time are replaced (upsert via
     DELETE + INSERT pattern).
     """
-    sys.path.insert(0, str(Path(__file__).parent))
+    sys.path.insert(0, str(Path(__file__).parent.parent))
     from db_manager import BirdRingingDB
 
     db_path = Path(db_path)
     if not db_path.exists():
         raise FileNotFoundError(
             f"Database not found: {db_path}\n"
-            "Run `python src/initialize_database.py` first."
+            "Run `python app/src/convert_mdb_to_duckdb.py` first."
         )
 
     print(f"\nLoading {len(df):,} rows into '{table_name}' in {db_path.name} …")
@@ -407,7 +407,7 @@ def patch_nidingen_from_vinga(db_path: str) -> None:
     db_path : str
         Path to the DuckDB database.
     """
-    sys.path.insert(0, str(Path(__file__).parent))
+    sys.path.insert(0, str(Path(__file__).parent.parent))
     from db_manager import BirdRingingDB
 
     db_path_obj = Path(db_path)
@@ -499,8 +499,8 @@ def main() -> None:
     )
     parser.add_argument(
         "--db-path",
-        default=str(Path(__file__).parent.parent / "data" / "bird_ringing.db"),
-        help="Path to the DuckDB database (default: data/bird_ringing.db)",
+        default=str(Path(__file__).parent.parent.parent.parent / "data" / "bird_ringing_0016.duckdb"),
+        help="Path to the DuckDB database (default: data/bird_ringing_0016.duckdb)",
     )
     parser.add_argument(
         "--dry-run",
