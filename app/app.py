@@ -6,7 +6,6 @@ It provides interactive visualizations for exploring bird observation data.
 """
 
 import os
-import json
 
 import pandas  # noqa: F401 – must be imported first to avoid partial-init errors with pandas 3.x
 import dash
@@ -22,10 +21,66 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Load translation locales
-locales_path = Path(__file__).parent / "assets" / "locales.json"
-with open(locales_path, "r", encoding="utf-8") as f:
-    LOCALES = json.load(f)
+# Swedish UI strings — all user-visible text hardcoded in Swedish.
+T = {
+    "title": "Nidingens Fågelstation",
+    "subtitle": "Historisk Ringmärkningsdata från Nidingen Fågelstation · Data från {start} till {end}",
+    "filters_title": "Datafilter",
+    "select_species": "Välj art",
+    "species_placeholder": "Välj en eller flera arter...",
+    "time_aggregation": "Tidsaggregering",
+    "date_range": "Datumintervall",
+    "plot_type": "Diagramtyp",
+    "plot_bar": "Stapeldiagram",
+    "plot_line": "Linjediagram",
+    "summary_total_obs": "Totala observationer",
+    "summary_unique_species": "Unika arter",
+    "summary_unique_inds": "Unika individer",
+    "summary_date_range": "Datumintervall",
+    "weekly_weight_header": "Veckovikt över året",
+    "select_year": "Välj år",
+    "yearly_weight_header": "Årlig medelviktstrend",
+    "pheno_header": "Analys av flyttningsfenologi",
+    "pheno_desc": "Utforska flyttningsmönster under året. Fåglar fångas under vår- (norrut) och höstflyttningen (söderut).",
+    "weather_header": "Väderanalys",
+    "weather_desc": "Meteorologiska observationer från SMHI Nidingen A (station 71190) kompletterade med Vinga A (station 71380) där Nidingen saknar data.",
+    "please_select_species": "Vänligen välj minst en art",
+    "please_select_variable": "Vänligen välj minst en variabel",
+    "no_data": "Ingen data tillgänglig",
+    "species_obs_over_time": "Observationer över tid",
+    "num_obs": "Antal observationer",
+    "date_label": "Datum",
+    "species_label": "Art",
+    "weight_dist_title": "Viktfördelning per art",
+    "weight_g": "Vikt (g)",
+    "wing_dist_title": "Vinglängdsfördelning per art",
+    "wing_mm": "Vinglängd (mm)",
+    "age_dist_title": "Åldersfördelning per art",
+    "percentage": "Andel (%)",
+    "age_class": "Åldersklass",
+    "fat_dist_title": "Genomsnittlig fettpoäng per art<br><sub>Felstaplar visar standardavvikelse</sub>",
+    "fat_score": "Fettpoäng (0-10)",
+    "week_of_year": "Vecka",
+    "avg_all_years": "Genomsnitt (Alla år)",
+    "weekly_weight_title": "Veckovis medelvikt per art",
+    "yearly_weight_title": "Årlig medelvikt per art ({start}\u2013{end})<br><sub>Skuggat område = fullt min\u2013max intervall per år</sub>",
+    "year_label": "År",
+    "weekly_obs_pattern": "Veckovis observationsmönster ({start}-{end} medel)<br><sub>Visar både vår- och höstflyttningstoppar</sub>",
+    "avg_weekly_obs": "Genomsnittliga veckovisa observationer",
+    "spring_mig": "Vårflyttning",
+    "autumn_mig": "Höstflyttning",
+    "daily_obs_dist": "Daglig observationsfördelning ({start}-{end})<br><sub>Varje rad visar tidsfördelningen för en art</sub>",
+    "day_of_year": "Dag på året",
+    "count_label": "Antal",
+    "spring_vs_autumn": "Vår- vs Höstflyttningstiming ({start}-{end})<br><sub>Punkter visar mediandag, felstaplar visar kvartilavstånd</sub>",
+    "month_jan": "Jan", "month_feb": "Feb", "month_mar": "Mar", "month_apr": "Apr",
+    "month_may": "Maj", "month_jun": "Jun", "month_jul": "Jul", "month_aug": "Aug",
+    "month_sep": "Sep", "month_oct": "Okt", "month_nov": "Nov", "month_dec": "Dec",
+    "avg_all_years_label": "Genomsnitt (Alla år)",
+    "heatmap_legend": "% av totala<br>observationer",
+    "weekly_heatmap_title": "Veckovisa observationsmönster - {suffix}",
+    "footer_text": "Nidingens Fågelstations Dashboard",
+}
 
 # Add src to path
 src_path = Path(__file__).parent / "src"
@@ -53,7 +108,7 @@ PASTEL_COLORS = [
 app = dash.Dash(
     __name__,
     external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
-    title="Nidingen Bird Ringing Station",
+    title="Nidingens Fågelstation",
     update_title="Loading...",
     meta_tags=[
         {"name": "viewport", "content": "width=device-width, initial-scale=1"}
@@ -147,43 +202,23 @@ species_options = [
 ]
 
 # Year options for heatmap (including "All Years" option)
-year_options = [{"label": "Average (All Years)", "value": "all"}] + [
+year_options = [{"label": "Genomsnitt (Alla år)", "value": "all"}] + [
     {"label": str(year), "value": year} for year in available_years
 ]
 
 # App Layout
 app.layout = dbc.Container([
-    # Language store (hidden, stores current language state)
-    dcc.Store(id="language-store", data="sv"),
-    
-    # Header with Language Toggle
+    # Header
     dbc.Row([
         dbc.Col([
             html.Div([
-                # Language toggle button in top right
-                dbc.Button(
-                    "SV/EN",
-                    id="language-toggle-btn",
-                    className="btn-sm",
-                    color="#ebe8c6",
-                    style={
-                        "position": "fixed",
-                        "top": "20px",
-                        "right": "20px",
-                        "zIndex": "1000",
-                        "fontSize": "0.9rem",
-                        "fontWeight": "bold",
-                        "padding": "0.5rem 1rem"
-                    }
+                html.H1(
+                    [html.I(className="fas fa-dove me-3"), "Nidingens Fågelstation"],
+                    className="text-center mb-3",
+                    style={"color": "#2c3e50", "fontWeight": "600", "fontSize": "2.5rem"}
                 ),
-                
-                html.H1(id="page-title", className="text-center mb-3", style={
-                    "color": "#2c3e50",
-                    "fontWeight": "600",
-                    "fontSize": "2.5rem"
-                }),
                 html.P(
-                    id="page-subtitle",
+                    f"Historisk Ringmärkningsdata från Nidingen Fågelstation · Data från {date_range[0]} till {date_range[1]}",
                     className="text-center text-muted mb-0",
                     style={"fontSize": "1.1rem"}
                 ),
@@ -198,32 +233,32 @@ app.layout = dbc.Container([
     # Filters Card
     dbc.Card([
         dbc.CardBody([
-            html.H5(id="filters-title", className="mb-4", style={"color": "#495057"}, children=[
+            html.H5([
                 html.I(className="fas fa-filter me-2"),
-                "Data Filters"
-            ]),
+                "Datafilter"
+            ], className="mb-4", style={"color": "#495057"}),
             dbc.Row([
                 dbc.Col([
-                    html.Label(id="label-select-species", className="fw-bold mb-2", style={"color": "#6c757d"}, children="Select Species"),
+                    html.Label("Välj art", className="fw-bold mb-2", style={"color": "#6c757d"}),
                     dcc.Dropdown(
                         id="species-dropdown",
                         options=species_options,
                         value=[opt["value"] for opt in species_options if opt["value"] in ("TOTAL", "RÖHAK", "LÖSÅN")][:3] or [],
                         multi=True,
-                        placeholder="Select one or more species...",
+                        placeholder="Välj en eller flera arter...",
                         className="mb-3"
                     )
                 ], md=6),
                 
                 dbc.Col([
-                    html.Label(id="label-time-agg", className="fw-bold mb-2", style={"color": "#6c757d"}, children="Time Aggregation"),
+                    html.Label("Tidsaggregering", className="fw-bold mb-2", style={"color": "#6c757d"}),
                     dcc.Dropdown(
                         id="aggregation-dropdown",
                         options=[
-                            {"label": "📅 Daily", "value": "daily"},
-                            {"label": "📊 Weekly", "value": "weekly"},
-                            {"label": "📈 Monthly", "value": "monthly"},
-                            {"label": "📆 Yearly", "value": "yearly"}
+                            {"label": "📅 Dagligen",   "value": "daily"},
+                            {"label": "📊 Veckovis",  "value": "weekly"},
+                            {"label": "📈 Månadsvis", "value": "monthly"},
+                            {"label": "📆 Årligen",   "value": "yearly"}
                         ],
                         value="yearly",
                         clearable=False,
@@ -234,7 +269,7 @@ app.layout = dbc.Container([
             
             dbc.Row([
                 dbc.Col([
-                    html.Label(id="label-date-range", className="fw-bold mb-2", style={"color": "#6c757d"}, children="Date Range"),
+                    html.Label("Datumintervall", className="fw-bold mb-2", style={"color": "#6c757d"}),
                     dcc.DatePickerRange(
                         id="date-range-picker",
                         start_date=date_range[0],
@@ -252,16 +287,16 @@ app.layout = dbc.Container([
         dbc.CardBody([
             dbc.Tabs([
                 # Summary Tab (formerly Time Series)
-                dbc.Tab(label="Summary", tab_id="tab-summary-timeseries", children=[
+                dbc.Tab(label="📊 Sammanfattning", tab_id="tab-summary-timeseries", children=[
                     html.Div([
                         dbc.Row([
                             dbc.Col([
-                                html.Label(id="label-plot-type", className="fw-bold me-3", style={"color": "#6c757d"}),
+                                html.Label("Diagramtyp", className="fw-bold me-3", style={"color": "#6c757d"}),
                                 dbc.RadioItems(
                                     id="plot-type-toggle",
                                     options=[
-                                        {"label": html.Span(id="opt-bar-chart"), "value": "bar"},
-                                        {"label": html.Span(id="opt-line-chart"), "value": "line"}
+                                        {"label": html.Span("Stapeldiagram"), "value": "bar"},
+                                        {"label": html.Span("Linjediagram"), "value": "line"}
                                     ],
                                     value="bar",
                                     inline=True,
@@ -283,7 +318,7 @@ app.layout = dbc.Container([
                 ]),
                 
                 # Morphometrics Tab
-                dbc.Tab(label="📊 Morphometrics", tab_id="tab-morpho", children=[
+                dbc.Tab(label="📊 Morfometri", tab_id="tab-morpho", children=[
                     html.Div([
                         # First row: Weight and Wing Length distributions
                         dbc.Row([
@@ -327,14 +362,14 @@ app.layout = dbc.Container([
 
                         # Third row: Weekly weight over the year
                         html.Div([
-                            html.H5(id="header-weekly-weight", children=[
+                            html.H5([
                                 html.I(className="fas fa-weight-hanging me-2"),
-                                "Weekly Weight Over the Year"
+                                "Veckovikt över året"
                             ], className="mb-3", style={"color": "#495057"}),
                             dbc.Row([
                                 dbc.Col([
                                     html.Label(
-                                        id="label-select-year",
+                                        "Välj år",
                                         className="fw-bold mb-2",
                                         style={"color": "#6c757d"}
                                     ),
@@ -356,9 +391,9 @@ app.layout = dbc.Container([
 
                         # Fourth row: Yearly mean weight trend
                         html.Div([
-                            html.H5(id="header-yearly-weight", children=[
+                            html.H5([
                                 html.I(className="fas fa-chart-line me-2"),
-                                "Yearly Mean Weight Trend"
+                                "Årlig medelviktstrend"
                             ], className="mb-3", style={"color": "#495057"}),
                             dbc.Spinner(
                                 dcc.Graph(id="weight-yearly-plot", style={"height": "450px"}),
@@ -371,11 +406,11 @@ app.layout = dbc.Container([
                 ]),
                 
                 # Phenology Tab
-                dbc.Tab(label="⏱️ Phenology", tab_id="tab-phenology", children=[
+                dbc.Tab(label="⏱️ Fenologi", tab_id="tab-phenology", children=[
                     html.Div([
                         html.Div([
-                            html.H4(id="header-pheno-main"),
-                            html.P(id="desc-pheno", className="text-muted mb-4"),
+                            html.H4("Analys av flyttningsfenologi"),
+                            html.P("Utforska flyttningsmönster under året. Fåglar fångas under vår- (norrut) och höstflyttningen (söderut).", className="text-muted mb-4"),
                         ], className="mt-3"),
                         
                         # Weekly Distribution
@@ -408,11 +443,11 @@ app.layout = dbc.Container([
                 ]),
                 
                 # Weekly Heatmap Tab
-                dbc.Tab(label="📈 Weekly Heatmap", tab_id="tab-heatmap", children=[
+                dbc.Tab(label="📈 Veckovis Värmekarta", tab_id="tab-heatmap", children=[
                     html.Div([
                         dbc.Row([
                             dbc.Col([
-                                html.Label("Select Year", className="fw-bold mb-2", style={"color": "#6c757d"}),
+                                html.Label("Välj år", className="fw-bold mb-2", style={"color": "#6c757d"}),
                                 dcc.Dropdown(
                                     id="heatmap-year-dropdown",
                                     options=year_options,
@@ -422,15 +457,15 @@ app.layout = dbc.Container([
                                 )
                             ], width="auto"),
                             dbc.Col([
-                                html.Label("Number of species", className="fw-bold mb-2", style={"color": "#6c757d"}),
+                                html.Label("Antal arter", className="fw-bold mb-2", style={"color": "#6c757d"}),
                                 dcc.Dropdown(
                                     id="heatmap-top-n-dropdown",
                                     options=[
-                                        {"label": "10",  "value": 10},
-                                        {"label": "30",  "value": 30},
-                                        {"label": "50",  "value": 50},
-                                        {"label": "100", "value": 100},
-                                        {"label": "All", "value": 0},
+                                        {"label": "10",   "value": 10},
+                                        {"label": "30",   "value": 30},
+                                        {"label": "50",   "value": 50},
+                                        {"label": "100",  "value": 100},
+                                        {"label": "Alla", "value": 0},
                                     ],
                                     value=50,
                                     clearable=False,
@@ -447,11 +482,11 @@ app.layout = dbc.Container([
                 ]),
                 
                 # Weather Analysis Tab
-                dbc.Tab(label="🌤️ Weather Analysis", tab_id="tab-weather", children=[
+                dbc.Tab(label="🌤️ Väderanalys", tab_id="tab-weather", children=[
                     html.Div([
                         html.Div([
-                            html.H4(id="header-weather-main"),
-                            html.P(id="desc-weather", className="text-muted mb-3"),
+                            html.H4("Väderanalys"),
+                            html.P("Meteorologiska observationer från SMHI Nidingen A (station 71190) kompletterade med Vinga A (station 71380) där Nidingen saknar data.", className="text-muted mb-3"),
                         ], className="mt-3"),
 
                         # Time series plot
@@ -468,20 +503,20 @@ app.layout = dbc.Container([
                         dbc.Row([
                             dbc.Col([
                                 html.Label(
-                                    "Select variables to display",
+                                    "Välj variabler att visa",
                                     className="fw-bold mb-2",
                                     style={"color": "#6c757d"}
                                 ),
                                 dbc.Checklist(
                                     id="weather-variable-checklist",
                                     options=[
-                                        {"label": "Temperature (mean / min / max) — Nidingen A",    "value": "temperature"},
-                                        {"label": "Wind speed & gusts — Nidingen A",                 "value": "wind"},
-                                        {"label": "Precipitation — Nidingen A (≤2007) + Vinga A (2007→)", "value": "precipitation"},
-                                        {"label": "Cloud cover — Nidingen A",                       "value": "cloud"},
-                                        {"label": "Humidity — Nidingen A",                           "value": "humidity"},
-                                        {"label": "Pressure — Nidingen A (≤1995) + Vinga A (1996→)", "value": "pressure"},
-                                        {"label": "Visibility (m) — Nidingen A (≤2007) + Vinga A (2007→)", "value": "visibility"},
+                                        {"label": "🌡️ Temperatur (medel / min / max) — Nidingen A",              "value": "temperature"},
+                                        {"label": "💨 Vindhastighet & byvind — Nidingen A",                       "value": "wind"},
+                                        {"label": "🌧️ Nederbörd — Nidingen A (≤2007) + Vinga A (2007→)",      "value": "precipitation"},
+                                        {"label": "☁️ Molnighet — Nidingen A",                                    "value": "cloud"},
+                                        {"label": "💧 Luftfuktighet — Nidingen A",                               "value": "humidity"},
+                                        {"label": "🔵 Lufttryck — Nidingen A (≤1995) + Vinga A (1996→)",         "value": "pressure"},
+                                        {"label": "👁️ Sikt (m) — Nidingen A (≤2007) + Vinga A (2007→)",         "value": "visibility"},
                                     ],
                                     value=["temperature", "wind", "precipitation", "visibility", "humidity", "cloud", "pressure"],
                                     inline=False,
@@ -502,7 +537,10 @@ app.layout = dbc.Container([
     dbc.Row([
         dbc.Col([
             html.Hr(className="my-4"),
-            html.P(id="footer-text", className="text-muted small")
+            html.P(
+                "Nidingens Fågelstations Dashboard",
+                className="text-muted small"
+            )
         ])
     ])
 ], fluid=True, className="py-4", style={"backgroundColor": "#f5f7fa"})
@@ -515,12 +553,11 @@ app.layout = dbc.Container([
      Input("aggregation-dropdown", "value"),
      Input("date-range-picker", "start_date"),
      Input("date-range-picker", "end_date"),
-     Input("plot-type-toggle", "value"),
-     Input("language-store", "data")]
+     Input("plot-type-toggle", "value")]
 )
-def update_time_series(species_codes, aggregation, start_date, end_date, plot_type, language):
+def update_time_series(species_codes, aggregation, start_date, end_date, plot_type):
     """Update time series plot based on filters."""
-    t = LOCALES[language]
+    t = T
     
     if not species_codes:
         return go.Figure().add_annotation(
@@ -636,12 +673,11 @@ def update_time_series(species_codes, aggregation, start_date, end_date, plot_ty
     Output("summary-stats", "children"),
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date"),
-     Input("language-store", "data")]
+     Input("date-range-picker", "end_date")]
 )
-def update_summary(species_codes, start_date, end_date, language):
+def update_summary(species_codes, start_date, end_date):
     """Update summary statistics."""
-    t = LOCALES[language]
+    t = T
     # Convert date strings to proper date format for comparison
     if isinstance(start_date, str):
         start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
@@ -791,12 +827,11 @@ def update_summary(species_codes, start_date, end_date, language):
     Output("weight-distribution", "figure"),
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date"),
-     Input("language-store", "data")]
+     Input("date-range-picker", "end_date")]
 )
-def update_weight_distribution(species_codes, start_date, end_date, language):
+def update_weight_distribution(species_codes, start_date, end_date):
     """Update weight distribution plot."""
-    t = LOCALES[language]
+    t = T
     
     if not species_codes:
         return go.Figure()
@@ -853,12 +888,11 @@ def update_weight_distribution(species_codes, start_date, end_date, language):
     Output("wing-length-distribution", "figure"),
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date"),
-     Input("language-store", "data")]
+     Input("date-range-picker", "end_date")]
 )
-def update_wing_distribution(species_codes, start_date, end_date, language):
+def update_wing_distribution(species_codes, start_date, end_date):
     """Update wing length distribution plot."""
-    t = LOCALES[language]
+    t = T
     
     if not species_codes:
         return go.Figure()
@@ -915,12 +949,11 @@ def update_wing_distribution(species_codes, start_date, end_date, language):
     Output("age-distribution", "figure"),
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date"),
-     Input("language-store", "data")]
+     Input("date-range-picker", "end_date")]
 )
-def update_age_distribution(species_codes, start_date, end_date, language):
+def update_age_distribution(species_codes, start_date, end_date):
     """Update age distribution plot showing percentage of age classes per species."""
-    t = LOCALES[language]
+    t = T
     
     if not species_codes:
         return go.Figure()
@@ -1019,12 +1052,11 @@ def update_age_distribution(species_codes, start_date, end_date, language):
     Output("fat-score-distribution", "figure"),
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date"),
-     Input("language-store", "data")]
+     Input("date-range-picker", "end_date")]
 )
-def update_fat_score_distribution(species_codes, start_date, end_date, language):
+def update_fat_score_distribution(species_codes, start_date, end_date):
     """Update fat score distribution plot."""
-    t = LOCALES[language]
+    t = T
     
     if not species_codes:
         return go.Figure()
@@ -1118,12 +1150,11 @@ def update_fat_score_distribution(species_codes, start_date, end_date, language)
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
      Input("date-range-picker", "end_date"),
-     Input("weight-weekly-year-dropdown", "value"),
-     Input("language-store", "data")]
+     Input("weight-weekly-year-dropdown", "value")]
 )
-def update_weight_weekly(species_codes, start_date, end_date, selected_year, language):
+def update_weight_weekly(species_codes, start_date, end_date, selected_year):
     """Weekly mean weight over the year, one line per species."""
-    t = LOCALES[language]
+    t = T
     
     if not species_codes:
         return go.Figure()
@@ -1220,12 +1251,11 @@ def update_weight_weekly(species_codes, start_date, end_date, selected_year, lan
     Output("weight-yearly-plot", "figure"),
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date"),
-     Input("language-store", "data")]
+     Input("date-range-picker", "end_date")]
 )
-def update_weight_yearly(species_codes, start_date, end_date, language):
+def update_weight_yearly(species_codes, start_date, end_date):
     """Yearly mean (± min/max) weight trend per species."""
-    t = LOCALES[language]
+    t = T
     
     if not species_codes:
         return go.Figure()
@@ -1318,12 +1348,11 @@ def update_weight_yearly(species_codes, start_date, end_date, language):
     Output("phenology-weekly-plot", "figure"),
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date"),
-     Input("language-store", "data")]
+     Input("date-range-picker", "end_date")]
 )
-def update_phenology_weekly(species_codes, start_date, end_date, language):
+def update_phenology_weekly(species_codes, start_date, end_date):
     """Update weekly phenology plot showing migration patterns."""
-    t = LOCALES[language]
+    t = T
     
     if not species_codes:
         return go.Figure()
@@ -1421,12 +1450,11 @@ def update_phenology_weekly(species_codes, start_date, end_date, language):
     Output("phenology-ridgeline-plot", "figure"),
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date"),
-     Input("language-store", "data")]
+     Input("date-range-picker", "end_date")]
 )
-def update_phenology_ridgeline(species_codes, start_date, end_date, language):
+def update_phenology_ridgeline(species_codes, start_date, end_date):
     """Update ridgeline plot showing daily distribution by species."""
-    t = LOCALES[language]
+    t = T
     
     if not species_codes:
         return go.Figure()
@@ -1516,12 +1544,11 @@ def update_phenology_ridgeline(species_codes, start_date, end_date, language):
     Output("phenology-seasonal-plot", "figure"),
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date"),
-     Input("language-store", "data")]
+     Input("date-range-picker", "end_date")]
 )
-def update_phenology_seasonal(species_codes, start_date, end_date, language):
+def update_phenology_seasonal(species_codes, start_date, end_date):
     """Update spring vs autumn migration comparison plot."""
-    t = LOCALES[language]
+    t = T
     
     if not species_codes:
         return go.Figure()
@@ -1625,12 +1652,11 @@ def update_phenology_seasonal(species_codes, start_date, end_date, language):
 @callback(
     Output("weekly-heatmap", "figure"),
     [Input("heatmap-year-dropdown", "value"),
-     Input("heatmap-top-n-dropdown", "value"),
-     Input("language-store", "data")]
+     Input("heatmap-top-n-dropdown", "value")]
 )
-def update_weekly_heatmap(selected_year, top_n, language):
+def update_weekly_heatmap(selected_year, top_n):
     """Update weekly heatmap showing normalized observations per species."""
-    t = LOCALES[language]
+    t = T
     
     with BirdRingingDB(DB_PATH, read_only=True) as db:
         # Determine if we're showing all years or a specific year
@@ -1760,17 +1786,16 @@ def update_weekly_heatmap(selected_year, top_n, language):
     Output("weather-timeseries-plot", "figure"),
     [Input("date-range-picker", "start_date"),
      Input("date-range-picker", "end_date"),
-     Input("weather-variable-checklist", "value"),
-     Input("language-store", "data")]
+     Input("weather-variable-checklist", "value")]
 )
-def update_weather_timeseries(start_date, end_date, selected_vars, language):
+def update_weather_timeseries(start_date, end_date, selected_vars):
     """Update the weather time series plot for the selected date range and variables."""
-    t = LOCALES[language]
-    
+    t = T
+
     if not selected_vars:
         fig = go.Figure()
         fig.add_annotation(
-            text=t.get("please_select_species", "Please select at least one variable"),
+            text="Vänligen välj minst en variabel",
             showarrow=False,
             font={"size": 16, "color": "#95a5a6"},
             xref="paper", yref="paper", x=0.5, y=0.5
@@ -2041,67 +2066,6 @@ def update_weather_timeseries(start_date, end_date, selected_vars, language):
         annotation.update(font=dict(size=13, color="#495057"), xanchor="left", x=0)
 
     return fig
-
-
-# Language Toggle Callback
-@callback(
-    Output("language-store", "data"),
-    Input("language-toggle-btn", "n_clicks"),
-    State("language-store", "data"),
-    prevent_initial_call=True
-)
-def toggle_language(n_clicks, current_language):
-    """Toggle between Swedish and English."""
-    return "en" if current_language == "sv" else "sv"
-
-
-# Update Page Title and Subtitle
-@callback(
-    [Output("page-title", "children"),
-     Output("page-subtitle", "children"),
-     Output("filters-title", "children"),
-     Output("label-select-species", "children"),
-     Output("label-time-agg", "children"),
-     Output("label-date-range", "children"),
-     Output("species-dropdown", "placeholder"),
-     Output("label-plot-type", "children"),
-     Output("opt-bar-chart", "children"),
-     Output("opt-line-chart", "children"),
-     Output("header-weekly-weight", "children"),
-     Output("label-select-year", "children"),
-     Output("header-yearly-weight", "children"),
-     Output("header-pheno-main", "children"),
-     Output("desc-pheno", "children"),
-     Output("header-weather-main", "children"),
-     Output("desc-weather", "children"),
-     Output("footer-text", "children")],
-    Input("language-store", "data")
-)
-def update_header_and_filters(language):
-    """Update all static text elements based on language."""
-    t = LOCALES[language]
-    subtitle = t["subtitle"].format(start=date_range[0], end=date_range[1])
-    
-    return (
-        [html.I(className="fas fa-dove me-3"), t["title"]],
-        subtitle,
-        [html.I(className="fas fa-filter me-2"), t["filters_title"]],
-        t["select_species"],
-        t["time_aggregation"],
-        t["date_range"],
-        t["species_placeholder"],
-        t.get("plot_type", "Plot Type"),
-        t.get("plot_bar", "Bar Chart"),
-        t.get("plot_line", "Line Chart"),
-        [html.I(className="fas fa-weight-hanging me-2"), t.get("weekly_weight_header", "Weekly Weight Over the Year")],
-        t.get("select_year", "Select Year"),
-        [html.I(className="fas fa-chart-line me-2"), t.get("yearly_weight_header", "Yearly Mean Weight Trend")],
-        t.get("pheno_header", "Migration Phenology Analysis"),
-        t.get("pheno_desc", "Explore migration patterns throughout the year. Birds are captured during spring (northward) and autumn (southward) migration periods."),
-        t.get("weather_header", "Weather Analysis"),
-        t.get("weather_desc", "Meteorological observations from SMHI Nidingen A (station 71190) supplemented by Vinga A (station 71380) where Nidingen lacks data."),
-        f"{t.get('dashboard', 'Nidingen Bird Ringing Station Dashboard')} · {html.A(t.get('view_github', 'View on GitHub'), href='#', className='text-decoration-none')} · {t.get('built_with', 'Built with Dash & Plotly')}"
-    )
 
 
 # Expose Flask server for gunicorn: `gunicorn app:server`
