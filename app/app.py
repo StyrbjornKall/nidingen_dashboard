@@ -21,66 +21,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Swedish UI strings — all user-visible text hardcoded in Swedish.
-T = {
-    "title": "Nidingens Fågelstation",
-    "subtitle": "Historisk Ringmärkningsdata från Nidingen Fågelstation · Data från {start} till {end}",
-    "filters_title": "Datafilter",
-    "select_species": "Välj art",
-    "species_placeholder": "Välj en eller flera arter...",
-    "time_aggregation": "Tidsaggregering",
-    "date_range": "Datumintervall",
-    "plot_type": "Diagramtyp",
-    "plot_bar": "Stapeldiagram",
-    "plot_line": "Linjediagram",
-    "summary_total_obs": "Totala observationer",
-    "summary_unique_species": "Unika arter",
-    "summary_unique_inds": "Unika individer",
-    "summary_date_range": "Datumintervall",
-    "weekly_weight_header": "Veckovikt över året",
-    "select_year": "Välj år",
-    "yearly_weight_header": "Årlig medelviktstrend",
-    "pheno_header": "Analys av flyttningsfenologi",
-    "pheno_desc": "Utforska flyttningsmönster under året. Fåglar fångas under vår- (norrut) och höstflyttningen (söderut).",
-    "weather_header": "Väderanalys",
-    "weather_desc": "Meteorologiska observationer från SMHI Nidingen A (station 71190) kompletterade med Vinga A (station 71380) där Nidingen saknar data.",
-    "please_select_species": "Vänligen välj minst en art",
-    "please_select_variable": "Vänligen välj minst en variabel",
-    "no_data": "Ingen data tillgänglig",
-    "species_obs_over_time": "Observationer över tid",
-    "num_obs": "Antal observationer",
-    "date_label": "Datum",
-    "species_label": "Art",
-    "weight_dist_title": "Viktfördelning per art",
-    "weight_g": "Vikt (g)",
-    "wing_dist_title": "Vinglängdsfördelning per art",
-    "wing_mm": "Vinglängd (mm)",
-    "age_dist_title": "Åldersfördelning per art",
-    "percentage": "Andel (%)",
-    "age_class": "Åldersklass",
-    "fat_dist_title": "Genomsnittlig fettpoäng per art<br><sub>Felstaplar visar standardavvikelse</sub>",
-    "fat_score": "Fettpoäng (0-10)",
-    "week_of_year": "Vecka",
-    "avg_all_years": "Genomsnitt (Alla år)",
-    "weekly_weight_title": "Veckovis medelvikt per art",
-    "yearly_weight_title": "Årlig medelvikt per art ({start}\u2013{end})<br><sub>Skuggat område = fullt min\u2013max intervall per år</sub>",
-    "year_label": "År",
-    "weekly_obs_pattern": "Veckovis observationsmönster ({start}-{end} medel)<br><sub>Visar både vår- och höstflyttningstoppar</sub>",
-    "avg_weekly_obs": "Genomsnittliga veckovisa observationer",
-    "spring_mig": "Vårflyttning",
-    "autumn_mig": "Höstflyttning",
-    "daily_obs_dist": "Daglig observationsfördelning ({start}-{end})<br><sub>Varje rad visar tidsfördelningen för en art</sub>",
-    "day_of_year": "Dag på året",
-    "count_label": "Antal",
-    "spring_vs_autumn": "Vår- vs Höstflyttningstiming ({start}-{end})<br><sub>Punkter visar mediandag, felstaplar visar kvartilavstånd</sub>",
-    "month_jan": "Jan", "month_feb": "Feb", "month_mar": "Mar", "month_apr": "Apr",
-    "month_may": "Maj", "month_jun": "Jun", "month_jul": "Jul", "month_aug": "Aug",
-    "month_sep": "Sep", "month_oct": "Okt", "month_nov": "Nov", "month_dec": "Dec",
-    "avg_all_years_label": "Genomsnitt (Alla år)",
-    "heatmap_legend": "% av totala<br>observationer",
-    "weekly_heatmap_title": "Veckovisa observationsmönster - {suffix}",
-    "footer_text": "Nidingens Fågelstations Dashboard",
-}
+
 
 # Add src to path
 src_path = Path(__file__).parent / "src"
@@ -251,10 +192,10 @@ app.layout = html.Div([
                                 dcc.Dropdown(
                                     id="aggregation-dropdown",
                                     options=[
-                                        {"label": "📅 Dagligen",   "value": "daily"},
-                                        {"label": "📊 Veckovis",  "value": "weekly"},
-                                        {"label": "📈 Månadsvis", "value": "monthly"},
-                                        {"label": "📆 Årligen",   "value": "yearly"},
+                                        {"label": "Dagligen",   "value": "daily"},
+                                        {"label": "Veckovis",  "value": "weekly"},
+                                        {"label": "Månadsvis", "value": "monthly"},
+                                        {"label": "Årligen",   "value": "yearly"},
                                     ],
                                     value="yearly",
                                     clearable=False,
@@ -286,9 +227,9 @@ app.layout = html.Div([
         html.Div([
             html.Div([
                 html.H1(
-                    "NIDINGEN FÅGELSTATION DATA DASHBOARD",
+                    "NIDINGENS FÅGELSTATION DASHBOARD",
                     style={
-                        "color": "#000000",
+                        "color": "#E7E7E7",
                         "fontWeight": "900",
                         "fontSize": "clamp(2rem, 4.5vw, 5rem)",
                         "textAlign": "left",
@@ -297,12 +238,26 @@ app.layout = html.Div([
                         "margin": "0",
                     }
                 ),
+                html.H2(
+                    "Historisk ringmärkningsdata och återfynd från Nidingen Fågelstation. Daglig upplösning från 1980-talet till idag-",
+                    style={
+                        "color": "#E7E7E7",
+                        "fontWeight": "400",
+                        "fontSize": "clamp(0.85rem, 1.5vw, 1.6rem)",
+                        "textAlign": "left",
+                        "lineHeight": "1.4",
+                        "letterSpacing": "0.01em",
+                        "margin": "0",
+                        "maxWidth": "none",
+                    }
+                ),
             ], id="hero-text-block"),
         ], id="content-tab-home"),
 
         # ── Sammanfattning tab ────────────────────────────────────────────
         html.Div([
             dbc.Container([
+                html.Div(id="summary-stats", className="mb-4"),
                 dbc.Row([
                     dbc.Col([
                         html.Label("Diagramtyp", className="fw-bold me-3",
@@ -324,13 +279,25 @@ app.layout = html.Div([
                     color="primary", type="border",
                     spinner_style={"width": "3rem", "height": "3rem"},
                 ),
-                html.Div(id="summary-stats", className="mt-4 p-2"),
             ], fluid=True, className="py-4"),
         ], id="content-tab-summary-timeseries", style={"display": "none"}),
 
         # ── Morfometri tab ────────────────────────────────────────────────
         html.Div([
             dbc.Container([
+                html.Div([
+                    html.H5([html.I(className="fas fa-circle me-2"),
+                             "Vikt vs. vinglängd per art"],
+                            className="mb-3", style={"color": "#495057"}),
+                    html.P(
+                        "Varje bubbla är en art. Storlek = genomsnittliga fångster per år (log-skalat). "
+                        "Färg = taxonomisk familj (grå = okänd).",
+                        className="text-muted small mb-3"
+                    ),
+                    dbc.Spinner(dcc.Graph(id="morpho-bubble-chart",
+                                          style={"height": "600px"}),
+                                color="primary", type="border"),
+                ], className="mb-4"),
                 dbc.Row([
                     dbc.Col([
                         dbc.Spinner(dcc.Graph(id="weight-distribution",
@@ -355,53 +322,6 @@ app.layout = html.Div([
                                     color="primary", type="border")
                     ], md=6),
                 ]),
-                html.Hr(className="my-4"),
-                html.Div([
-                    html.H5([html.I(className="fas fa-weight-hanging me-2"),
-                             "Veckovikt över året"],
-                            className="mb-3", style={"color": "#495057"}),
-                    dbc.Row([
-                        dbc.Col([
-                            html.Label("Välj år", className="fw-bold mb-2",
-                                       style={"color": "#6c757d"}),
-                            dcc.Dropdown(
-                                id="weight-weekly-year-dropdown",
-                                options=year_options,
-                                value="all",
-                                clearable=False,
-                                style={"width": "260px"},
-                            ),
-                        ], width="auto"),
-                    ], className="mb-3"),
-                    dbc.Spinner(dcc.Graph(id="weight-weekly-plot",
-                                          style={"height": "450px"}),
-                                color="primary", type="border"),
-                ], className="mt-4 mb-4"),
-                html.Div([
-                    html.H5([html.I(className="fas fa-chart-line me-2"),
-                             "Årlig medelviktstrend"],
-                            className="mb-3", style={"color": "#495057"}),
-                    dbc.Spinner(dcc.Graph(id="weight-yearly-plot",
-                                          style={"height": "450px"}),
-                                color="primary", type="border"),
-                ], className="mb-4"),
-
-                html.Hr(className="my-4"),
-
-                html.Div([
-                    html.H5([html.I(className="fas fa-circle me-2"),
-                             "Vikt vs. vinglängd per art"],
-                            className="mb-3", style={"color": "#495057"}),
-                    html.P(
-                        "Varje bubbla är en art. Storlek = genomsnittliga fångster per år (log-skalat). "
-                        "Färg = taxonomisk familj (grå = okänd).",
-                        className="text-muted small mb-3"
-                    ),
-                    dbc.Spinner(dcc.Graph(id="morpho-bubble-chart",
-                                          style={"height": "600px"}),
-                                color="primary", type="border"),
-                ], className="mb-4"),
-
             ], fluid=True, className="py-4"),
         ], id="content-tab-morpho", style={"display": "none"}),
 
@@ -584,11 +504,9 @@ def toggle_filter_collapse(n_clicks, is_open):
 )
 def update_time_series(species_codes, aggregation, start_date, end_date, plot_type):
     """Update time series plot based on filters."""
-    t = T
-    
     if not species_codes:
         return go.Figure().add_annotation(
-            text=t["please_select_species"],
+            text="Vänligen välj minst en art",
             showarrow=False,
             font={"size": 20, "color": "#95a5a6"}
         )
@@ -603,7 +521,7 @@ def update_time_series(species_codes, aggregation, start_date, end_date, plot_ty
         df = db.execute_query(query).pl().to_pandas()
     
     # Create figure based on plot type
-    agg_text = t.get(f"agg_{aggregation}", aggregation.capitalize()).split(" ", 1)[1] if f"agg_{aggregation}" in t else aggregation.capitalize()
+    agg_text = aggregation.capitalize()
     if plot_type == "bar":
         # Bar chart with pastel colors
         fig = px.bar(
@@ -611,8 +529,8 @@ def update_time_series(species_codes, aggregation, start_date, end_date, plot_ty
             x="period",
             y="count",
             color="swedish_name",
-            title=f"{t['species_obs_over_time']} ({agg_text})",
-            labels={"period": t["date_label"], "count": t["num_obs"], "swedish_name": t["species_label"]},
+            title=f"Observationer över tid ({agg_text})",
+            labels={"period": "Datum", "count": "Antal observationer", "swedish_name": "Art"},
             barmode="group",
             color_discrete_sequence=PASTEL_COLORS
         )
@@ -661,8 +579,8 @@ def update_time_series(species_codes, aggregation, start_date, end_date, plot_ty
             y="count",
             color="swedish_name",
             markers=True if mode in ["markers", "lines+markers"] else False,
-            title=f"{t['species_obs_over_time']} ({agg_text})",
-            labels={"period": t["date_label"], "count": t["num_obs"], "swedish_name": t["species_label"]},
+            title=f"Observationer över tid ({agg_text})",
+            labels={"period": "Datum", "count": "Antal observationer", "swedish_name": "Art"},
             color_discrete_sequence=PASTEL_COLORS
         )
         
@@ -704,7 +622,6 @@ def update_time_series(species_codes, aggregation, start_date, end_date, plot_ty
 )
 def update_summary(species_codes, start_date, end_date):
     """Update summary statistics."""
-    t = T
     # Convert date strings to proper date format for comparison
     if isinstance(start_date, str):
         start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
@@ -715,53 +632,58 @@ def update_summary(species_codes, start_date, end_date):
         end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
     else:
         end_date_obj = end_date
+
+    selected_species = [code for code in (species_codes or []) if code != "TOTAL"]
+
+    def _table_metrics(db, table_name):
+        where_clauses = ["date >= ?", "date <= ?"]
+        params = [start_date_obj, end_date_obj]
+
+        if selected_species:
+            placeholders = ", ".join(["?"] * len(selected_species))
+            where_clauses.append(f"species_code IN ({placeholders})")
+            params.extend(selected_species)
+
+        where_sql = " AND ".join(where_clauses)
+        row_count = db.conn.execute(
+            f"SELECT COUNT(*) FROM {table_name} WHERE {where_sql}",
+            params,
+        ).fetchone()[0]
+        return row_count
     
     with BirdRingingDB(DB_PATH, read_only=True) as db:
-        if species_codes:
-            df = db.get_data_as_polars(
-                filters={"species_code": species_codes}
-            )
-            # Filter by date using proper date objects
-            df = df.filter(
-                (pl.col("date") >= start_date_obj) & (pl.col("date") <= end_date_obj)
-            )
-            
-            # Special handling for TOTAL species to show correct unique species count
-            if len(species_codes) == 1 and species_codes[0] == "TOTAL":
-                # When only TOTAL is selected, we want to show the count of actual species
-                # that contribute to this total, not just "1" (which is the TOTAL species itself)
-                start_str = start_date if isinstance(start_date, str) else start_date.strftime("%Y-%m-%d")
-                end_str = end_date if isinstance(end_date, str) else end_date.strftime("%Y-%m-%d")
-                
-                unique_species = db.conn.execute(f"""
-                    SELECT COUNT(DISTINCT species_code) 
-                    FROM ring_records 
-                    WHERE species_code != 'TOTAL' 
-                    AND date >= '{start_str}' AND date <= '{end_str}'
-                """).fetchone()[0]
-            else:
-                # When more than one species is selected we first try to remove TOTAL if it's in the selection to avoid double counting, then count unique species
-                if "TOTAL" in species_codes:
-                    df = df.filter(pl.col("species_code") != "TOTAL")
-                unique_species = df["species_code"].n_unique()
+        ringon_rows = _table_metrics(db, "ringon")
+        kontr_rows = _table_metrics(db, "kontr")
+        fynd_rows = _table_metrics(db, "fynd")
+
+        where_clauses = ["date >= ?", "date <= ?"]
+        params = [start_date_obj, end_date_obj]
+        if selected_species:
+            placeholders = ", ".join(["?"] * len(selected_species))
+            where_clauses.append(f"species_code IN ({placeholders})")
+            params.extend(selected_species)
+        where_sql = " AND ".join(where_clauses)
+
+        unique_species = db.conn.execute(
+            f"SELECT COUNT(DISTINCT species_code) FROM ringon WHERE {where_sql}",
+            params,
+        ).fetchone()[0]
+
+        year_bounds = db.conn.execute(
+            f"""
+            SELECT
+                MIN(EXTRACT(YEAR FROM date)) AS min_year,
+                MAX(EXTRACT(YEAR FROM date)) AS max_year
+            FROM ringon
+            WHERE {where_sql}
+            """,
+            params,
+        ).fetchone()
+
+        if year_bounds and year_bounds[0] is not None and year_bounds[1] is not None:
+            year_range_str = f"{int(year_bounds[0])}–{int(year_bounds[1])}"
         else:
-            # If no species selected, fetch all but exclude TOTAL to avoid double counting
-            df = db.get_data_as_polars()
-            df = df.filter(pl.col("species_code") != "TOTAL")
-            
-            df = df.filter(
-                (pl.col("date") >= start_date_obj) & (pl.col("date") <= end_date_obj)
-            )
-            unique_species = df["species_code"].n_unique()
-        
-        total_records = len(df)
-        unique_individuals = df["ring_number"].n_unique()
-        
-        # Handle empty df possibility for min/max
-        if len(df) > 0:
-            date_range_str = f"{df['date'].min()} to {df['date'].max()}"
-        else:
-            date_range_str = "No data"
+            year_range_str = "No data"
     
     return dbc.Row([
         dbc.Col([
@@ -770,10 +692,10 @@ def update_summary(species_codes, start_date, end_date):
                     html.Div([
                         html.I(className="fas fa-clipboard-list fa-2x mb-3", 
                               style={"color": "#B4D4E1"}),
-                        html.H2(f"{total_records:,}", 
+                        html.H2(f"{ringon_rows:,}", 
                                className="mb-2",
                                style={"color": "#2c3e50", "fontWeight": "600"}),
-                        html.P(t["summary_total_obs"], 
+                        html.P("Ringmärkningar",
                               className="text-muted mb-0",
                               style={"fontSize": "0.95rem"})
                     ], className="text-center")
@@ -783,7 +705,7 @@ def update_summary(species_codes, start_date, end_date):
                 "border": "none",
                 "borderLeft": "4px solid #B4D4E1"
             })
-        ], md=3, className="mb-3"),
+        ], md=2, className="mb-3"),
         
         dbc.Col([
             dbc.Card([
@@ -791,10 +713,10 @@ def update_summary(species_codes, start_date, end_date):
                     html.Div([
                         html.I(className="fas fa-dove fa-2x mb-3", 
                               style={"color": "#C5E1B5"}),
-                        html.H2(f"{unique_species}", 
+                        html.H2(f"{kontr_rows:,}", 
                                className="mb-2",
                                style={"color": "#2c3e50", "fontWeight": "600"}),
-                        html.P(t["summary_unique_species"], 
+                        html.P("Kontroller",
                               className="text-muted mb-0",
                               style={"fontSize": "0.95rem"})
                     ], className="text-center")
@@ -804,7 +726,7 @@ def update_summary(species_codes, start_date, end_date):
                 "border": "none",
                 "borderLeft": "4px solid #C5E1B5"
             })
-        ], md=3, className="mb-3"),
+        ], md=2, className="mb-3"),
         
         dbc.Col([
             dbc.Card([
@@ -812,10 +734,10 @@ def update_summary(species_codes, start_date, end_date):
                     html.Div([
                         html.I(className="fas fa-hashtag fa-2x mb-3", 
                               style={"color": "#FFD4B8"}),
-                        html.H2(f"{unique_individuals:,}", 
+                        html.H2(f"{unique_species:,}", 
                                className="mb-2",
                                style={"color": "#2c3e50", "fontWeight": "600"}),
-                        html.P(t["summary_unique_inds"], 
+                        html.P("Unika arter",
                               className="text-muted mb-0",
                               style={"fontSize": "0.95rem"})
                     ], className="text-center")
@@ -825,7 +747,7 @@ def update_summary(species_codes, start_date, end_date):
                 "border": "none",
                 "borderLeft": "4px solid #FFD4B8"
             })
-        ], md=3, className="mb-3"),
+        ], md=2, className="mb-3"),
         
         dbc.Col([
             dbc.Card([
@@ -833,10 +755,10 @@ def update_summary(species_codes, start_date, end_date):
                     html.Div([
                         html.I(className="fas fa-calendar-alt fa-2x mb-3", 
                               style={"color": "#E0C5E8"}),
-                        html.H4(date_range_str, 
+                        html.H2(f"{fynd_rows:,}", 
                                className="mb-2",
-                               style={"color": "#2c3e50", "fontWeight": "600", "fontSize": "1.1rem"}),
-                        html.P(t["summary_date_range"], 
+                               style={"color": "#2c3e50", "fontWeight": "600"}),
+                        html.P("Återfynd",
                               className="text-muted mb-0",
                               style={"fontSize": "0.95rem"})
                     ], className="text-center")
@@ -846,7 +768,28 @@ def update_summary(species_codes, start_date, end_date):
                 "border": "none",
                 "borderLeft": "4px solid #E0C5E8"
             })
-        ], md=3, className="mb-3"),
+        ], md=2, className="mb-3"),
+        
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.Div([
+                        html.I(className="fas fa-calendar-alt fa-2x mb-3", 
+                              style={"color": "#9ec5fe"}),
+                        html.H2(year_range_str,
+                               className="mb-2",
+                               style={"color": "#2c3e50", "fontWeight": "600", "fontSize": "1.15rem"}),
+                        html.P("År",
+                              className="text-muted mb-0",
+                              style={"fontSize": "0.95rem"})
+                    ], className="text-center")
+                ])
+            ], className="shadow-sm h-100", style={
+                "borderRadius": "10px",
+                "border": "none",
+                "borderLeft": "4px solid #9ec5fe"
+            })
+        ], md=4, className="mb-3"),
     ])
 
 
@@ -858,8 +801,6 @@ def update_summary(species_codes, start_date, end_date):
 )
 def update_weight_distribution(species_codes, start_date, end_date):
     """Update weight distribution plot."""
-    t = T
-    
     if not species_codes:
         return go.Figure()
     
@@ -900,8 +841,8 @@ def update_weight_distribution(species_codes, start_date, end_date):
         y="weight",
         color="species_label",
         points=False,
-        title=t["weight_dist_title"],
-        labels={"species_label": t["species_label"], "weight": t["weight_g"]},
+        title="Viktfördelning per art",
+        labels={"species_label": "Art", "weight": "Vikt (g)"},
         color_discrete_sequence=PASTEL_COLORS,
         category_orders={"species_label": [f"{s}<br>(n={sample_sizes[s]})" for s in species_order]}
     )
@@ -928,8 +869,6 @@ def update_weight_distribution(species_codes, start_date, end_date):
 )
 def update_wing_distribution(species_codes, start_date, end_date):
     """Update wing length distribution plot."""
-    t = T
-    
     if not species_codes:
         return go.Figure()
     
@@ -970,8 +909,8 @@ def update_wing_distribution(species_codes, start_date, end_date):
         y="wing_length",
         color="species_label",
         points=False,
-        title=t["wing_dist_title"],
-        labels={"species_label": t["species_label"], "wing_length": t["wing_mm"]},
+        title="Vinglängdsfördelning per art",
+        labels={"species_label": "Art", "wing_length": "Vinglängd (mm)"},
         color_discrete_sequence=PASTEL_COLORS,
         category_orders={"species_label": [f"{s}<br>(n={sample_sizes[s]})" for s in species_order]}
     )
@@ -998,8 +937,6 @@ def update_wing_distribution(species_codes, start_date, end_date):
 )
 def update_age_distribution(species_codes, start_date, end_date):
     """Update age distribution plot showing percentage of age classes per species."""
-    t = T
-    
     if not species_codes:
         return go.Figure()
     
@@ -1015,7 +952,7 @@ def update_age_distribution(species_codes, start_date, end_date):
     
     if len(df) == 0:
         return go.Figure().add_annotation(
-            text=t.get("no_data", "No data available"),
+            text="Ingen data tillgänglig",
             showarrow=False,
             font={"size": 16, "color": "#95a5a6"}
         )
@@ -1058,7 +995,7 @@ def update_age_distribution(species_codes, start_date, end_date):
             textposition='inside',
             hovertemplate='<b>%{x}</b><br>' +
                          f'Age: {age}<br>' +
-                         f'{t["percentage"]}: %{{y:.1f}}%<br>' +
+                         'Andel (%): %{y:.1f}%<br>' +
                          '<extra></extra>'
         ))
     
@@ -1067,16 +1004,16 @@ def update_age_distribution(species_codes, start_date, end_date):
     
     fig.update_layout(
         barmode='stack',
-        title=t["age_dist_title"],
-        xaxis_title=t["species_label"],
-        yaxis_title=t["percentage"],
+        title="Åldersfördelning per art",
+        xaxis_title="Art",
+        yaxis_title="Andel (%)",
         template="plotly_white",
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(family="Arial, sans-serif", size=12, color="#495057"),
         title_font=dict(size=18, color="#2c3e50"),
         legend=dict(
-            title=t["age_class"],
+            title="Åldersklass",
             orientation="v",
             yanchor="top",
             y=0.99,
@@ -1101,8 +1038,6 @@ def update_age_distribution(species_codes, start_date, end_date):
 )
 def update_fat_score_distribution(species_codes, start_date, end_date):
     """Update fat score distribution plot."""
-    t = T
-    
     if not species_codes:
         return go.Figure()
     
@@ -1118,7 +1053,7 @@ def update_fat_score_distribution(species_codes, start_date, end_date):
     
     if len(df) == 0:
         return go.Figure().add_annotation(
-            text=t.get("no_data", "No data available"),
+            text="Ingen data tillgänglig",
             showarrow=False,
             font={"size": 16, "color": "#95a5a6"}
         )
@@ -1162,7 +1097,7 @@ def update_fat_score_distribution(species_codes, start_date, end_date):
                 text=[f"{row['mean_fat_score']:.2f}"],
                 textposition='outside',
                 hovertemplate='<b>%{x}</b><br>' +
-                             f'{t["fat_score"]}: %{{y:.2f}}<br>' +
+                             'Fettpoäng (0-10): %{y:.2f}<br>' +
                              f"Std: {row['std_fat_score']:.2f}<br>" +
                              f"n={int(row['count'])}<br>" +
                              '<extra></extra>',
@@ -1174,9 +1109,9 @@ def update_fat_score_distribution(species_codes, start_date, end_date):
                      for s in species_order if s in fat_summary['swedish_name'].values]
     
     fig.update_layout(
-        title=t["fat_dist_title"],
-        xaxis_title=t["species_label"],
-        yaxis_title=t["fat_score"],
+        title="Genomsnittlig fettpoäng per art<br><sub>Felstaplar visar standardavvikelse</sub>",
+        xaxis_title="Art",
+        yaxis_title="Fettpoäng (0-10)",
         template="plotly_white",
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
@@ -1191,115 +1126,16 @@ def update_fat_score_distribution(species_codes, start_date, end_date):
 
 
 @callback(
-    Output("weight-weekly-plot", "figure"),
+    Output("morpho-bubble-chart", "figure"),
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date"),
-     Input("weight-weekly-year-dropdown", "value")]
-)
-def update_weight_weekly(species_codes, start_date, end_date, selected_year):
-    """Weekly mean weight over the year, one line per species."""
-    t = T
-    
-    if not species_codes:
-        return go.Figure()
-
-    year_param = None if selected_year == "all" else int(selected_year)
-
-    with BirdRingingDB(DB_PATH, read_only=True) as db:
-        query = BirdRingingQueries.get_weekly_weight_by_species(
-            species_codes=species_codes,
-            year=year_param,
-            start_date=start_date if year_param is None else None,
-            end_date=end_date if year_param is None else None,
-        )
-        df = db.execute_query(query).pl().to_pandas()
-
-    if df.empty:
-        return go.Figure().add_annotation(
-            text=t.get("no_data", "No data available"),
-            showarrow=False,
-            font={"size": 16, "color": "#95a5a6"},
-        )
-
-    year_label = str(year_param) if year_param else f"{t['avg_all_years']} {start_date[:4]}–{end_date[:4]}"
-    title = f"{t['weekly_weight_title']} ({year_label})"
-
-    fig = go.Figure()
-
-    sorted_codes = sort_species_by_taxonomy(species_codes)
-    for idx, species_code in enumerate(sorted_codes):
-        sp_df = df[df["species_code"] == species_code]
-        if sp_df.empty:
-            continue
-
-        name = sp_df["swedish_name"].iloc[0]
-        color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
-        r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
-        fill_color = f"rgba({r},{g},{b},0.15)"
-
-        # Shaded min–max band
-        x_band = sp_df["week_of_year"].tolist() + sp_df["week_of_year"].tolist()[::-1]
-        y_band = sp_df["max_weight"].tolist() + sp_df["min_weight"].tolist()[::-1]
-        fig.add_trace(go.Scatter(
-            x=x_band,
-            y=y_band,
-            fill="toself",
-            fillcolor=fill_color,
-            line=dict(color="rgba(0,0,0,0)"),
-            showlegend=False,
-            hoverinfo="skip",
-            name=f"{name} range",
-        ))
-
-        # Mean line
-        fig.add_trace(go.Scatter(
-            x=sp_df["week_of_year"],
-            y=sp_df["mean_weight"],
-            mode="lines+markers",
-            name=name,
-            line=dict(color=color, width=2.5),
-            marker=dict(size=5, color=color),
-            hovertemplate=(
-                f"<b>{name}</b><br>"
-                f"{t['week_of_year']}: %{{x}}<br>"
-                f"{t['weight_g']}: %{{y:.2f}}<br>"
-                "<extra></extra>"
-            ),
-        ))
-
-    fig.update_layout(
-        title=title,
-        xaxis_title=f"{t['week_of_year']}",
-        yaxis_title=t["weight_g"],
-        template="plotly_white",
-        hovermode="x unified",
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
-        title_font=dict(size=18, color="#2c3e50"),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-            bgcolor="rgba(255,255,255,0.8)",
-            bordercolor="#dee2e6",
-            borderwidth=1,
-        ),
-    )
-    return fig
-
-
-@callback(
-    Output("morpho-bubble-chart", "figure"),
-    [Input("date-range-picker", "start_date"),
      Input("date-range-picker", "end_date")]
 )
-def update_morpho_bubble(start_date, end_date):
+def update_morpho_bubble(species_codes, start_date, end_date):
     """Bubble chart: mean weight vs mean wing length per species.
     Bubble size = avg captures per year (log-scaled). Colour = family."""
+    selected_species = {c for c in (species_codes or []) if c != "TOTAL"}
+
     with BirdRingingDB(DB_PATH, read_only=True) as db:
         df = db.execute_query(f"""
             SELECT
@@ -1323,7 +1159,7 @@ def update_morpho_bubble(start_date, end_date):
 
     if df.empty:
         return go.Figure().add_annotation(
-            text=T.get("no_data", "Ingen data tillgänglig"),
+            text="Ingen data tillgänglig",
             showarrow=False, font={"size": 16, "color": "#95a5a6"}
         )
 
@@ -1348,6 +1184,9 @@ def update_morpho_bubble(start_date, end_date):
         colour = colour_map[family]
         show_legend = family not in shown_families
         shown_families.add(family)
+        is_selected = row["species_code"] in selected_species
+        border_color = "#dc3545" if is_selected else "rgba(80,80,80,0.4)"
+        border_width = 3 if is_selected else 1
 
         fig.add_trace(go.Scatter(
             x=[row["mean_weight"]],
@@ -1359,24 +1198,24 @@ def update_morpho_bubble(start_date, end_date):
             marker=dict(
                 size=row["bubble_size"],
                 color=colour,
-                line=dict(width=1, color="rgba(80,80,80,0.4)"),
+                line=dict(width=border_width, color=border_color),
                 opacity=0.85,
             ),
-            text=row["swedish_name"],
-            customdata=[[row["avg_per_year"], row["total_captures"], family]],
+            customdata=[[row["swedish_name"], row["avg_per_year"], row["total_captures"], family]],
             hovertemplate=(
-                "<b>%{text}</b><br>"
+                "<b>%{customdata[0]}</b><br>"
+                "Art: %{customdata[0]}<br>"
                 "Vikt: %{x:.1f} g<br>"
                 "Vinglängd: %{y:.1f} mm<br>"
-                "Avg fångster/år: %{customdata[0]:.0f}<br>"
-                "Totalt: %{customdata[1]:,}<br>"
-                "Familj: %{customdata[2]}<extra></extra>"
+                "Avg fångster/år: %{customdata[1]:.0f}<br>"
+                "Totalt: %{customdata[2]:,}<br>"
+                "Familj: %{customdata[3]}<extra></extra>"
             ),
         ))
 
     fig.update_layout(
-        xaxis_title=T["weight_g"],
-        yaxis_title=T["wing_mm"],
+        xaxis_title="Vikt (g)",
+        yaxis_title="Vinglängd (mm)",
         template="plotly_white",
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
@@ -1395,103 +1234,6 @@ def update_morpho_bubble(start_date, end_date):
 
 
 @callback(
-    Output("weight-yearly-plot", "figure"),
-    [Input("species-dropdown", "value"),
-     Input("date-range-picker", "start_date"),
-     Input("date-range-picker", "end_date")]
-)
-def update_weight_yearly(species_codes, start_date, end_date):
-    """Yearly mean (± min/max) weight trend per species."""
-    t = T
-    
-    if not species_codes:
-        return go.Figure()
-
-    with BirdRingingDB(DB_PATH, read_only=True) as db:
-        query = BirdRingingQueries.get_yearly_weight_by_species(
-            species_codes=species_codes,
-            start_date=start_date,
-            end_date=end_date,
-        )
-        df = db.execute_query(query).pl().to_pandas()
-
-    if df.empty:
-        return go.Figure().add_annotation(
-            text=t.get("no_data", "No data available"),
-            showarrow=False,
-            font={"size": 16, "color": "#95a5a6"},
-        )
-
-    fig = go.Figure()
-
-    sorted_codes = sort_species_by_taxonomy(species_codes)
-    for idx, species_code in enumerate(sorted_codes):
-        sp_df = df[df["species_code"] == species_code].sort_values("year")
-        if sp_df.empty:
-            continue
-
-        name = sp_df["swedish_name"].iloc[0]
-        color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
-        r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
-        fill_color = f"rgba({r},{g},{b},0.15)"
-
-        # Shaded min–max band
-        x_band = sp_df["year"].tolist() + sp_df["year"].tolist()[::-1]
-        y_band = sp_df["max_weight"].tolist() + sp_df["min_weight"].tolist()[::-1]
-        fig.add_trace(go.Scatter(
-            x=x_band,
-            y=y_band,
-            fill="toself",
-            fillcolor=fill_color,
-            line=dict(color="rgba(0,0,0,0)"),
-            showlegend=False,
-            hoverinfo="skip",
-            name=f"{name} range",
-        ))
-
-        # Mean line with markers
-        fig.add_trace(go.Scatter(
-            x=sp_df["year"],
-            y=sp_df["mean_weight"],
-            mode="lines+markers",
-            name=name,
-            line=dict(color=color, width=2.5),
-            marker=dict(size=8, color=color, line=dict(width=1.5, color="white")),
-            text=sp_df["n"].map(lambda v: f"n={v:,}"),
-            hovertemplate=(
-                f"<b>{name}</b><br>"
-                f"{t['year_label']}: %{{x}}<br>"
-                f"{t['weight_g']}: %{{y:.2f}}<br>"
-                "%{text}<extra></extra>"
-            ),
-        ))
-
-    fig.update_layout(
-        title=t["yearly_weight_title"].format(start=start_date[:4], end=end_date[:4]),
-        xaxis_title=t["year_label"],
-        yaxis_title=t["weight_g"],
-        template="plotly_white",
-        hovermode="x unified",
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
-        title_font=dict(size=18, color="#2c3e50"),
-        xaxis=dict(dtick=1, tickformat="d"),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-            bgcolor="rgba(255,255,255,0.8)",
-            bordercolor="#dee2e6",
-            borderwidth=1,
-        ),
-    )
-    return fig
-
-
-@callback(
     Output("phenology-weekly-plot", "figure"),
     [Input("species-dropdown", "value"),
      Input("date-range-picker", "start_date"),
@@ -1499,8 +1241,6 @@ def update_weight_yearly(species_codes, start_date, end_date):
 )
 def update_phenology_weekly(species_codes, start_date, end_date):
     """Update weekly phenology plot showing migration patterns."""
-    t = T
-    
     if not species_codes:
         return go.Figure()
     
@@ -1545,8 +1285,8 @@ def update_phenology_weekly(species_codes, start_date, end_date):
             line=dict(width=3, color=line_color),
             fillcolor=fill_color,
             hovertemplate='<b>%{fullData.name}</b><br>' +
-                         f'{t["week_of_year"]}: %{{x}}<br>' +
-                         f'{t["avg_weekly_obs"]}: %{{y:.1f}}<br>' +
+                         'Vecka: %{x}<br>' +
+                         'Genomsnittliga veckovisa observationer: %{y:.1f}<br>' +
                          '<extra></extra>'
         ))
     
@@ -1555,7 +1295,7 @@ def update_phenology_weekly(species_codes, start_date, end_date):
         x0=9, x1=22, 
         fillcolor="rgba(144, 238, 144, 0.15)", 
         line_width=0,
-        annotation_text=t["spring_mig"],
+        annotation_text="Vårflyttning",
         annotation_position="top left",
         annotation=dict(font_size=11, font_color="#6c757d")
     )
@@ -1563,15 +1303,15 @@ def update_phenology_weekly(species_codes, start_date, end_date):
         x0=31, x1=43,
         fillcolor="rgba(255, 218, 185, 0.15)",
         line_width=0,
-        annotation_text=t["autumn_mig"],
+        annotation_text="Höstflyttning",
         annotation_position="top left",
         annotation=dict(font_size=11, font_color="#6c757d")
     )
     
     fig.update_layout(
-        title=t["weekly_obs_pattern"].format(start=start_year, end=end_year),
-        xaxis_title=f"{t['week_of_year']}",
-        yaxis_title=t["avg_weekly_obs"],
+        title=f"Veckovis observationsmönster ({start_year}-{end_year} medel)<br><sub>Visar både vår- och höstflyttningstoppar</sub>",
+        xaxis_title="Vecka",
+        yaxis_title="Genomsnittliga veckovisa observationer",
         template="plotly_white",
         hovermode="x unified",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -1601,8 +1341,6 @@ def update_phenology_weekly(species_codes, start_date, end_date):
 )
 def update_phenology_ridgeline(species_codes, start_date, end_date):
     """Update ridgeline plot showing daily distribution by species."""
-    t = T
-    
     if not species_codes:
         return go.Figure()
     
@@ -1657,7 +1395,7 @@ def update_phenology_ridgeline(species_codes, start_date, end_date):
                 line=dict(width=2, color=line_color),
                 fillcolor=fill_color,
                 showlegend=False,
-                hovertemplate=f'{t["day_of_year"]}: %{{x}}<br>{t["count_label"]}: %{{y:.2f}}<extra></extra>'
+                hovertemplate='Dag på året: %{x}<br>Antal: %{y:.2f}<extra></extra>'
             ),
             row=idx,
             col=1
@@ -1665,18 +1403,18 @@ def update_phenology_ridgeline(species_codes, start_date, end_date):
         
         # Update y-axis for each subplot
         fig.update_yaxes(
-            title_text=t["count_label"],
+            title_text="Antal",
             title_standoff=5,
             title_font_size=10,
             row=idx,
             col=1
         )
     
-    fig.update_xaxes(title_text=t["day_of_year"], row=n_species, col=1)
+    fig.update_xaxes(title_text="Dag på året", row=n_species, col=1)
     
     fig.update_layout(
         height=220 * n_species,  # Increased height per species
-        title_text=t["daily_obs_dist"].format(start=start_year, end=end_year),
+        title_text=f"Daglig observationsfördelning ({start_year}-{end_year})<br><sub>Varje rad visar tidsfördelningen för en art</sub>",
         template="plotly_white",
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
@@ -1695,8 +1433,6 @@ def update_phenology_ridgeline(species_codes, start_date, end_date):
 )
 def update_phenology_seasonal(species_codes, start_date, end_date):
     """Update spring vs autumn migration comparison plot."""
-    t = T
-    
     if not species_codes:
         return go.Figure()
     
@@ -1753,21 +1489,21 @@ def update_phenology_seasonal(species_codes, start_date, end_date):
                 text=[f"n={int(n)}" for n in season_df['n_observations']],
                 hovertemplate='<b>%{y}</b><br>' +
                              f'{season_df["season"].iloc[0].capitalize()} migration<br>' +
-                             f'{t["day_of_year"]}: %{{x:.0f}}<br>' +
+                             'Dag på året: %{x:.0f}<br>' +
                              f'IQR: %{{error_x.array:.0f}} days<br>' +
                              '%{text}<br>' +
                              '<extra></extra>'
             ))
     
     # Add month labels on y-axis
-    months = [(1, t["month_jan"]), (32, t["month_feb"]), (60, t["month_mar"]), (91, t["month_apr"]), (121, t["month_may"]), 
-              (152, t["month_jun"]), (182, t["month_jul"]), (213, t["month_aug"]), (244, t["month_sep"]), (274, t["month_oct"]), 
-              (305, t["month_nov"]), (335, t["month_dec"])]
+    months = [(1, "Jan"), (32, "Feb"), (60, "Mar"), (91, "Apr"), (121, "Maj"),
+              (152, "Jun"), (182, "Jul"), (213, "Aug"), (244, "Sep"), (274, "Okt"),
+              (305, "Nov"), (335, "Dec")]
     
     fig.update_layout(
-        title=t["spring_vs_autumn"].format(start=start_year, end=end_year),
-        yaxis_title=t["species_label"],
-        xaxis_title=t["day_of_year"],
+        title=f"Vår- vs Höstflyttningstiming ({start_year}-{end_year})<br><sub>Punkter visar mediandag, felstaplar visar kvartilavstånd</sub>",
+        yaxis_title="Art",
+        xaxis_title="Dag på året",
         yaxis=dict(categoryorder='array', categoryarray=list(reversed(sorted_names))),
         template="plotly_white",
         hovermode="closest",
@@ -1803,13 +1539,11 @@ def update_phenology_seasonal(species_codes, start_date, end_date):
 )
 def update_weekly_heatmap(selected_year, top_n):
     """Update weekly heatmap showing normalized observations per species."""
-    t = T
-    
     with BirdRingingDB(DB_PATH, read_only=True) as db:
         # Determine if we're showing all years or a specific year
         if selected_year == "all":
             year_param = None
-            title_suffix = t["avg_all_years"]
+            title_suffix = "Genomsnitt (Alla år)"
         else:
             year_param = int(selected_year)
             title_suffix = f"({selected_year})"
@@ -1824,7 +1558,7 @@ def update_weekly_heatmap(selected_year, top_n):
     
     if len(df) == 0:
         return go.Figure().add_annotation(
-            text=t.get("no_data", "No data available"),
+            text="Ingen data tillgänglig",
             showarrow=False,
             font={"size": 20, "color": "#95a5a6"}
         )
@@ -1889,7 +1623,7 @@ def update_weekly_heatmap(selected_year, top_n):
         colorscale='viridis',
         colorbar=dict(
             title=dict(
-                text=t["heatmap_legend"],
+                text="% av totala<br>observationer",
                 side="right"
             ),
             thickness=15,
@@ -1898,7 +1632,7 @@ def update_weekly_heatmap(selected_year, top_n):
         hoverongaps=False,
         hovertemplate=(
             f'<b>%{{y}}</b><br>'
-            f'{t["week_of_year"]} %{{x}}<br>'
+            'Vecka %{x}<br>'
             f'%{{z:.1f}}%<br>'
             f'{count_label}=%{{customdata:.1f}}'
             f'<extra></extra>'
@@ -1906,16 +1640,16 @@ def update_weekly_heatmap(selected_year, top_n):
     ))
     
     fig.update_layout(
-        title=t["weekly_heatmap_title"].format(suffix=title_suffix),
+        title=f"Veckovisa observationsmönster - {title_suffix}",
         xaxis=dict(
-            title=f"{t['week_of_year']}",
+            title="Vecka",
             tickmode='linear',
             tick0=1,
             dtick=2,
             side='bottom'
         ),
         yaxis=dict(
-            title=t["species_label"],
+            title="Art",
             tickfont=dict(size=13)
         ),
         height=200 + 20 * len(pivot_counts),  # Dynamic height based on number of species
@@ -1937,8 +1671,6 @@ def update_weekly_heatmap(selected_year, top_n):
 )
 def update_weather_timeseries(start_date, end_date, selected_vars):
     """Update the weather time series plot for the selected date range and variables."""
-    t = T
-
     if not selected_vars:
         fig = go.Figure()
         fig.add_annotation(
@@ -1960,7 +1692,7 @@ def update_weather_timeseries(start_date, end_date, selected_vars):
     if df.empty:
         fig = go.Figure()
         fig.add_annotation(
-            text=t.get("no_data", "No data available"),
+            text="Ingen data tillgänglig",
             showarrow=False,
             font={"size": 16, "color": "#95a5a6"},
             xref="paper", yref="paper", x=0.5, y=0.5
