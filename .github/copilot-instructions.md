@@ -11,6 +11,7 @@ This project is a web-based dashboard application for visualizing and analyzing 
 - Weekly heatmap showing observation patterns for the top 30 species
 - Summary statistics dashboard
 - **Weather Analysis tab** — standalone multi-panel time series of all SMHI weather parameters with dual-station attribution (Nidingen A + Vinga A gap-fill)
+- **Återfynd (Rediscoveries) tab** — interactive `Scattergeo` world map showing where Nidingen-related birds have been found globally, combining `fynd` and `frring` tables
 - Multi-dimensional filtering (species, date range, time aggregation)
 - Support for millions of records with efficient query performance
 
@@ -140,6 +141,47 @@ LEFT JOIN species_metadata m ON r.swedish_name = m.swedish_name
 
 - `weather_data`: SMHI hourly meteorological observations — see full schema below
 - `ringer_info`: Ringer contact information
+- `fynd`: Rediscovery events linked to Nidingen (6,223 rows, all with coordinates)
+- `frring`: Original ringing records for foreign rings found at Nidingen (764 rows)
+- `artkod_lookup`: Mapping from Swedish ringing species codes (e.g. `BLMES`) to Swedish common names
+
+### `fynd` and `frring` Tables — Rediscoveries
+
+**`fynd`** contains ALL rediscovery events associated with station 0016 (Nidingen).
+- `date` = **date of the finding event** (NOT the original ringing date)
+- `latitude`/`longitude` = **location of the finding event**
+- `ring_number` links to either `ring_records` (Nidingen-ringed) or `frring` (foreign-ringed)
+
+Two sub-populations within `fynd`:
+| Population | Criteria | Coordinates | Count |
+|---|---|---|---|
+| Nidingen birds found elsewhere | `ring_number` in `ring_records` AND not at Nidingen coords | Non-Nidingen (world) | ~5,013 |
+| Foreign birds found at Nidingen | `ring_number` in `frring` | Nidingen (57.3, 11.9) | ~1,210 |
+
+**`frring`** contains the **original ringing records** for foreign rings (birds NOT first ringed at Nidingen).
+- `date` = **original ringing date** (before the bird came to Nidingen)
+- `latitude`/`longitude` = **original ringing location** (usually far from Nidingen)
+
+**Species name join chain** (fynd/frring use Swedish ringing codes, not eBird codes):
+```sql
+fynd.species_code → artkod_lookup.artkod → artkod_lookup.swedish_name → species_metadata.swedish_name
+```
+
+**Map data queries:**
+```python
+# All rediscovery events for the world map (outbound + inbound)
+query = BirdRingingQueries.get_rediscoveries_map_data(
+    species_codes=["RÖHAK"],   # optional
+    start_date="2000-01-01",   # optional, filters on event/find date
+    direction="both",           # "both" | "outbound" | "inbound"
+)
+# Returns: ring_number, species_code, swedish_name, english_name,
+#          event_date, ring_date, latitude, longitude, city, locality,
+#          find_type, distance_km, days_since_ring, direction
+
+# Species dropdown options for the Återfynd tab
+query = BirdRingingQueries.get_rediscoveries_species_options()
+```
 
 ### `weather_data` Table Schema
 
@@ -328,6 +370,7 @@ date_range        # (min_date, max_date) tuple
 | 🔥 Weekly Heatmap | `tab-heatmap` | heatmap year dropdown | `weekly-heatmap` |
 | 📋 Summary | `tab-summary` | species, date range | `summary-stats` (returns Bootstrap cards) |
 | 🌤️ Weather Analysis | `tab-weather` | variable checklist, date range | `weather-timeseries-plot` |
+| 🗺️ Återfynd | `tab-rediscoveries` | own species dropdown, date range, direction checklist, lines toggle | `rediscoveries-map`, `rediscoveries-summary` |
 
 ### Callback Pattern
 

@@ -1377,6 +1377,156 @@ class BirdRingingQueries:
     # ------------------------------------------------------------------
 
     @staticmethod
+    @staticmethod
+    def get_rediscoveries_map_data(
+        species_codes: Optional[List[str]] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        direction: str = "both",
+    ) -> str:
+        """
+        Return geographic data for the rediscoveries (återfynd) map.
+
+        Combines two datasets into one result set:
+
+        * **outbound** – Nidingen-ringed birds found elsewhere in the world.
+          The coordinates (latitude, longitude) and event_date are those of the
+          finding location / event, taken from the ``fynd`` table.
+        * **inbound** – Foreign-ringed birds that appeared at Nidingen.
+          The coordinates and ring_date are those of the *original* ringing
+          location, taken from the ``frring`` table, joined via the ``fynd``
+          table (which records when the bird was encountered at Nidingen).
+
+        Parameters
+        ----------
+        species_codes : list of str, optional
+            Filter by species code(s) (e.g. ``['RÖHAK', 'BLMES']``).
+            If None, all species are returned.
+        start_date : str, optional
+            Earliest event date to include (``YYYY-MM-DD``).  For outbound
+            events this is the find date; for inbound events this is the date
+            the bird was found at Nidingen.
+        end_date : str, optional
+            Latest event date to include.
+        direction : str
+            ``'outbound'``, ``'inbound'``, or ``'both'`` (default).
+
+        Returns
+        -------
+        str
+            SQL query returning one row per rediscovery event with columns:
+            ring_number, species_code, swedish_name, english_name,
+            event_date, ring_date, latitude, longitude, city, locality,
+            find_type, distance_km, days_since_ring, direction.
+        """
+        # Build species WHERE clause (shared between the two UNION arms)
+        species_filter_fynd = ""
+        species_filter_frring = ""
+        if species_codes:
+            codes = "', '".join(species_codes)
+            species_filter_fynd   = f"  AND f.species_code IN ('{codes}')\n"
+            species_filter_frring = f"  AND fr.species_code IN ('{codes}')\n"
+
+        date_filter_outbound = ""
+        date_filter_inbound  = ""
+        if start_date:
+            date_filter_outbound += f"  AND f.date >= '{start_date}'\n"
+            date_filter_inbound  += f"  AND fj.date >= '{start_date}'\n"
+        if end_date:
+            date_filter_outbound += f"  AND f.date <= '{end_date}'\n"
+            date_filter_inbound  += f"  AND fj.date <= '{end_date}'\n"
+
+        outbound_sql = f"""
+    SELECT
+        f.ring_number,
+        f.species_code,
+        al.swedish_name,
+        sm.english_name,
+        f.date                  AS event_date,
+        rr.ring_date,
+        f.latitude,
+        f.longitude,
+        f.city,
+        f.locality,
+        f.find_type,
+        f.distance_km,
+        f.days_since_ring,
+        'outbound'              AS direction
+    FROM fynd f
+    INNER JOIN (
+        SELECT ring_number, MIN(date) AS ring_date
+        FROM ring_records
+        GROUP BY ring_number
+    ) rr ON f.ring_number = rr.ring_number
+    LEFT JOIN artkod_lookup    al ON f.species_code    = al.artkod
+    LEFT JOIN species_metadata sm ON lower(al.swedish_name) = lower(sm.swedish_name)
+    WHERE f.latitude  IS NOT NULL
+      AND f.longitude IS NOT NULL
+      AND NOT (f.latitude  BETWEEN 57.25 AND 57.35
+           AND f.longitude BETWEEN 11.85 AND 11.95)
+{species_filter_fynd}{date_filter_outbound}"""
+
+        inbound_sql = f"""
+    SELECT
+        fr.ring_number,
+        fr.species_code,
+        al.swedish_name,
+        sm.english_name,
+        fj.date                 AS event_date,
+        fr.date                 AS ring_date,
+        fr.latitude,
+        fr.longitude,
+        fr.city,
+        fr.locality,
+        fj.find_type,
+        fj.distance_km,
+        fj.days_since_ring,
+        'inbound'               AS direction
+    FROM frring fr
+    INNER JOIN fynd fj ON fr.ring_number = fj.ring_number
+    LEFT JOIN artkod_lookup    al ON fr.species_code    = al.artkod
+    LEFT JOIN species_metadata sm ON lower(al.swedish_name) = lower(sm.swedish_name)
+    WHERE fr.latitude  IS NOT NULL
+      AND fr.longitude IS NOT NULL
+      AND NOT (fr.latitude  BETWEEN 57.25 AND 57.35
+           AND fr.longitude BETWEEN 11.85 AND 11.95)
+{species_filter_frring}{date_filter_inbound}"""
+
+        if direction == "outbound":
+            return outbound_sql
+        elif direction == "inbound":
+            return inbound_sql
+        else:
+            return f"{outbound_sql}\n    UNION ALL\n{inbound_sql}"
+
+    @staticmethod
+    def get_rediscoveries_species_options() -> str:
+        """
+        Return distinct species from the ``fynd`` and ``frring`` tables with
+        their Swedish names (via ``artkod_lookup``).
+
+        Used to populate the species dropdown on the Återfynd tab.
+
+        Returns
+        -------
+        str
+            SQL query returning: species_code, swedish_name (sorted).
+        """
+        return """
+    SELECT
+        src.species_code,
+        al.swedish_name
+    FROM (
+        SELECT DISTINCT species_code FROM fynd
+        UNION
+        SELECT DISTINCT species_code FROM frring
+    ) src
+    LEFT JOIN artkod_lookup al ON src.species_code = al.artkod
+    WHERE src.species_code IS NOT NULL
+    ORDER BY src.species_code
+    """
+
+    @staticmethod
     def get_species_with_taxonomy(
         species_codes: Optional[List[str]] = None,
     ) -> str:

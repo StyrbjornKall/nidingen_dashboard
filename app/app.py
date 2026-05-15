@@ -291,6 +291,16 @@ app.layout = html.Div([
                     color="primary", type="border",
                     spinner_style={"width": "3rem", "height": "3rem"},
                 ),
+                html.Hr(className="my-4"),
+                html.H5("Topp 100 arter – totalt antal märkningar",
+                        className="mb-1", style={"color": "#495057"}),
+                html.P("Baserat på samtliga ringmärkningar, oavsett valt filter.",
+                       className="text-muted small mb-3"),
+                dbc.Spinner(
+                    dcc.Graph(id="species-total-bar", style={"height": "1400px"}),
+                    color="primary", type="border",
+                    spinner_style={"width": "3rem", "height": "3rem"},
+                ),
             ], fluid=True, className="py-4"),
         ], id="content-tab-summary-timeseries", style={"display": "none"}),
 
@@ -582,6 +592,69 @@ def update_tab_visibility(active_tab):
 def toggle_filter_collapse(n_clicks, is_open):
     """Open / close the filter panel."""
     return not is_open
+
+
+# ── Top-40 species bar chart (static, no filters) ────────────────────────────
+@callback(
+    Output("species-total-bar", "figure"),
+    Input("tabs", "active_tab"),  # triggers once when the tab is first visited
+)
+def update_species_total_bar(_active_tab):
+    """Horizontal bar chart: top 100 species by total ringing records in Ringon."""
+    query = """
+    SELECT
+        r.species_code,
+        COALESCE(al.swedish_name, r.species_code) AS swedish_name,
+        COALESCE(sm.english_name, '')              AS english_name,
+        COUNT(*)                                   AS total
+    FROM ringon r
+    LEFT JOIN artkod_lookup    al ON r.species_code          = al.artkod
+    LEFT JOIN species_metadata sm ON lower(al.swedish_name)  = lower(sm.swedish_name)
+    WHERE r.species_code IS NOT NULL
+    GROUP BY r.species_code, al.swedish_name, sm.english_name
+    ORDER BY total DESC
+    LIMIT 100
+    """
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        df = db.execute_query(query).pl().to_pandas()
+
+    if df.empty:
+        return go.Figure()
+
+    # Build a readable label: "rödhake (RÖHAK)"
+    df["label"] = df["swedish_name"] + " (" + df["species_code"] + ")"
+    # Reverse so the most prevalent species is at the top of the horizontal bar
+    df = df.sort_values("total", ascending=True)
+
+    # Colour by rank using the pastel palette (cycle if needed)
+    n = len(df)
+    colors = [PASTEL_COLORS[i % len(PASTEL_COLORS)] for i in range(n)]
+
+    fig = go.Figure(go.Bar(
+        x=df["total"],
+        y=df["label"],
+        orientation="h",
+        marker=dict(color=colors, line=dict(width=0.5, color="#aaa")),
+        text=df["total"].apply(lambda v: f"{v:,}"),
+        textposition="outside",
+        hovertemplate=(
+            "<b>%{y}</b><br>"
+            "Antal: %{x:,}<extra></extra>"
+        ),
+    ))
+
+    fig.update_layout(
+        template="plotly_white",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        xaxis=dict(title="Antal ringmärkningar", showgrid=True, gridcolor="#e9ecef"),
+        yaxis=dict(title="", tickfont=dict(size=11)),
+        margin=dict(l=10, r=80, t=20, b=40),
+        showlegend=False,
+        bargap=0.25,
+    )
+    return fig
 
 
 @callback(
