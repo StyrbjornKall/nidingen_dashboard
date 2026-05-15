@@ -42,9 +42,9 @@ WORKDIR $HOME/app
 # Serve mounts the persistent volume at /home/appuser/data.
 # Add /home/appuser/data as a Mount path in Project Settings → Storage,
 # then select it when creating the Custom app.
-# Upload bird_ringing.db into the volume via the File Manager — it will
-# appear at /home/appuser/data/bird_ringing.db inside the container.
-ENV DUCKDB_PATH=/home/appuser/data/bird_ringing.db
+# Upload bird_ringing_0016.duckdb into the volume via the File Manager — it will
+# appear at /home/appuser/data/bird_ringing_0016.duckdb inside the container.
+ENV DUCKDB_PATH=/home/appuser/data/bird_ringing_0016.duckdb
 
 # ── Gunicorn / Dash settings ──────────────────────────────────────────────────
 ENV PYTHONUNBUFFERED=1
