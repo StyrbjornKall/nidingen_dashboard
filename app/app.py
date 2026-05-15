@@ -385,6 +385,23 @@ app.layout = html.Div([
                                           style={"height": "450px"}),
                                 color="primary", type="border"),
                 ], className="mb-4"),
+
+                html.Hr(className="my-4"),
+
+                html.Div([
+                    html.H5([html.I(className="fas fa-circle me-2"),
+                             "Vikt vs. vinglängd per art"],
+                            className="mb-3", style={"color": "#495057"}),
+                    html.P(
+                        "Varje bubbla är en art. Storlek = genomsnittliga fångster per år (log-skalat). "
+                        "Färg = taxonomisk familj (grå = okänd).",
+                        className="text-muted small mb-3"
+                    ),
+                    dbc.Spinner(dcc.Graph(id="morpho-bubble-chart",
+                                          style={"height": "600px"}),
+                                color="primary", type="border"),
+                ], className="mb-4"),
+
             ], fluid=True, className="py-4"),
         ], id="content-tab-morpho", style={"display": "none"}),
 
@@ -888,7 +905,8 @@ def update_weight_distribution(species_codes, start_date, end_date):
         color_discrete_sequence=PASTEL_COLORS,
         category_orders={"species_label": [f"{s}<br>(n={sample_sizes[s]})" for s in species_order]}
     )
-    fig.update_traces(spanmode="hard")
+    # bandwidth >= 0.5 g prevents oscillation from discrete/coarse weight recordings
+    fig.update_traces(spanmode="hard", bandwidth=0.5)
     
     fig.update_layout(
         template="plotly_white",
@@ -957,7 +975,8 @@ def update_wing_distribution(species_codes, start_date, end_date):
         color_discrete_sequence=PASTEL_COLORS,
         category_orders={"species_label": [f"{s}<br>(n={sample_sizes[s]})" for s in species_order]}
     )
-    fig.update_traces(spanmode="hard")
+    # bandwidth=1.0 mm matches measurement resolution, prevents KDE oscillation artefacts
+    fig.update_traces(spanmode="hard", bandwidth=1.0)
     
     fig.update_layout(
         template="plotly_white",
@@ -1269,6 +1288,108 @@ def update_weight_weekly(species_codes, start_date, end_date, selected_year):
             bordercolor="#dee2e6",
             borderwidth=1,
         ),
+    )
+    return fig
+
+
+@callback(
+    Output("morpho-bubble-chart", "figure"),
+    [Input("date-range-picker", "start_date"),
+     Input("date-range-picker", "end_date")]
+)
+def update_morpho_bubble(start_date, end_date):
+    """Bubble chart: mean weight vs mean wing length per species.
+    Bubble size = avg captures per year (log-scaled). Colour = family."""
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        df = db.execute_query(f"""
+            SELECT
+                r.species_code,
+                r.swedish_name,
+                COALESCE(m.family_english_name, 'Unknown') AS family_name,
+                AVG(r.weight)      AS mean_weight,
+                AVG(r.wing_length) AS mean_wing,
+                COUNT(*)           AS total_captures,
+                COUNT(DISTINCT EXTRACT(YEAR FROM r.date)) AS n_years
+            FROM ring_records r
+            LEFT JOIN species_metadata m ON r.swedish_name = m.swedish_name
+            WHERE r.date BETWEEN '{start_date}' AND '{end_date}'
+              AND r.weight > 0 AND r.weight IS NOT NULL
+              AND r.wing_length > 0 AND r.wing_length IS NOT NULL
+              AND r.species_code != 'TOTAL'
+            GROUP BY r.species_code, r.swedish_name, family_name
+            HAVING total_captures >= 10
+            ORDER BY family_name, r.swedish_name
+        """).pl().to_pandas()
+
+    if df.empty:
+        return go.Figure().add_annotation(
+            text=T.get("no_data", "Ingen data tillgänglig"),
+            showarrow=False, font={"size": 16, "color": "#95a5a6"}
+        )
+
+    import math
+    df["avg_per_year"] = df["total_captures"] / df["n_years"].clip(lower=1)
+    # Log-scale the size so that very common species don't dominate visually;
+    # clamp minimum to 1 before log to avoid zero/negative values.
+    df["bubble_size"] = df["avg_per_year"].clip(lower=1).apply(math.log).clip(lower=1) * 6
+
+    # Assign a consistent colour to each family
+    families = sorted(df["family_name"].unique())
+    unknown_label = "Unknown"
+    known_families = [f for f in families if f != unknown_label]
+    colour_map = {f: PASTEL_COLORS[i % len(PASTEL_COLORS)] for i, f in enumerate(known_families)}
+    colour_map[unknown_label] = "#cccccc"
+
+    fig = go.Figure()
+    shown_families = set()
+
+    for _, row in df.iterrows():
+        family = row["family_name"]
+        colour = colour_map[family]
+        show_legend = family not in shown_families
+        shown_families.add(family)
+
+        fig.add_trace(go.Scatter(
+            x=[row["mean_weight"]],
+            y=[row["mean_wing"]],
+            mode="markers",
+            name=family,
+            legendgroup=family,
+            showlegend=show_legend,
+            marker=dict(
+                size=row["bubble_size"],
+                color=colour,
+                line=dict(width=1, color="rgba(80,80,80,0.4)"),
+                opacity=0.85,
+            ),
+            text=row["swedish_name"],
+            customdata=[[row["avg_per_year"], row["total_captures"], family]],
+            hovertemplate=(
+                "<b>%{text}</b><br>"
+                "Vikt: %{x:.1f} g<br>"
+                "Vinglängd: %{y:.1f} mm<br>"
+                "Avg fångster/år: %{customdata[0]:.0f}<br>"
+                "Totalt: %{customdata[1]:,}<br>"
+                "Familj: %{customdata[2]}<extra></extra>"
+            ),
+        ))
+
+    fig.update_layout(
+        xaxis_title=T["weight_g"],
+        yaxis_title=T["wing_mm"],
+        template="plotly_white",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=12, color="#495057"),
+        title_font=dict(size=18, color="#2c3e50"),
+        legend=dict(
+            title="Familj",
+            orientation="v",
+            bgcolor="rgba(255,255,255,0.85)",
+            bordercolor="#dee2e6",
+            borderwidth=1,
+        ),
+        hovermode="closest",
     )
     return fig
 
