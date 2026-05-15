@@ -102,6 +102,11 @@ with BirdRingingDB(DB_PATH, read_only=True) as db:
     """).fetchall()
     available_years = [int(row[0]) for row in years_list]
 
+    # Species present in the rediscoveries (fynd / frring) tables
+    rediscoveries_species_list = db.execute_query(
+        BirdRingingQueries.get_rediscoveries_species_options()
+    ).fetchall()
+
     # Build taxonomy sort order lookup: species_code -> (order, family, scientific_name)
     # Sorts by the biological hierarchy: Order → Family → Scientific name.
     # Unmatched species (no metadata join) are placed at the end via '~' sentinel.
@@ -147,6 +152,12 @@ year_options = [{"label": "Genomsnitt (Alla år)", "value": "all"}] + [
     {"label": str(year), "value": year} for year in available_years
 ]
 
+# Rediscoveries dropdown: all species present in fynd / frring
+rediscoveries_species_options = [
+    {"label": f"{code} - {swe_name}" if swe_name else code, "value": code}
+    for code, swe_name in rediscoveries_species_list
+]
+
 # App Layout
 app.layout = html.Div([
 
@@ -158,6 +169,7 @@ app.layout = html.Div([
         dbc.Tab(label="Fenologi",       tab_id="tab-phenology"),
         dbc.Tab(label="Värmekarta",     tab_id="tab-heatmap"),
         dbc.Tab(label="Väderanalys",    tab_id="tab-weather"),
+        dbc.Tab(label="Återfynd",       tab_id="tab-rediscoveries"),
     ], id="tabs", active_tab="tab-home", className="top-nav-tabs"),
 
     # ── FILTER DROPDOWN PANEL (hidden on Hem + Väderanalys) ──────────────
@@ -432,6 +444,82 @@ app.layout = html.Div([
             ], fluid=True, className="py-4"),
         ], id="content-tab-weather", style={"display": "none"}),
 
+        # ── Återfynd tab ──────────────────────────────────────────────────
+        html.Div([
+            dbc.Container([
+                html.H4("Återfynd – världskarta", className="mt-3"),
+                html.P(
+                    "Interaktiv karta över platser i världen som har en koppling till "
+                    "ringmärkta fåglar på Nidingen. "
+                    "Utgående (outbound): Nidingenringmärkta fåglar funna någon annanstans. "
+                    "Ingående (inbound): Utlandsringmärkta fåglar vars ursprungliga "
+                    "ringmärkningsplats visas.",
+                    className="text-muted mb-3",
+                ),
+                # ── Filter row ────────────────────────────────────────────
+                dbc.Card([
+                    dbc.CardBody([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label("Välj art", className="fw-bold mb-1 small",
+                                           style={"color": "#6c757d"}),
+                                dcc.Dropdown(
+                                    id="rediscoveries-species-dropdown",
+                                    options=rediscoveries_species_options,
+                                    value=None,
+                                    multi=True,
+                                    placeholder="Alla arter (lämna tomt) eller välj art(er)…",
+                                ),
+                            ], md=5),
+                            dbc.Col([
+                                html.Label("Datumintervall (fynddatum)", className="fw-bold mb-1 small",
+                                           style={"color": "#6c757d"}),
+                                dcc.DatePickerRange(
+                                    id="rediscoveries-date-picker",
+                                    start_date=date_range[0],
+                                    end_date=date_range[1],
+                                    display_format="YYYY-MM-DD",
+                                ),
+                            ], md=4),
+                            dbc.Col([
+                                html.Label("Riktning", className="fw-bold mb-1 small",
+                                           style={"color": "#6c757d"}),
+                                dbc.Checklist(
+                                    id="rediscoveries-direction-checklist",
+                                    options=[
+                                        {"label": "Utgående (Nidingen → världen)",
+                                         "value": "outbound"},
+                                        {"label": "Ingående (världen → Nidingen)",
+                                         "value": "inbound"},
+                                    ],
+                                    value=["outbound", "inbound"],
+                                    inline=False,
+                                ),
+                            ], md=3),
+                        ], align="end", className="g-3"),
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Switch(
+                                    id="rediscoveries-lines-toggle",
+                                    label="Visa linjer från / till Nidingen",
+                                    value=False,
+                                    className="mt-2",
+                                ),
+                            ], width="auto"),
+                        ]),
+                    ])
+                ], className="border-0 shadow-sm mb-3"),
+                # ── Map ───────────────────────────────────────────────────
+                dbc.Spinner(
+                    dcc.Graph(id="rediscoveries-map", style={"height": "620px"}),
+                    color="primary", type="border",
+                    spinner_style={"width": "3rem", "height": "3rem"},
+                ),
+                # ── Summary cards ─────────────────────────────────────────
+                html.Div(id="rediscoveries-summary", className="mt-3"),
+            ], fluid=True, className="py-4"),
+        ], id="content-tab-rediscoveries", style={"display": "none"}),
+
     ], id="main-content-area"),
 
     # ── FOOTER ────────────────────────────────────────────────────────────
@@ -454,11 +542,12 @@ app.layout = html.Div([
      Output("content-tab-phenology", "style"),
      Output("content-tab-heatmap", "style"),
      Output("content-tab-weather", "style"),
+     Output("content-tab-rediscoveries", "style"),
      Output("filter-panel-outer", "style")],
     Input("tabs", "active_tab"),
 )
 def update_tab_visibility(active_tab):
-    """Show only the active tab content; show filter panel unless on Hem/Väderanalys."""
+    """Show only the active tab content; show filter panel unless on Hem/Väderanalys/Återfynd."""
     _TAB_IDS = [
         "tab-home",
         "tab-summary-timeseries",
@@ -466,6 +555,7 @@ def update_tab_visibility(active_tab):
         "tab-phenology",
         "tab-heatmap",
         "tab-weather",
+        "tab-rediscoveries",
     ]
     content_styles = [
         {"display": "block"} if tid == active_tab else {"display": "none"}
@@ -477,7 +567,7 @@ def update_tab_visibility(active_tab):
 
     filter_style = (
         {"display": "none"}
-        if active_tab in ("tab-home", "tab-weather")
+        if active_tab in ("tab-home", "tab-weather", "tab-rediscoveries")
         else {"display": "block"}
     )
     return content_styles + [filter_style]
@@ -1945,6 +2035,227 @@ def update_weather_timeseries(start_date, end_date, selected_vars):
         annotation.update(font=dict(size=13, color="#495057"), xanchor="left", x=0)
 
     return fig
+
+
+# ── Återfynd – world map ──────────────────────────────────────────────────────
+_FIND_TYPE_LABELS = {
+    "0": "Okänd",
+    "1": "Funnen död",
+    "2": "Funnen död (okänd orsak)",
+    "3": "Trafikdödad",
+    "4": "Avsiktligt fångad av människa",
+    "5": "Funnen döende",
+    "6": "Övrig",
+    "7": "Observerad (ej fångad)",
+    "8": "Återfångad och återutsläppt",
+    "9": "Övrig",
+    "R": "Åter ringad",
+}
+
+_NIDINGEN_LAT = 57.3
+_NIDINGEN_LON = 11.9
+
+
+@callback(
+    [Output("rediscoveries-map",     "figure"),
+     Output("rediscoveries-summary", "children")],
+    [Input("rediscoveries-species-dropdown",   "value"),
+     Input("rediscoveries-date-picker",        "start_date"),
+     Input("rediscoveries-date-picker",        "end_date"),
+     Input("rediscoveries-direction-checklist","value"),
+     Input("rediscoveries-lines-toggle",       "value")],
+)
+def update_rediscoveries_map(species_codes, start_date, end_date, directions, show_lines):
+    """Render the world-map of rediscovery events."""
+    if not directions:
+        empty_fig = go.Figure()
+        empty_fig.update_layout(
+            template="plotly_white",
+            paper_bgcolor="rgba(0,0,0,0)",
+            geo=dict(showframe=False),
+        )
+        return empty_fig, html.P("Välj minst en riktning.", className="text-muted")
+
+    # Determine which direction subset to query
+    if "outbound" in directions and "inbound" in directions:
+        direction_param = "both"
+    elif "outbound" in directions:
+        direction_param = "outbound"
+    else:
+        direction_param = "inbound"
+
+    query = BirdRingingQueries.get_rediscoveries_map_data(
+        species_codes=species_codes if species_codes else None,
+        start_date=start_date,
+        end_date=end_date,
+        direction=direction_param,
+    )
+
+    with BirdRingingDB(DB_PATH, read_only=True) as db:
+        df = db.execute_query(query).pl()
+
+    if df.is_empty():
+        empty_fig = go.Figure()
+        empty_fig.update_layout(
+            template="plotly_white",
+            paper_bgcolor="rgba(0,0,0,0)",
+            annotations=[dict(text="Inga data för de valda filtren",
+                              showarrow=False, font=dict(size=16))],
+            geo=dict(showframe=False),
+        )
+        return empty_fig, html.P("Inga data.", className="text-muted")
+
+    df = df.to_pandas()
+    df["find_type_label"] = df["find_type"].astype(str).map(_FIND_TYPE_LABELS).fillna("Okänd")
+    df["swedish_name"]    = df["swedish_name"].fillna(df["species_code"])
+    df["english_name"]    = df["english_name"].fillna("")
+    df["city_display"]    = df["city"].fillna("").str.strip()
+    df["event_date_str"]  = df["event_date"].astype(str)
+    df["ring_date_str"]   = df["ring_date"].astype(str)
+
+    # Human-readable hover text
+    df["hover"] = (
+        "<b>" + df["swedish_name"] + "</b> (" + df["species_code"] + ")<br>"
+        + "Ring: " + df["ring_number"] + "<br>"
+        + "Fyndatum: " + df["event_date_str"] + "<br>"
+        + "Ringdatum: " + df["ring_date_str"] + "<br>"
+        + "Plats: " + df["city_display"] + "<br>"
+        + "Avstånd: " + df["distance_km"].fillna(0).astype(int).astype(str) + " km<br>"
+        + "Dagar sedan ring: " + df["days_since_ring"].fillna(0).astype(int).astype(str) + "<br>"
+        + "Typ: " + df["find_type_label"]
+    )
+
+    # Color map: outbound = pastel blue, inbound = pastel orange
+    color_map = {"outbound": PASTEL_COLORS[0], "inbound": PASTEL_COLORS[1]}
+
+    fig = go.Figure()
+
+    # ── Great-circle lines (optional) ────────────────────────────────────
+    if show_lines:
+        for _, row in df.iterrows():
+            line_color = color_map.get(row["direction"], "#aaaaaa")
+            fig.add_trace(go.Scattergeo(
+                lat=[_NIDINGEN_LAT, row["latitude"]],
+                lon=[_NIDINGEN_LON, row["longitude"]],
+                mode="lines",
+                line=dict(width=0.6, color=line_color),
+                opacity=0.35,
+                showlegend=False,
+                hoverinfo="skip",
+            ))
+
+    # ── Scatter markers, one group per direction ──────────────────────────
+    for dir_val in ["outbound", "inbound"]:
+        if dir_val not in directions:
+            continue
+        sub = df[df["direction"] == dir_val]
+        if sub.empty:
+            continue
+        label = "Utgående (Nidingen → världen)" if dir_val == "outbound" else "Ingående (världen → Nidingen)"
+        fig.add_trace(go.Scattergeo(
+            lat=sub["latitude"],
+            lon=sub["longitude"],
+            mode="markers",
+            marker=dict(
+                size=8,
+                color=color_map[dir_val],
+                opacity=0.80,
+                line=dict(width=0.5, color="#555"),
+            ),
+            text=sub["hover"],
+            hovertemplate="%{text}<extra></extra>",
+            name=label,
+        ))
+
+    # ── Nidingen anchor marker ────────────────────────────────────────────
+    fig.add_trace(go.Scattergeo(
+        lat=[_NIDINGEN_LAT],
+        lon=[_NIDINGEN_LON],
+        mode="markers+text",
+        marker=dict(size=12, color="#2c3e50", symbol="star", line=dict(width=1, color="#fff")),
+        text=["Nidingen"],
+        textposition="top right",
+        textfont=dict(size=11, color="#2c3e50"),
+        hovertemplate="<b>Nidingen</b><extra></extra>",
+        name="Nidingen",
+        showlegend=True,
+    ))
+
+    fig.update_layout(
+        template="plotly_white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=0, r=0, t=40, b=0),
+        title=dict(
+            text=f"Återfynd – {len(df):,} händelser ({df['ring_number'].nunique():,} ringar)",
+            font=dict(size=16, color="#2c3e50"),
+            x=0.01,
+        ),
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01,
+            bgcolor="rgba(255,255,255,0.85)",
+            bordercolor="#dee2e6",
+            borderwidth=1,
+        ),
+        geo=dict(
+            projection_type="natural earth",
+            showland=True,
+            landcolor="#f0f4f8",
+            showcountries=True,
+            countrycolor="#c9d4dd",
+            showcoastlines=True,
+            coastlinecolor="#8fa8b8",
+            showocean=True,
+            oceancolor="#e8f4f8",
+            showframe=False,
+        ),
+    )
+
+    # ── Summary cards ─────────────────────────────────────────────────────
+    n_total    = len(df)
+    n_rings    = df["ring_number"].nunique()
+    n_species  = df["species_code"].nunique()
+    max_dist   = int(df["distance_km"].max()) if not df["distance_km"].isna().all() else 0
+    max_days   = int(df["days_since_ring"].max()) if not df["days_since_ring"].isna().all() else 0
+    furthest_row = df.loc[df["distance_km"].idxmax()] if max_dist > 0 else None
+    furthest_species = furthest_row["swedish_name"] if furthest_row is not None else "–"
+    furthest_city    = furthest_row["city_display"] if furthest_row is not None else "–"
+
+    def _stat_card(icon_class, value, label):
+        return dbc.Col(
+            dbc.Card([
+                dbc.CardBody([
+                    html.I(className=f"{icon_class} fa-2x mb-2", style={"color": "#B4D4E1"}),
+                    html.H4(str(value), className="mb-0 fw-bold"),
+                    html.P(label, className="text-muted small mb-0"),
+                ], className="text-center py-3"),
+            ], className="border-0 shadow-sm h-100"),
+            md=2, sm=4, xs=6, className="mb-3",
+        )
+
+    summary = dbc.Row([
+        _stat_card("fas fa-map-marker-alt", f"{n_total:,}",    "Fyndhändelser"),
+        _stat_card("fas fa-ring",            f"{n_rings:,}",   "Unika ringar"),
+        _stat_card("fas fa-feather",         f"{n_species}",   "Arter"),
+        _stat_card("fas fa-ruler-horizontal", f"{max_dist:,} km", "Längsta fynd"),
+        _stat_card("fas fa-calendar-alt",    f"{max_days:,}",  "Max dagar sedan ring"),
+        dbc.Col(
+            dbc.Card([
+                dbc.CardBody([
+                    html.I(className="fas fa-trophy fa-2x mb-2", style={"color": "#FFD4B8"}),
+                    html.H6(furthest_species, className="mb-0 fw-bold"),
+                    html.P(f"funnen i {furthest_city}" if furthest_city else "–",
+                           className="text-muted small mb-0"),
+                ], className="text-center py-3"),
+            ], className="border-0 shadow-sm h-100"),
+            md=2, sm=4, xs=6, className="mb-3",
+        ),
+    ])
+
+    return fig, summary
 
 
 # Expose Flask server for gunicorn: `gunicorn app:server`
