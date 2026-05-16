@@ -109,6 +109,80 @@ body {
 #content-tab-morpho,
 #content-tab-phenology,
 #content-tab-heatmap,
-#content-tab-weather {
+#content-tab-weather,
+#content-tab-about-webpage {
     background-color: #f5f7fa;
+}
+
+/* ─── ABOUT WEBPAGE TAB ───────────────────────────────── */
+
+.about-page-content {
+    max-width: 980px;
+    margin: 0 auto;
+    background: #ffffff;
+    border: 1px solid #e5e9ef;
+    border-radius: 14px;
+    padding: 2rem 2rem 1.5rem;
+    box-shadow: 0 8px 24px rgba(28, 43, 58, 0.08);
+}
+
+.about-title {
+    color: #1c2b3a;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    margin-bottom: 1rem;
+}
+
+.about-section-title {
+    color: #2c3e50;
+    font-weight: 700;
+    margin-top: 1.8rem;
+    margin-bottom: 0.7rem;
+}
+
+.about-lead,
+.about-paragraph {
+    color: #3f4f5f;
+    line-height: 1.75;
+    margin-bottom: 0.9rem;
+    font-size: 1rem;
+}
+
+.about-faq-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+    margin-top: 0.8rem;
+}
+
+.faq-item {
+    border: 1px solid #dce3eb;
+    border-radius: 10px;
+    background: #fbfdff;
+    padding: 0.65rem 0.85rem;
+}
+
+.faq-item summary {
+    cursor: pointer;
+    color: #1f3548;
+    font-weight: 600;
+}
+
+.faq-item p {
+    margin: 0.65rem 0 0;
+    color: #4b5d6f;
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .about-page-content {
+        padding: 1.2rem 1rem 1rem;
+        border-radius: 10px;
+    }
+
+    .about-lead,
+    .about-paragraph,
+    .faq-item p {
+        font-size: 0.96rem;
+    }
 }

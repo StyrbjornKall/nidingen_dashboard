@@ -194,6 +194,7 @@ app.layout = html.Div([
         dbc.Tab(label="Värmekarta",     tab_id="tab-heatmap"),
         dbc.Tab(label="Väderanalys",    tab_id="tab-weather"),
         dbc.Tab(label="Återfynd",       tab_id="tab-rediscoveries"),
+        dbc.Tab(label="Om websidan",    tab_id="tab-about-webpage"),
     ], id="tabs", active_tab="tab-home", className="top-nav-tabs"),
 
     # ── FILTER DROPDOWN PANEL (hidden on Hem + Väderanalys) ──────────────
@@ -554,6 +555,99 @@ app.layout = html.Div([
             ], fluid=True, className="py-4"),
         ], id="content-tab-rediscoveries", style={"display": "none"}),
 
+        # ── Om websidan tab ───────────────────────────────────────────────
+        html.Div([
+            dbc.Container([
+                html.Div([
+                    html.H1("Om websidan", className="about-title"),
+                    html.P(
+                        "Skådare, familjemedlemmar och vänner har sedan 1980 samlat in data "
+                        "på Nidingens fågelstation för forskningsändamål. Det är ett mödosamt "
+                        "arbete som få haft insikt i då datat som samlats in hamnat i excelark, "
+                        "databaser eller dokument hos Ringmärkningscentralen och på själva ön.",
+                        className="about-lead"
+                    ),
+                    html.P(
+                        "I ett försök att skörda frukterna av vårt hårda arbete och tillgängliggöra "
+                        "intressanta observationer från de 45+ år av data till alla som varit "
+                        "delaktiga har vi därför skapat detta datavisualiseringsverktyg.",
+                        className="about-paragraph"
+                    ),
+                    html.P(
+                        "Verktyget innehåller i stort sett samtliga data från 1980 till idag som samlats in på "
+                        "Nidingen i interaktiv form. Alla arter, märkningar, kontroller och återfynd "
+                        "som någon gång lagts in i Fagel (vårt märkningssystem) finns här visualiserade "
+                        "på ett, förhoppningsvis, lättbegripligt sätt.",
+                        className="about-paragraph"
+                    ),
+
+                    html.H2("Beskrivning", className="about-section-title"),
+                    html.P(
+                        "Verktyget är en dashboard med i stort sett enbart interaktiva komponenter. "
+                        "Det är svårt att överblicka de nästan 400 000 märkningar som finns i datat, så websidan är "
+                        "därför dynamisk. I nuläget är det främst art- och datumfilter som används för "
+                        "att styra visualiseringarna, men du kan även klicka i vissa figurer och hålla "
+                        "muspekaren över punkter i figurerna för att se mer information.",
+                        className="about-paragraph"
+                    ),
+
+                    html.H2("Vem där?", className="about-section-title"),
+                    html.P([
+                        "Jag som utvecklat webbverktyget heter Styrbjörn Käll. Kontakta gärna mig om "
+                        "du har idéer eller förbättringsförslag (",
+                        html.A("skall@chalmers.se", href="mailto:skall@chalmers.se"),
+                        "). Tack till Tommy Järås, Mikael Käll och Anders Magnusson som hjälpt till "
+                        "med databearbetning och utformning av websidan." 
+                        "Och tack till alla som samlat in data på Nidingen under årens lopp – det är ert arbete som gör det här möjligt!"
+                    ], className="about-paragraph"),
+
+                    html.H2("FAQ", className="about-section-title"),
+                    html.Div([
+                        html.Details([
+                            html.Summary("1. Vad visar websidan i korthet?"),
+                            html.P("Den visar ringmärkningsdata från Nidingen i interaktiva diagram och kartor, så att du enkelt kan se mönster över tid.")
+                        ], className="faq-item"),
+                        html.Details([
+                            html.Summary("2. Jag är inte van vid diagram, var ska jag börja?"),
+                            html.P("Börja med Sammanfattning-fliken. Välj en art och ett datumintervall så får du en enkel översikt innan du går vidare.")
+                        ], className="faq-item"),
+                        html.Details([
+                            html.Summary("3. Varför ändras siffrorna när jag byter filter?"),
+                            html.P("Alla figurer uppdateras direkt efter dina val. Om du väljer få arter eller kort tid blir antalen naturligt lägre.")
+                        ], className="faq-item"),
+                        html.Details([
+                            html.Summary("4. Vad är skillnaden mellan märkningar, kontroller och återfynd?"),
+                            html.P("Märkning är ny ringmärkning, kontroll är återfångst av redan ringmärkt fågel, och återfynd är rapporterad fyndhändelse efter ringmärkning.")
+                        ], className="faq-item"),
+                        html.Details([
+                            html.Summary("5. Kan jag se data för bara en viss period, till exempel hösten?"),
+                            html.P("Ja. Använd datumväljaren högst upp på sidan för att avgränsa till exakt den period du vill undersöka.")
+                        ], className="faq-item"),
+                        html.Details([
+                            html.Summary("6. Vad betyder TOTAL i artlistan?"),
+                            html.P("TOTAL är en sammanlagd visning över alla arter i valt urval. Det är bra för att se helhetsbilden.")
+                        ], className="faq-item"),
+                        html.Details([
+                            html.Summary("7. Kan jag jämföra flera arter samtidigt?"),
+                            html.P("Ja. Du kan välja flera arter i filterlistan och se dem sida vid sida i samma visualisering.")
+                        ], className="faq-item"),
+                        html.Details([
+                            html.Summary("8. Vad gör jag om en figur ser tom ut?"),
+                            html.P("Kontrollera först att du valt minst en art och att datumintervallet innehåller data. Prova sedan ett bredare intervall.")
+                        ], className="faq-item"),
+                        html.Details([
+                            html.Summary("9. Kan jag använda websidan i mobil eller surfplatta?"),
+                            html.P("Ja, den fungerar i mobil och surfplatta. På mindre skärmar kan du behöva scrolla mer i vissa figurer.")
+                        ], className="faq-item"),
+                        html.Details([
+                            html.Summary("10. Vem kontaktar jag om jag hittar fel eller har förslag?"),
+                            html.P("Skicka ett mejl till skall@chalmers.se. Förslag och synpunkter är mycket välkomna.")
+                        ], className="faq-item"),
+                    ], className="about-faq-list"),
+                ], className="about-page-content"),
+            ], fluid=True, className="py-4"),
+        ], id="content-tab-about-webpage", style={"display": "none"}),
+
     ], id="main-content-area"),
 
     # ── FOOTER ────────────────────────────────────────────────────────────
@@ -577,11 +671,12 @@ app.layout = html.Div([
      Output("content-tab-heatmap", "style"),
      Output("content-tab-weather", "style"),
      Output("content-tab-rediscoveries", "style"),
+     Output("content-tab-about-webpage", "style"),
      Output("filter-panel-outer", "style")],
     Input("tabs", "active_tab"),
 )
 def update_tab_visibility(active_tab):
-    """Show only the active tab content; show filter panel unless on Hem/Väderanalys/Återfynd."""
+    """Show only the active tab content; hide filters on non-filter tabs."""
     _TAB_IDS = [
         "tab-home",
         "tab-summary-timeseries",
@@ -590,6 +685,7 @@ def update_tab_visibility(active_tab):
         "tab-heatmap",
         "tab-weather",
         "tab-rediscoveries",
+        "tab-about-webpage",
     ]
     content_styles = [
         {"display": "block"} if tid == active_tab else {"display": "none"}
@@ -601,7 +697,7 @@ def update_tab_visibility(active_tab):
 
     filter_style = (
         {"display": "none"}
-        if active_tab in ("tab-home", "tab-weather", "tab-rediscoveries")
+        if active_tab in ("tab-home", "tab-weather", "tab-rediscoveries", "tab-about-webpage")
         else {"display": "block"}
     )
     return content_styles + [filter_style]
