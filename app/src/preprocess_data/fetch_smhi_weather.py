@@ -484,6 +484,79 @@ def patch_nidingen_from_vinga(db_path: str) -> None:
         db.optimize_database()
 
 
+# ---------------------------------------------------------------------------
+# Precomputed daily summary table
+# ---------------------------------------------------------------------------
+
+def build_weather_daily(db_path: str) -> None:
+    """
+    (Re)build the ``weather_daily`` precomputed table in DuckDB.
+
+    This table stores one aggregated row per calendar date, computed from the
+    hourly ``weather_data`` and ``weather_data_vinga`` tables.  Using it in
+    the dashboard's weather tab avoids grouping 300 000+ hourly rows on every
+    user request, making the plot near-instant instead of multi-second.
+
+    Must be called *after* both ``weather_data`` and ``weather_data_vinga``
+    have been populated (i.e. at the end of the fetch workflow).  It is safe
+    to call on an existing database — the table is rebuilt from scratch each
+    time.
+
+    Parameters
+    ----------
+    db_path : str
+        Path to the DuckDB database.
+    """
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from db_manager import BirdRingingDB
+
+    db_path_obj = Path(db_path)
+    if not db_path_obj.exists():
+        raise FileNotFoundError(f"Database not found: {db_path_obj}")
+
+    print("\nBuilding weather_daily precomputed table …")
+    with BirdRingingDB(str(db_path_obj)) as db:
+        conn = db.conn
+
+        conn.execute("DROP TABLE IF EXISTS weather_daily")
+        conn.execute("""
+            CREATE TABLE weather_daily AS
+            SELECT
+                CAST(w.observation_time AS DATE)                       AS date,
+                EXTRACT(YEAR  FROM CAST(w.observation_time AS DATE))::INTEGER AS year,
+                EXTRACT(MONTH FROM CAST(w.observation_time AS DATE))::INTEGER AS month,
+                EXTRACT(DOY   FROM CAST(w.observation_time AS DATE))::INTEGER AS day_of_year,
+                AVG(w.temperature)                                     AS mean_temperature,
+                MIN(w.temperature)                                     AS min_temperature,
+                MAX(w.temperature)                                     AS max_temperature,
+                AVG(w.wind_speed)                                      AS mean_wind_speed,
+                MAX(w.gust_wind)                                       AS max_gust,
+                AVG(w.wind_direction)                                  AS mean_wind_direction,
+                AVG(w.humidity)                                        AS mean_humidity,
+                SUM(COALESCE(w.precipitation, v.precipitation))        AS total_precipitation,
+                AVG(COALESCE(w.pressure, v.pressure))                  AS mean_pressure,
+                AVG(COALESCE(w.visibility, v.visibility))              AS mean_visibility,
+                AVG(w.cloud_cover)                                     AS mean_cloud_cover,
+                COUNT(w.temperature) * 1.0 / 24.0                     AS data_completeness,
+                BOOL_OR(
+                    (w.precipitation IS NULL AND v.precipitation IS NOT NULL)
+                    OR (w.pressure   IS NULL AND v.pressure      IS NOT NULL)
+                    OR (w.visibility IS NULL AND v.visibility    IS NOT NULL)
+                )                                                      AS vinga_gap_fill_used
+            FROM weather_data w
+            LEFT JOIN weather_data_vinga v ON w.observation_time = v.observation_time
+            GROUP BY CAST(w.observation_time AS DATE)
+            ORDER BY date
+        """)
+        conn.execute("CREATE INDEX idx_weather_daily_date ON weather_daily(date)")
+
+        n = conn.execute("SELECT COUNT(*) FROM weather_daily").fetchone()[0]
+        date_range = conn.execute(
+            "SELECT MIN(date), MAX(date) FROM weather_daily"
+        ).fetchone()
+        print(f"  weather_daily: {n:,} rows  ({date_range[0]} → {date_range[1]})")
+
+        db.optimize_database()
 
 
 # ---------------------------------------------------------------------------
@@ -595,6 +668,11 @@ def main() -> None:
 
             # 3. Patch Nidingen weather_data with Vinga values where NULL
             patch_nidingen_from_vinga(args.db_path)
+
+    # 4. (Re)build the precomputed daily summary table — always do this after
+    #    any new data has been written so the dashboard picks up fresh values.
+    if not args.dry_run:
+        build_weather_daily(args.db_path)
 
     print("\nDone.")
 

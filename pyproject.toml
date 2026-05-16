@@ -9,6 +9,7 @@ dependencies = [
     "dash-bootstrap-components>=2.0.4",
     "dotenv>=0.9.9",
     "duckdb>=1.5.2",
+    "flask-caching>=2.4.0",
     "matplotlib>=3.10.9",
     "pandas>=2.3.3",
     "plotly>=6.7.0",

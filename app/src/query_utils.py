@@ -1191,6 +1191,11 @@ class BirdRingingQueries:
         Return a compact daily weather summary table, useful for dashboard
         overview plots (temperature, wind, rain, cloud).
 
+        Queries the precomputed ``weather_daily`` table — one row per calendar
+        date — which is built by ``fetch_smhi_weather.py``.  This avoids
+        GROUP BY aggregation over 300 000+ hourly rows on every request,
+        making the weather dashboard tab near-instant.
+
         Parameters
         ----------
         start_date, end_date : str, optional
@@ -1203,41 +1208,32 @@ class BirdRingingQueries:
         """
         where_parts = ["1=1"]
         if start_date:
-            where_parts.append(f"CAST(w.observation_time AS DATE) >= '{start_date}'")
+            where_parts.append(f"date >= '{start_date}'")
         if end_date:
-            where_parts.append(f"CAST(w.observation_time AS DATE) <= '{end_date}'")
+            where_parts.append(f"date <= '{end_date}'")
         where_clause = " AND ".join(where_parts)
 
         return f"""
         SELECT
-            CAST(w.observation_time AS DATE)                       AS date,
-            EXTRACT(YEAR  FROM CAST(w.observation_time AS DATE))::INTEGER AS year,
-            EXTRACT(MONTH FROM CAST(w.observation_time AS DATE))::INTEGER AS month,
-            EXTRACT(DOY   FROM CAST(w.observation_time AS DATE))::INTEGER AS day_of_year,
-            AVG(w.temperature)                 AS mean_temperature,
-            MIN(w.temperature)                 AS min_temperature,
-            MAX(w.temperature)                 AS max_temperature,
-            AVG(w.wind_speed)                  AS mean_wind_speed,
-            MAX(w.gust_wind)                   AS max_gust,
-            AVG(w.wind_direction)              AS mean_wind_direction,
-            AVG(w.humidity)                    AS mean_humidity,
-            -- Prefer Nidingen precipitation; fall back to Vinga when NULL
-            SUM(COALESCE(w.precipitation, v.precipitation))        AS total_precipitation,
-            -- Prefer Nidingen pressure; fall back to Vinga when NULL
-            AVG(COALESCE(w.pressure, v.pressure))                  AS mean_pressure,
-            -- Prefer Nidingen visibility; fall back to Vinga when NULL
-            AVG(COALESCE(w.visibility, v.visibility))              AS mean_visibility,
-            AVG(w.cloud_cover)                 AS mean_cloud_cover,
-            COUNT(w.temperature) * 1.0 / 24.0 AS data_completeness,   -- 1.0 = full hourly day; ~0.33 = 3-hourly synoptic (pre-1996)
-            -- Flag whether any Vinga values were used in this day's aggregation
-            BOOL_OR(w.precipitation IS NULL AND v.precipitation IS NOT NULL
-                    OR w.pressure   IS NULL AND v.pressure      IS NOT NULL
-                    OR w.visibility IS NULL AND v.visibility    IS NOT NULL)
-                                               AS vinga_gap_fill_used
-        FROM weather_data w
-        LEFT JOIN weather_data_vinga v ON w.observation_time = v.observation_time
+            date,
+            year,
+            month,
+            day_of_year,
+            mean_temperature,
+            min_temperature,
+            max_temperature,
+            mean_wind_speed,
+            max_gust,
+            mean_wind_direction,
+            mean_humidity,
+            total_precipitation,
+            mean_pressure,
+            mean_visibility,
+            mean_cloud_cover,
+            data_completeness,
+            vinga_gap_fill_used
+        FROM weather_daily
         WHERE {where_clause}
-        GROUP BY CAST(w.observation_time AS DATE)
         ORDER BY date
         """
 

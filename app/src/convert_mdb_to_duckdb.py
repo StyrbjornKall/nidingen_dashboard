@@ -701,10 +701,111 @@ def initialize_weather_schemas(duck: duckdb.DuckDBPyConnection) -> None:
             f"CREATE INDEX IF NOT EXISTS idx_{prefix}_date "
             f"ON {table}(CAST(observation_time AS DATE))"
         )
-    print("  weather_data + weather_data_vinga schemas ready (populate with fetch_smhi_weather.py)")
+    # Create an empty weather_daily table so the app starts without errors
+    # even before weather data has been fetched.  The real data is populated
+    # by fetch_smhi_weather.py via build_weather_daily().
+    duck.execute("""
+        CREATE TABLE IF NOT EXISTS weather_daily (
+            date                DATE PRIMARY KEY,
+            year                INTEGER,
+            month               INTEGER,
+            day_of_year         INTEGER,
+            mean_temperature    DOUBLE,
+            min_temperature     DOUBLE,
+            max_temperature     DOUBLE,
+            mean_wind_speed     DOUBLE,
+            max_gust            DOUBLE,
+            mean_wind_direction DOUBLE,
+            mean_humidity       DOUBLE,
+            total_precipitation DOUBLE,
+            mean_pressure       DOUBLE,
+            mean_visibility     DOUBLE,
+            mean_cloud_cover    DOUBLE,
+            data_completeness   DOUBLE,
+            vinga_gap_fill_used BOOLEAN
+        )
+    """)
+    duck.execute("CREATE INDEX IF NOT EXISTS idx_weather_daily_date ON weather_daily(date)")
+    print("  weather_data + weather_data_vinga + weather_daily schemas ready "
+          "(populate with fetch_smhi_weather.py)")
 
 
 # ── entry point ──────────────────────────────────────────────────────────────
+
+def build_precomputed_tables(duck: duckdb.DuckDBPyConnection) -> None:
+    """
+    Build small precomputed tables that the dashboard reads at startup
+    to avoid expensive aggregations on first render.
+
+    Tables created
+    --------------
+    species_list
+        All distinct (species_code, swedish_name) with taxonomy sort keys
+        pre-joined from species_metadata.  Used to populate the species
+        dropdown in O(1) at app startup instead of joining ring_records
+        with species_metadata on every launch.
+    rediscoveries_species_options
+        Species present in the fynd / frring tables (for the Återfynd tab).
+    date_range_cache
+        Single-row table with (min_date, max_date) for the DatePickerRange.
+    year_list
+        Distinct calendar years with ringing data (for the heatmap dropdown).
+    """
+    print("  Building precomputed metadata tables …")
+
+    duck.execute("DROP TABLE IF EXISTS species_list")
+    duck.execute("""
+        CREATE TABLE species_list AS
+        SELECT
+            r.species_code,
+            r.swedish_name,
+            COALESCE(m.order_scientific_name, '~') AS order_name,
+            COALESCE(m.family_scientific_name, '~') AS family_name,
+            COALESCE(m.scientific_name, r.swedish_name, r.species_code) AS sci_name,
+            m.english_name
+        FROM (SELECT DISTINCT species_code, swedish_name FROM ring_records) r
+        LEFT JOIN species_metadata m ON r.swedish_name = m.swedish_name
+        ORDER BY order_name, family_name, sci_name
+    """)
+    n1 = duck.execute("SELECT COUNT(*) FROM species_list").fetchone()[0]
+    print(f"    species_list: {n1} rows")
+
+    duck.execute("DROP TABLE IF EXISTS rediscoveries_species_options")
+    duck.execute("""
+        CREATE TABLE rediscoveries_species_options AS
+        SELECT src.species_code, al.swedish_name
+        FROM (
+            SELECT DISTINCT species_code FROM fynd
+            UNION
+            SELECT DISTINCT species_code FROM frring
+        ) src
+        LEFT JOIN artkod_lookup al ON src.species_code = al.artkod
+        WHERE src.species_code IS NOT NULL
+        ORDER BY src.species_code
+    """)
+    n2 = duck.execute("SELECT COUNT(*) FROM rediscoveries_species_options").fetchone()[0]
+    print(f"    rediscoveries_species_options: {n2} rows")
+
+    duck.execute("DROP TABLE IF EXISTS date_range_cache")
+    duck.execute("""
+        CREATE TABLE date_range_cache AS
+        SELECT MIN(date) AS min_date, MAX(date) AS max_date
+        FROM ring_records
+        WHERE species_code != 'TOTAL' AND date IS NOT NULL
+    """)
+    print("    date_range_cache: 1 row")
+
+    duck.execute("DROP TABLE IF EXISTS year_list")
+    duck.execute("""
+        CREATE TABLE year_list AS
+        SELECT DISTINCT EXTRACT(YEAR FROM date)::INTEGER AS year
+        FROM ring_records
+        WHERE species_code != 'TOTAL' AND date IS NOT NULL
+        ORDER BY year
+    """)
+    n4 = duck.execute("SELECT COUNT(*) FROM year_list").fetchone()[0]
+    print(f"    year_list: {n4} rows")
+
 
 def convert(mdb_path: Path, db_path: Path) -> None:
     now = datetime.now().strftime("%H:%M:%S")
@@ -721,23 +822,27 @@ def convert(mdb_path: Path, db_path: Path) -> None:
     duck.execute("SET threads=4")
 
     # ── 1. native tables ──────────────────────────────────────────────
-    print("[1/5] Reading Access tables…")
+    print("[1/6] Reading Access tables…")
     tables = read_native_tables(mdb_path)
 
-    print("[2/5] Writing native tables to DuckDB…")
+    print("[2/6] Writing native tables to DuckDB…")
     write_native_tables(duck, tables)
 
     # ── 2. lookup / metadata ─────────────────────────────────────────
-    print("[3/5] Loading species metadata…")
+    print("[3/6] Loading species metadata…")
     load_artkod_lookup(duck, _METADATA_CSV)
     load_species_metadata(duck, _METADATA_CSV)
 
     # ── 3. ring_records compatibility table ───────────────────────────
-    print("[4/5] Building ring_records compatibility table…")
+    print("[4/6] Building ring_records compatibility table…")
     build_ring_records(duck)
 
-    # ── 4. weather schemas (empty, populate later) ───────────────────
-    print("[5/5] Initializing weather schemas…")
+    # ── 4. precomputed metadata tables (fast startup) ─────────────────
+    print("[5/6] Building precomputed metadata tables…")
+    build_precomputed_tables(duck)
+
+    # ── 5. weather schemas (empty, populate later) ───────────────────
+    print("[6/6] Initializing weather schemas…")
     initialize_weather_schemas(duck)
 
     # ── 5. optimize ───────────────────────────────────────────────────

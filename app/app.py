@@ -18,6 +18,7 @@ import sys
 import polars as pl
 from datetime import datetime, date
 from dotenv import load_dotenv
+from flask_caching import Cache
 
 load_dotenv()
 
@@ -56,6 +57,15 @@ app = dash.Dash(
     ]
 )
 
+# Simple in-process cache for expensive, rarely-changing callbacks.
+# SimpleCache lives in the Python process (no extra service needed).
+# Timeout: 1 hour — long enough for typical sessions, short enough that a
+# DB rebuild + app restart refreshes data without manual cache clearing.
+cache = Cache(app.server, config={
+    "CACHE_TYPE": "SimpleCache",
+    "CACHE_DEFAULT_TIMEOUT": 3600,
+})
+
 # Database path — override with DUCKDB_PATH env var for deployment.
 # Default points to the new MDB-sourced database created by
 # app/src/convert_mdb_to_duckdb.py.  The old bird_ringing.db is deprecated.
@@ -80,54 +90,68 @@ if not Path(DB_PATH).exists():
     )
 
 # Load initial data for filters
+# Fast path: use precomputed tables built by convert_mdb_to_duckdb.py.
+# Slow path: fall back to direct ring_records queries for databases that
+# haven't been rebuilt yet. Run app/src/preprocess_data/rebuild_precomputed_tables.py
+# to create the precomputed tables on an existing database.
 with BirdRingingDB(DB_PATH, read_only=True) as db:
-    # Get available species
-    species_list = db.execute_query("""
-        SELECT DISTINCT species_code, swedish_name 
-        FROM ring_records 
-        ORDER BY species_code
-    """).fetchall()
-    
-    # Get date range
-    date_range = db.execute_query("""
-        SELECT MIN(date), MAX(date) 
-        FROM ring_records
-    """).fetchone()
-    
-    # Get available years for heatmap
-    years_list = db.execute_query("""
-        SELECT DISTINCT EXTRACT(YEAR FROM date) as year
-        FROM ring_records
-        ORDER BY year
-    """).fetchall()
-    available_years = [int(row[0]) for row in years_list]
+    try:
+        _species_rows = db.execute_query(
+            "SELECT species_code, swedish_name, order_name, family_name, sci_name "
+            "FROM species_list ORDER BY order_name, family_name, sci_name"
+        ).fetchall()
+        date_range = db.execute_query(
+            "SELECT min_date, max_date FROM date_range_cache"
+        ).fetchone()
+        available_years = [
+            int(row[0]) for row in
+            db.execute_query("SELECT year FROM year_list ORDER BY year").fetchall()
+        ]
+        rediscoveries_species_list = db.execute_query(
+            "SELECT species_code, swedish_name "
+            "FROM rediscoveries_species_options ORDER BY species_code"
+        ).fetchall()
+    except Exception:
+        # Fallback: original slower queries for databases without precomputed tables
+        print(
+            "WARNING: Precomputed lookup tables not found. "
+            "Run app/src/preprocess_data/rebuild_precomputed_tables.py to speed up startup."
+        )
+        _species_rows_raw = db.execute_query("""
+            SELECT r.species_code, r.swedish_name,
+                   COALESCE(m.order_scientific_name, '~') AS order_name,
+                   COALESCE(m.family_scientific_name, '~') AS family_name,
+                   COALESCE(m.scientific_name, r.swedish_name, r.species_code) AS sci_name
+            FROM (SELECT DISTINCT species_code, swedish_name FROM ring_records) r
+            LEFT JOIN species_metadata m ON r.swedish_name = m.swedish_name
+            ORDER BY order_name, family_name, sci_name
+        """).fetchall()
+        _species_rows = _species_rows_raw
 
-    # Species present in the rediscoveries (fynd / frring) tables
-    rediscoveries_species_list = db.execute_query(
-        BirdRingingQueries.get_rediscoveries_species_options()
-    ).fetchall()
+        date_range = db.execute_query(
+            "SELECT MIN(date), MAX(date) FROM ring_records"
+        ).fetchone()
+        available_years = [
+            int(row[0]) for row in db.execute_query(
+                "SELECT DISTINCT EXTRACT(YEAR FROM date) AS year "
+                "FROM ring_records ORDER BY year"
+            ).fetchall()
+        ]
+        rediscoveries_species_list = db.execute_query(
+            BirdRingingQueries.get_rediscoveries_species_options()
+        ).fetchall()
 
-    # Build taxonomy sort order lookup: species_code -> (order, family, scientific_name)
-    # Sorts by the biological hierarchy: Order → Family → Scientific name.
-    # Unmatched species (no metadata join) are placed at the end via '~' sentinel.
-    _taxon_rows = db.execute_query("""
-        SELECT r.species_code, r.swedish_name,
-               COALESCE(m.order_scientific_name, '~') AS order_name,
-               COALESCE(m.family_scientific_name, '~') AS family_name,
-               COALESCE(m.scientific_name, r.swedish_name, r.species_code) AS sci_name
-        FROM (SELECT DISTINCT species_code, swedish_name FROM ring_records) r
-        LEFT JOIN species_metadata m ON r.swedish_name = m.swedish_name
-        ORDER BY order_name, family_name, sci_name
-    """).fetchall()
-    # TOTAL always first (empty-string tuple sorts before anything); others by hierarchy
-    TAXON_SORT_ORDER = {}
-    _SPECIES_SWEDISH = {}
-    for code, swe_name, order_name, family_name, sci_name in _taxon_rows:
-        if code == "TOTAL":
-            TAXON_SORT_ORDER[code] = ("", "", "")
-        else:
-            TAXON_SORT_ORDER[code] = (order_name, family_name, sci_name)
-        _SPECIES_SWEDISH[code] = swe_name
+# Build taxonomy sort-order lookup from the already-fetched species_list rows
+TAXON_SORT_ORDER: dict = {}
+_SPECIES_SWEDISH: dict = {}
+for code, swe_name, order_name, family_name, sci_name in _species_rows:
+    if code == "TOTAL":
+        TAXON_SORT_ORDER[code] = ("", "", "")
+    else:
+        TAXON_SORT_ORDER[code] = (order_name, family_name, sci_name)
+    _SPECIES_SWEDISH[code] = swe_name
+
+species_list = [(row[0], row[1]) for row in _species_rows]
 
 
 def sort_species_by_taxonomy(species_codes):
@@ -601,6 +625,12 @@ def toggle_filter_collapse(n_clicks, is_open):
 )
 def update_species_total_bar(_active_tab):
     """Horizontal bar chart: top 100 species by total ringing records in Ringon."""
+    return _species_total_bar_figure()
+
+
+@cache.memoize(timeout=3600)
+def _species_total_bar_figure():
+    """Build (and cache) the species totals bar chart.  Cached for 1 hour."""
     query = """
     SELECT
         r.species_code,
@@ -798,55 +828,46 @@ def update_summary(species_codes, start_date, end_date):
 
     selected_species = [code for code in (species_codes or []) if code != "TOTAL"]
 
-    def _table_metrics(db, table_name):
-        where_clauses = ["date >= ?", "date <= ?"]
-        params = [start_date_obj, end_date_obj]
+    # Build optional species IN clause (shared across all arms)
+    if selected_species:
+        sp_placeholders = ", ".join(["?"] * len(selected_species))
+        sp_clause = f" AND species_code IN ({sp_placeholders})"
+        sp_params = selected_species
+    else:
+        sp_clause = ""
+        sp_params = []
 
-        if selected_species:
-            placeholders = ", ".join(["?"] * len(selected_species))
-            where_clauses.append(f"species_code IN ({placeholders})")
-            params.extend(selected_species)
-
-        where_sql = " AND ".join(where_clauses)
-        row_count = db.conn.execute(
-            f"SELECT COUNT(*) FROM {table_name} WHERE {where_sql}",
-            params,
-        ).fetchone()[0]
-        return row_count
-    
     with BirdRingingDB(DB_PATH, read_only=True) as db:
-        ringon_rows = _table_metrics(db, "ringon")
-        kontr_rows = _table_metrics(db, "kontr")
-        fynd_rows = _table_metrics(db, "fynd")
-
-        where_clauses = ["date >= ?", "date <= ?"]
-        params = [start_date_obj, end_date_obj]
-        if selected_species:
-            placeholders = ", ".join(["?"] * len(selected_species))
-            where_clauses.append(f"species_code IN ({placeholders})")
-            params.extend(selected_species)
-        where_sql = " AND ".join(where_clauses)
-
-        unique_species = db.conn.execute(
-            f"SELECT COUNT(DISTINCT species_code) FROM ringon WHERE {where_sql}",
-            params,
-        ).fetchone()[0]
-
-        year_bounds = db.conn.execute(
+        # Single combined query — one pass through each table
+        row = db.conn.execute(
             f"""
             SELECT
-                MIN(EXTRACT(YEAR FROM date)) AS min_year,
-                MAX(EXTRACT(YEAR FROM date)) AS max_year
-            FROM ringon
-            WHERE {where_sql}
+                (SELECT COUNT(*) FROM ringon
+                 WHERE date >= ? AND date <= ?{sp_clause})   AS ringon_rows,
+                (SELECT COUNT(*) FROM kontr
+                 WHERE date >= ? AND date <= ?{sp_clause})   AS kontr_rows,
+                (SELECT COUNT(*) FROM fynd
+                 WHERE date >= ? AND date <= ?{sp_clause})   AS fynd_rows,
+                (SELECT COUNT(DISTINCT species_code) FROM ringon
+                 WHERE date >= ? AND date <= ?{sp_clause})   AS unique_species,
+                (SELECT MIN(EXTRACT(YEAR FROM date)) FROM ringon
+                 WHERE date >= ? AND date <= ?{sp_clause})   AS min_year,
+                (SELECT MAX(EXTRACT(YEAR FROM date)) FROM ringon
+                 WHERE date >= ? AND date <= ?{sp_clause})   AS max_year
             """,
-            params,
+            [start_date_obj, end_date_obj] + sp_params +
+            [start_date_obj, end_date_obj] + sp_params +
+            [start_date_obj, end_date_obj] + sp_params +
+            [start_date_obj, end_date_obj] + sp_params +
+            [start_date_obj, end_date_obj] + sp_params +
+            [start_date_obj, end_date_obj] + sp_params,
         ).fetchone()
 
-        if year_bounds and year_bounds[0] is not None and year_bounds[1] is not None:
-            year_range_str = f"{int(year_bounds[0])}–{int(year_bounds[1])}"
-        else:
-            year_range_str = "No data"
+    ringon_rows, kontr_rows, fynd_rows, unique_species, min_year, max_year = row
+    if min_year is not None and max_year is not None:
+        year_range_str = f"{int(min_year)}–{int(max_year)}"
+    else:
+        year_range_str = "No data"
     
     return dbc.Row([
         dbc.Col([
@@ -966,16 +987,16 @@ def update_weight_distribution(species_codes, start_date, end_date):
     """Update weight distribution plot."""
     if not species_codes:
         return go.Figure()
-    
+
+    sp_in = "', '".join(species_codes)
     with BirdRingingDB(DB_PATH, read_only=True) as db:
-        df = db.get_data_as_polars(
-            filters={"species_code": species_codes}
-        ).to_pandas()
-    
-    # Filter by date
-    df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
-    # Remove NA and zero values (incorrect measurements)
-    df = df[(df["weight"].notna()) & (df["weight"] > 0)]
+        df = db.execute_query(f"""
+            SELECT species_code, swedish_name, weight, date
+            FROM ring_records
+            WHERE species_code IN ('{sp_in}')
+              AND date >= '{start_date}' AND date <= '{end_date}'
+              AND weight IS NOT NULL AND weight > 0
+        """).pl().to_pandas()
 
     # Clip each species to the 1.5×IQR fence to remove outlier tails
     _q1 = df.groupby("swedish_name")["weight"].transform("quantile", 0.25)
@@ -1034,16 +1055,16 @@ def update_wing_distribution(species_codes, start_date, end_date):
     """Update wing length distribution plot."""
     if not species_codes:
         return go.Figure()
-    
+
+    sp_in = "', '".join(species_codes)
     with BirdRingingDB(DB_PATH, read_only=True) as db:
-        df = db.get_data_as_polars(
-            filters={"species_code": species_codes}
-        ).to_pandas()
-    
-    # Filter by date
-    df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
-    # Remove NA and zero values (incorrect measurements)
-    df = df[(df["wing_length"].notna()) & (df["wing_length"] > 0)]
+        df = db.execute_query(f"""
+            SELECT species_code, swedish_name, wing_length, date
+            FROM ring_records
+            WHERE species_code IN ('{sp_in}')
+              AND date >= '{start_date}' AND date <= '{end_date}'
+              AND wing_length IS NOT NULL AND wing_length > 0
+        """).pl().to_pandas()
 
     # Clip each species to the 1.5×IQR fence to remove outlier tails
     _q1 = df.groupby("swedish_name")["wing_length"].transform("quantile", 0.25)
@@ -1102,16 +1123,16 @@ def update_age_distribution(species_codes, start_date, end_date):
     """Update age distribution plot showing percentage of age classes per species."""
     if not species_codes:
         return go.Figure()
-    
+
+    sp_in = "', '".join(species_codes)
     with BirdRingingDB(DB_PATH, read_only=True) as db:
-        df = db.get_data_as_polars(
-            filters={"species_code": species_codes}
-        ).to_pandas()
-    
-    # Filter by date
-    df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
-    # Remove NA values in age
-    df = df[df["age"].notna() & (df["age"] != "")]
+        df = db.execute_query(f"""
+            SELECT species_code, swedish_name, age, date
+            FROM ring_records
+            WHERE species_code IN ('{sp_in}')
+              AND date >= '{start_date}' AND date <= '{end_date}'
+              AND age IS NOT NULL AND age != ''
+        """).pl().to_pandas()
     
     if len(df) == 0:
         return go.Figure().add_annotation(
@@ -1203,16 +1224,16 @@ def update_fat_score_distribution(species_codes, start_date, end_date):
     """Update fat score distribution plot."""
     if not species_codes:
         return go.Figure()
-    
+
+    sp_in = "', '".join(species_codes)
     with BirdRingingDB(DB_PATH, read_only=True) as db:
-        df = db.get_data_as_polars(
-            filters={"species_code": species_codes}
-        ).to_pandas()
-    
-    # Filter by date
-    df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
-    # Remove NA values in fat score and filter valid range (0-10)
-    df = df[df["fat_score"].notna() & (df["fat_score"] >= 0) & (df["fat_score"] <= 10)]
+        df = db.execute_query(f"""
+            SELECT species_code, swedish_name, fat_score, date
+            FROM ring_records
+            WHERE species_code IN ('{sp_in}')
+              AND date >= '{start_date}' AND date <= '{end_date}'
+              AND fat_score IS NOT NULL AND fat_score >= 0 AND fat_score <= 10
+        """).pl().to_pandas()
     
     if len(df) == 0:
         return go.Figure().add_annotation(

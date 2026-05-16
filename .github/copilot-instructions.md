@@ -21,6 +21,7 @@ This project is a web-based dashboard application for visualizing and analyzing 
 - **Database**: DuckDB (embedded analytical database)
 - **Data Processing**: Polars (high-performance DataFrame library)
 - **Visualization**: Plotly (interactive charts)
+- **Caching**: flask-caching (SimpleCache, 1-hour TTL for expensive static callbacks)
 - **Language**: Python 3.9+
 - **Web Server**: Gunicorn (production deployment)
 
@@ -140,10 +141,27 @@ LEFT JOIN species_metadata m ON r.swedish_name = m.swedish_name
 ### Other Supporting Tables
 
 - `weather_data`: SMHI hourly meteorological observations — see full schema below
+- `weather_daily`: **Precomputed** daily aggregates from `weather_data` + Vinga gap-fill. Used by the weather tab instead of GROUP BY over 300K hourly rows. Rebuilt by `fetch_smhi_weather.py` and `rebuild_precomputed_tables.py`.
 - `ringer_info`: Ringer contact information
 - `fynd`: Rediscovery events linked to Nidingen (6,223 rows, all with coordinates)
 - `frring`: Original ringing records for foreign rings found at Nidingen (764 rows)
 - `artkod_lookup`: Mapping from Swedish ringing species codes (e.g. `BLMES`) to Swedish common names
+
+### Precomputed Metadata Tables (Dashboard Startup)
+
+These tiny tables are created by `convert_mdb_to_duckdb.py` and can be refreshed
+with `app/src/preprocess_data/rebuild_precomputed_tables.py`. They replace expensive
+startup queries on `ring_records` (400 k+ rows).
+
+| Table | Rows | Purpose |
+|-------|------|---------|
+| `species_list` | ~216 | Distinct species with taxonomy sort keys (order/family/sci). Used for the species dropdown. |
+| `rediscoveries_species_options` | ~109 | Species present in fynd/frring. Used for the Återfynd tab dropdown. |
+| `date_range_cache` | 1 | `(min_date, max_date)` for the date picker range. |
+| `year_list` | ~47 | Distinct calendar years. Used for the heatmap year dropdown. |
+| `weather_daily` | ~16,000 | Daily weather aggregates. Used by the Väderanalys tab. |
+
+**If these tables are missing** (old database), the app falls back to slower direct queries and prints a warning. Run `rebuild_precomputed_tables.py` to add them.
 
 ### `fynd` and `frring` Tables — Rediscoveries
 
@@ -339,7 +357,7 @@ with BirdRingingDB("data/bird_ringing.db", read_only=True) as db:
 | `get_weather_for_date_range(start_date, end_date, aggregation)` | Raw or aggregated SMHI weather; `aggregation`: `hourly`, `daily`, `weekly`, `monthly` |
 | `get_weather_joined_with_ringing(start_date, end_date, species_codes, weather_aggregation, max_gap_hours)` | Ringing counts joined to weather; `weather_aggregation='daily'` (robust default) or `'nearest'` (ASOF JOIN, adds `weather_match_hours` gap column) |
 | `get_weather_at_capture_time(start_date, end_date, species_codes, max_gap_hours)` | Record-level ASOF join — one row per individual capture with nearest weather attached; `weather_match_hours` always present; weather columns NULL when gap > `max_gap_hours` |
-| `get_daily_weather_summary(start_date, end_date)` | Compact daily table: min/max/mean temp, wind, rain, visibility, cloud, `data_completeness`, `vinga_gap_fill_used`. Uses `COALESCE(w.x, v.x)` for precipitation, pressure, and visibility. |
+| `get_daily_weather_summary(start_date, end_date)` | Compact daily table: min/max/mean temp, wind, rain, visibility, cloud, `data_completeness`, `vinga_gap_fill_used`. Now reads from the precomputed `weather_daily` table (fast). |
 
 ## Dashboard Architecture (`app.py`)
 
@@ -758,6 +776,6 @@ with BirdRingingDB("data/bird_ringing.db") as db:
 
 ---
 
-**Last Updated**: 2026-03-20
+**Last Updated**: 2026-05-16
 **Database Version**: 1.0
 **Schema Version**: 1.1
