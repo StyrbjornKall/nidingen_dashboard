@@ -251,7 +251,7 @@ app.layout = html.Div([
                     }
                 ),
                 html.H2(
-                    "Historisk ringmärkningsdata och återfynd från Nidingen Fågelstation. Daglig upplösning från 1980-talet till idag-",
+                    "Historisk ringmärkningsdata och återfynd från Nidingen Fågelstation. Daglig upplösning från 1980-talet till idag.",
                     style={
                         "color": "#E7E7E7",
                         "fontWeight": "400",
@@ -2145,6 +2145,7 @@ def update_rediscoveries_map(species_codes, start_date, end_date, directions, sh
         empty_fig.update_layout(
             template="plotly_white",
             paper_bgcolor="rgba(0,0,0,0)",
+            plor_bgcolor="rgba(0,0,0,0)",
             geo=dict(showframe=False),
         )
         return empty_fig, html.P("Välj minst en riktning.", className="text-muted")
@@ -2172,6 +2173,7 @@ def update_rediscoveries_map(species_codes, start_date, end_date, directions, sh
         empty_fig.update_layout(
             template="plotly_white",
             paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
             annotations=[dict(text="Inga data för de valda filtren",
                               showarrow=False, font=dict(size=16))],
             geo=dict(showframe=False),
@@ -2212,7 +2214,7 @@ def update_rediscoveries_map(species_codes, start_date, end_date, directions, sh
                 lon=[_NIDINGEN_LON, row["longitude"]],
                 mode="lines",
                 line=dict(width=0.6, color=line_color),
-                opacity=0.35,
+                opacity=0.5,
                 showlegend=False,
                 hoverinfo="skip",
             ))
@@ -2232,7 +2234,7 @@ def update_rediscoveries_map(species_codes, start_date, end_date, directions, sh
             marker=dict(
                 size=8,
                 color=color_map[dir_val],
-                opacity=0.80,
+                opacity=0.50,
                 line=dict(width=0.5, color="#555"),
             ),
             text=sub["hover"],
@@ -2256,7 +2258,6 @@ def update_rediscoveries_map(species_codes, start_date, end_date, directions, sh
 
     fig.update_layout(
         template="plotly_white",
-        paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=0, r=0, t=40, b=0),
         title=dict(
             text=f"Återfynd – {len(df):,} händelser ({df['ring_number'].nunique():,} ringar)",
@@ -2276,15 +2277,23 @@ def update_rediscoveries_map(species_codes, start_date, end_date, directions, sh
         geo=dict(
             projection_type="natural earth",
             showland=True,
-            landcolor="#f0f4f8",
+            landcolor="#d4e8d4",        # light pastel green
             showcountries=True,
-            countrycolor="#c9d4dd",
+            countrycolor="#8fba8f",     # slightly deeper green border
             showcoastlines=True,
-            coastlinecolor="#8fa8b8",
+            coastlinecolor="#6a9f6a",
             showocean=True,
-            oceancolor="#e8f4f8",
+            oceancolor="#daeef5",       # soft blue ocean
+            showlakes=True,
+            lakecolor="#9cd9f0",
+            showrivers=True,
+            rivercolor="#93d6ec",
             showframe=False,
+            bgcolor="rgba(0,0,0,0)",    # transparent map background
+            resolution=110,
         ),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
 
     # ── Summary cards ─────────────────────────────────────────────────────
