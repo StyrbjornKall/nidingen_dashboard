@@ -1,259 +1,158 @@
-# 🐦 Bird Ringing Dashboard - Nidingen Station
+# 🐦 Nidingens Fågelstation — Bird Ringing Dashboard
 
-An interactive web dashboard for visualizing and analyzing bird ringing data from Nidingen ringing station in Sweden. Built with Plotly Dash, DuckDB, and Polars for high-performance data analysis.
+An interactive web dashboard for exploring more than 45 years of bird-ringing
+data from **Nidingens Fågelstation**, a ringing station on an island off the
+coast of Halland, Sweden. It covers about 396,000 newly ringed birds, 54,000
+recaptures and 6,000 recoveries from all over the world, together with SMHI
+weather data. Data run from 1980 to the present at daily resolution.
+
+It is built with **Plotly Dash**, **DuckDB** and **Polars**, and is deployed
+as a Docker container on SciLifeLab Serve. The user interface is in Swedish.
 
 ## Features
 
-- **📈 Time Series Analysis**: Visualize bird observations over time with flexible aggregation (daily, weekly, monthly, yearly)
-- **📊 Morphometric Analysis**: Explore weight and wing length distributions across species and age classes
-- **🌸 Phenology Tracking**: Analyze migration timing patterns and seasonal trends
-- **🔄 Recapture Analysis**: Track individual birds and analyze return patterns
-- **⚡ High Performance**: Efficiently handles millions of records using DuckDB and Polars
-- **🎨 Interactive Filters**: Multi-dimensional filtering by species, date range, and more
+| Tab | What it shows |
+|---|---|
+| **Hem** | Landing page |
+| **Sammanfattning** | Key figures, time series (day/week/month/year, bar or line) and the top 100 species of all time |
+| **Morfometri** | Weight, wing length, age and fat-score distributions, plus a bubble chart |
+| **Fenologi** | Migration timing: weekly distribution, ridgeline and seasonal plots |
+| **Värmekarta** | Species × week heatmap for one year or the average over all years (top N species) |
+| **Väderanalys** | SMHI weather time series for Nidingen A, gap-filled from Vinga A |
+| **Återfynd** | World map of Nidingen birds found elsewhere and foreign-ringed birds caught at Nidingen |
+| **Om websidan** | About page and FAQ |
 
-## Quick Start
+The Sammanfattning, Morfometri, Fenologi and Värmekarta tabs share a filter
+panel for species (including an aggregate `TOTAL`), time aggregation and
+date range.
 
-### Prerequisites
+## Quick start (local)
 
-- Python 3.9 or higher
-- pip package manager
-- For local development the repo uses uv
+Prerequisites: [uv](https://docs.astral.sh/uv/) and Python 3.13. Building the
+database from the Access file also needs Windows with the Microsoft Access
+ODBC driver.
 
-### Installation
+```bash
+# 1. Install dependencies
+uv sync
 
-1. **Clone or navigate to the project directory:**
-   ```bash
-   cd märkning
-   ```
+# 2. Get the database. Either copy bird_ringing_0016.duckdb into data/, or build it:
+uv run python app/src/convert_mdb_to_duckdb.py              # data/RingDb0016.mdb → data/bird_ringing_0016.duckdb
+uv run python app/src/preprocess_data/fetch_smhi_weather.py # add SMHI weather (Nidingen A + Vinga A)
 
-2. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+# 3. Tell the app where the database is (.env in the repo root)
+echo DUCKDB_PATH=/absolute/path/to/data/bird_ringing_0016.duckdb >> .env
 
-3. **Initialize the database:**
-   ```bash
-   python src/initialize_database.py
-   ```
-   
-   This will:
-   - Create the DuckDB database
-   - Load existing data from `data/processed/processed_nidingen_data.csv`
-   - Create indexes for optimal query performance
-   - Display summary statistics
-
-4. **Run the dashboard:**
-   ```bash
-   python app.py
-   ```
-
-5. **Open your browser and navigate to:**
-   ```
-   http://localhost:8050
-   ```
-
-## Project Structure
-
-```
-root/
-├── app/
-│   ├── app.py                      # Main dashboard application
-│   ├── Dockerfile                  # Dockerfile for creating image
-│   ├── start-script.sh             # Shell script required for docker images that run on Scilifelab serve
-│   ├── requirements.txt            # Python dependencies
-│   ├── src/
-│   │   ├── db_manager.py          # Database operations
-│   │   ├── data_processor.py      # Data processing utilities
-│   │   ├── query_utils.py         # Pre-built SQL queries
-│   │   ├── initialize_database.py # Database setup script
-│   │   └── preprocess_raw_data.py # Raw data preprocessing
-├── data/
-│   ├── bird_ringing.db        # DuckDB database (generated)
-│   ├── processed/             # Processed CSV data
-│   ├── metadata/              # Species and ringer metadata
-│   └── raw/                   # Raw data files
-├── notebooks/                  # Jupyter notebooks for analysis
-└── figures/                    # Generated visualizations
+# 4. Run
+uv run python app/app.py      # → http://localhost:8050
 ```
 
-## Usage
+## Data pipeline
 
-### Dashboard Interface
-
-The dashboard provides four main tabs:
-
-1. **📈 Time Series**: View observation counts over time
-   - Select one or multiple species
-   - Choose aggregation level (daily/weekly/monthly/yearly)
-   - Filter by date range
-
-2. **📊 Morphometrics**: Analyze body measurements
-   - Box plots for weight and wing length distributions
-   - Compare across species and age classes
-   - Identify outliers and trends
-
-3. **🌸 Phenology**: Track migration timing
-   - Median arrival dates by year
-   - Quartile ranges showing variation
-   - Compare timing shifts across years
-
-4. **📋 Summary**: View overall statistics
-   - Total observations
-   - Unique species count
-   - Individual bird counts
-   - Active date ranges
-
-### Programmatic Usage
-
-#### Query the Database
-
-```python
-from src.db_manager import BirdRingingDB
-
-with BirdRingingDB("data/bird_ringing.db", read_only=True) as db:
-    # Get data as Polars DataFrame
-    df = db.get_data_as_polars(filters={"species_code": "GÄSMY"})
-    
-    # Execute custom query
-    result = db.execute_query("SELECT * FROM ring_records LIMIT 10")
-    
-    # Get summary statistics
-    stats = db.get_summary_stats()
+```text
+RingDb0016.mdb (station's Access DB) ─┐
+combined_species_metadata.csv ────────┼─► convert_mdb_to_duckdb.py ─► bird_ringing_0016.duckdb ─► app.py
+SMHI Open Data API ───────────────────┴─► fetch_smhi_weather.py ───────┘
 ```
 
-#### Process Data with Polars
+- **`convert_mdb_to_duckdb.py`** is the main build step. It copies the
+  station's tables (`ringon`, `kontr`, `fynd`, `frring`, `signaturer`,
+  `lokaler`), adds taxonomy, builds the analysis table `ring_records` and
+  creates small lookup tables for fast start-up. Re-running it is safe and
+  keeps the weather tables.
+- **`fetch_smhi_weather.py`** downloads hourly weather for Nidingen A (SMHI
+  71190) and Vinga A (71380). It fills Nidingen's gaps in precipitation,
+  pressure and visibility from Vinga and builds the `weather_daily` table.
+- **`rebuild_precomputed_tables.py`** refreshes only the small lookup tables.
+- **`fetch_observation_data.py`** (optional) downloads Artportalen sightings
+  into a separate `bird_observations.db`. The dashboard doesn't use it yet.
 
-```python
-from src.data_processor import BirdDataProcessor
+To add a new season, get an updated `RingDb0016.mdb` from the station and
+re-run the converter.
 
-processor = BirdDataProcessor()
+## Database overview
 
-# Load and clean data
-df = processor.load_csv("data.csv")
-df = processor.clean_ring_records(df)
+`data/bird_ringing_0016.duckdb`:
 
-# Add time features (year, month, season, etc.)
-df = processor.add_time_features(df)
+| Table | Rows | Content |
+|---|---:|---|
+| `ringon` | ~396 k | Birds newly ringed at Nidingen |
+| `kontr` | ~54 k | Recaptures at Nidingen |
+| `fynd` | ~6 k | Recovery reports (Nidingen birds found elsewhere, foreign birds found at Nidingen) |
+| `frring` | 764 | Original ringing data for foreign-ringed birds caught at Nidingen |
+| `ring_records` | ~900 k | Analysis table: `ringon` + `kontr` + taxonomy, **plus a `TOTAL` copy of every row** |
+| `species_metadata`, `artkod_lookup` | 133 | Taxonomy (Artfakta + eBird) and species code → Swedish name |
+| `signaturer`, `lokaler` | 367 / 5 | Ringer codes and location codes |
+| `weather_data`, `weather_data_vinga`, `weather_daily` | 303 k / 218 k / 16 k | SMHI hourly and daily weather |
+| `species_list`, `year_list`, `date_range_cache`, `rediscoveries_species_options` | small | Precomputed lookups for app start-up |
 
-# Get species summary
-summary = processor.get_species_summary(df)
+Species are identified by Swedish 5-letter ringing codes, for example
+`RÖHAK` (rödhake, European Robin), `LÖSÅN` (lövsångare, Willow Warbler),
+`ÄNPIP` (ängspiplärka, Meadow Pipit), `KUFÅG` (kungsfågel, Goldcrest) and
+`SKPIP` (skärpiplärka, Rock Pipit).
 
-# Calculate phenology metrics
-phenology = processor.calculate_phenology_metrics(df)
+➡️ **The full column-level schema, join paths and data quirks are documented
+in [`.github/copilot-instructions.md`](.github/copilot-instructions.md).**
+
+## Project structure
+
+```text
+app/
+  app.py                 Dash app (layout + callbacks)
+  Dockerfile, start-script.sh, requirements.txt
+  assets/                CSS, images, logos
+  src/
+    convert_mdb_to_duckdb.py   Build the database from the Access file
+    db_manager.py              BirdRingingDB connection helper
+    query_utils.py             SQL query builders used by the app
+    data_processor.py          Polars helpers
+    fetch_observation_data.py  Artportalen sightings → bird_observations.db
+    preprocess_data/           Weather fetcher, lookup-table rebuild, legacy scripts
+  tests/                 Exploratory scripts + pytest suite for the observation fetcher
+data/                    Databases and raw/processed data (not in git)
+notebooks/               Jupyter exploration
+figures/                 Exported exploration plots and outreach screenshots
 ```
 
-#### Use Pre-built Queries
+## Deployment
 
-```python
-from src.query_utils import BirdRingingQueries
+On every push to `main`, the GitHub Actions workflow builds `app/Dockerfile`
+and pushes the image to Docker Hub as `nidingen-dashboard`. On SciLifeLab
+Serve the container runs Gunicorn on port 8000 as UID 1000. It reads the
+database from a persistent volume at
+`/home/appuser/data/bird_ringing_0016.duckdb`, and you set the path with
+`DUCKDB_PATH`. **The database is not baked into the image.** After rebuilding
+the data, upload the new `.duckdb` file through the Serve File Manager.
 
-# Time series query
-query = BirdRingingQueries.get_species_time_series(
-    start_date="2020-01-01",
-    species_codes=["GÄSMY", "BLMES"],
-    aggregation="monthly"
-)
-
-# Morphometric distributions
-query = BirdRingingQueries.get_morphometric_distributions(
-    species_codes=["GÄSMY"],
-    year=2023
-)
+```bash
+docker build -f app/Dockerfile -t nidingen-dashboard .
+docker run -p 8000:8000 -v "$PWD/data:/home/appuser/data" nidingen-dashboard
 ```
-
-## Adding New Data
-
-To add new years or data:
-
-```python
-from src.db_manager import BirdRingingDB
-
-with BirdRingingDB("data/bird_ringing.db") as db:
-    # Append new data (preserves existing records)
-    db.load_csv_to_table(
-        csv_path="data/processed/new_data_2025.csv",
-        if_exists="append"
-    )
-    
-    # Optimize database after bulk load
-    db.optimize_database()
-```
-
-## Data Schema
-
-The main `ring_records` table contains:
-
-- **Identification**: record_id, ring_number, species_code
-- **Temporal**: date, time, year, month, day
-- **Morphometrics**: weight, wing_length, fat_score, muscle_score
-- **Metadata**: age, ringer, record_type (capture/recapture)
-- **Species Info**: scientific_name, swedish_name, taxon_id
-
-## Common Species Codes
-
-| Code  | Swedish Name          | Scientific Name         |
-|-------|-----------------------|-------------------------|
-| GÄSMY | Gärdsmyg             | Troglodytes troglodytes |
-| BLMES | Blåmes               | Cyanistes caeruleus     |
-| SKPIP | Skärpiplärka         | Anthus petrosus         |
-| RÖHAK | Rödhake              | Erithacus rubecula      |
-| KOTRA | Koltrast             | Turdus merula           |
-| JÄSPA | Järnsparv            | Prunella modularis      |
-
-## Performance Optimization
-
-The system is designed to handle millions of records efficiently:
-
-- **Indexed Queries**: Optimized indexes on date, species_code, and ring_number
-- **Parallel Processing**: Polars automatically parallelizes operations
-- **Read-Only Mode**: Dashboard uses read-only connections to prevent locking
-- **Lazy Evaluation**: Queries are optimized before execution
-- **Efficient Storage**: DuckDB uses columnar storage for fast aggregations
 
 ## Development
 
-For detailed development instructions, see [`.github/copilot-instructions.md`](.github/copilot-instructions.md)
+- Add queries to `app/src/query_utils.py`, then add a `dcc.Graph` and a
+  `@callback` in `app/app.py`. See the conventions in
+  `.github/copilot-instructions.md`.
+- Open the database read-only while the app is running, because DuckDB
+  allows only one writer.
+- Tests: `uv run pytest app/tests/test_fetch_observations.py`. The other
+  files in `app/tests/` are exploratory scripts.
 
-### Running Tests
+## Technology
 
-```bash
-# Test database operations
-python -m pytest tests/test_db_manager.py
+Plotly Dash · Dash Bootstrap Components · DuckDB · Polars · Plotly ·
+flask-caching · Gunicorn · Docker · uv
 
-# Test data processing
-python -m pytest tests/test_data_processor.py
-```
+## Data sources
 
-### Adding New Visualizations
-
-1. Add query to `src/query_utils.py`
-2. Create callback function in `app.py`
-3. Add UI component to layout
-4. Test with sample data
-
-## Technology Stack
-
-- **Frontend**: Plotly Dash
-- **Database**: DuckDB (embedded analytical database)
-- **Data Processing**: Polars (high-performance DataFrames)
-- **Visualization**: Plotly
-- **Language**: Python 3.9+
-
-## License
-
-[Add your license information here]
-
-## Contributors
-
-[Add contributor information here]
-
-## Support
-
-For issues and questions:
-- Open an issue on GitHub
-- Check the documentation in `.github/copilot-instructions.md`
-- Review example notebooks in `notebooks/`
+- Ringing data: Nidingens Fågelstation / Ringmärkningscentralen
+  (`RingDb0016.mdb`)
+- Weather: [SMHI Open Data](https://opendata.smhi.se/)
+- Taxonomy: [Artfakta](https://artfakta.se/) and the
+  [eBird taxonomy](https://ebird-api-ui.com/taxonomy/ebird-taxonomy)
+- Sightings: [Artdatabanken SOS API](https://github.com/biodiversitydata-se/SOS)
 
 ---
 
-**Last Updated**: February 16, 2026
+**Last updated:** 2026-11-10
