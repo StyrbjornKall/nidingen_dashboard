@@ -111,6 +111,10 @@ with BirdRingingDB(DB_PATH, read_only=True) as db:
             "SELECT species_code, swedish_name "
             "FROM rediscoveries_species_options ORDER BY species_code"
         ).fetchall()
+        print(f"Loaded precomputed tables: {len(_species_rows)} species, "
+              f"date range {date_range[0]} to {date_range[1]}, "
+              f"{len(available_years)} years, "
+              f"{len(rediscoveries_species_list)} rediscoveries species.")
     except Exception:
         # Fallback: original slower queries for databases without precomputed tables
         print(
@@ -218,7 +222,7 @@ app.layout = html.Div([
                                     id="species-dropdown",
                                     options=species_options,
                                     value=[opt["value"] for opt in species_options
-                                           if opt["value"] in ("TOTAL", "RÖHAK", "LÖSÅN")][:3] or [],
+                                           if opt["value"] in ("TOTAL", "RÖHAK", "LÖSÅN", "GRSÅN")][:4] or [],
                                     multi=True,
                                     placeholder="Välj en eller flera arter...",
                                 )
