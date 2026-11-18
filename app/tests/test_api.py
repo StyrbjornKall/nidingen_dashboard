@@ -312,3 +312,55 @@ def test_etag_and_cache(client):
 def test_gzip(client):
     r = client.get("/api/summary/timeseries?species=AAA&grain=week", headers={"Accept-Encoding": "gzip"})
     assert r.headers.get("content-encoding") == "gzip"
+
+
+# ---------------------------------------------------------------------------
+# Serving the built frontend
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def site(client, tmp_path_factory):
+    """The same fixture store, plus a fake frontend build."""
+    dist = tmp_path_factory.mktemp("dist")
+    (dist / "assets").mkdir()
+    (dist / "index.html").write_text("<!doctype html><title>app</title>", encoding="utf-8")
+    (dist / "favicon.png").write_bytes(b"png")
+    (dist / "assets" / "index-abc123.js").write_text("console.log(1)", encoding="utf-8")
+    store = client.app.state.store
+    with TestClient(create_app(store, web_dist=dist)) as c:
+        yield c
+
+
+def test_frontend_routes_get_index(site):
+    for path in ("/", "/trender", "/fenologi?arter=R%C3%96HAK", "/no/such/page"):
+        r = site.get(path)
+        assert r.status_code == 200 and "<title>app</title>" in r.text, path
+        assert r.headers["cache-control"] == "no-cache"
+
+
+def test_frontend_files_and_assets(site):
+    assert site.get("/favicon.png").content == b"png"
+    r = site.get("/assets/index-abc123.js")
+    assert r.status_code == 200 and "immutable" in r.headers["cache-control"]
+    assert site.get("/assets/missing.js").status_code == 404
+
+
+def test_frontend_does_not_shadow_the_api(site):
+    assert site.get("/api/meta").status_code == 200
+    r = site.get("/api/nope")
+    assert r.status_code == 404 and r.headers["content-type"].startswith("application/json")
+
+
+def test_frontend_blocks_path_traversal(site):
+    r = site.get("/..%2F..%2Fetc%2Fpasswd")
+    assert r.status_code == 200 and "<title>app</title>" in r.text
+
+
+def test_openapi_file_matches_the_api():
+    """web/openapi.json (and the TypeScript types made from it) must follow the API."""
+    from pathlib import Path
+    committed = Path(__file__).resolve().parents[2] / "web" / "openapi.json"
+    if not committed.exists():
+        pytest.skip("web/openapi.json not generated")
+    assert json.loads(committed.read_text(encoding="utf-8")) == create_app().openapi(), \
+        "run: npm --prefix web run gen:api"

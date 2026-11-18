@@ -1,0 +1,48 @@
+.group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-segmented-track);
+}
+
+.button {
+  all: unset;
+  position: relative;
+  cursor: pointer;
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: var(--radius-pill);
+  font: 500 14px/40px var(--font-sans);
+  color: #35423b;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* 40 px drawn, 44 px to touch (the track adds the rest). */
+.button::after {
+  content: "";
+  position: absolute;
+  inset: -2px 0;
+}
+
+.button:hover {
+  background: var(--color-segmented-hover);
+  color: var(--color-ink);
+}
+
+.button[aria-pressed="true"] {
+  background: var(--color-ink);
+  color: #fff;
+}
+
+.button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  background: transparent;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}

@@ -194,6 +194,15 @@ All endpoints return JSON shaped for the charts. Use `Cache-Control` and ETags; 
 - **Accessibility:** real buttons and links, labels on inputs, 44 px touch targets, `aria-label` on icon-only buttons, text contrast of at least 4.5:1 (the palette already passes). Charts need a text alternative, such as the readout panels and tables in the design.
 - **Responsive:** every page must work at phone width. Wide tables and charts scroll inside their card.
 
+**As built in phase 4** (code in `web/`, details in `.github/copilot-instructions.md` §7b):
+- Pinned to the newest release of the majors in common use: React 19.2, React Router 7, Vite 7, TypeScript 5.9, Vitest 4 (3 had critical advisories), Playwright 1.65.
+- Routes: `/`, `/sammanfattning`, `/trender`, `/morfometri`, `/fenologi`, `/aterfynd`, `/vader`, `/om`, plus a Swedish not-found page. FastAPI serves `web/dist` and sends `index.html` for every other non-API path.
+- URL state: `arter`, `period`, `sasong`. The menu carries them between pages. Each page has its own default and its own fallback when the selection is emptied, as in the design (Sammanfattning: ALLA; Trender and Fenologi: the configured default, fallback RÖHAK; Morfometri: RÖHAK, ÄNPIP, SKPIP). Defaults are not written to the URL.
+- Fonts are bundled (`@fontsource`) instead of loaded from Google Fonts, so visitors' browsers don't contact Google.
+- Additions to the design for accessibility: skip link, focus moves to the page heading after navigation, the species picker closes on Escape and outside click and returns focus, 44 px hit areas around the design's 40 px controls.
+- On phones the menu scrolls sideways and the selection bar is not sticky (it wraps to about a quarter of the screen).
+- The species picker lists ALLA and every species with new ringings (codes seen only as recaptures are left out); codes without a Swedish name are listed by code.
+
 ## 8. Feature parity checklist
 
 | Current Dash tab | New page | Notes |

@@ -1,0 +1,9 @@
+node_modules/
+# The root .gitignore ignores lib/ (Python packaging); our source lives in src/lib.
+!src/lib/
+dist/
+test-results/
+playwright-report/
+# Generated from design/tokens.json before dev, build, test and typecheck.
+src/styles/tokens.css
+src/lib/tokens.ts

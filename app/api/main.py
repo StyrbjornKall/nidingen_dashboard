@@ -8,19 +8,28 @@ Development (repo root):
 Every /api GET response is cached in memory per process and carries an ETag
 derived from the aggregate build; the data only changes when the database is
 rebuilt, so restart the API after replacing the database file.
+
+If the frontend has been built (``npm --prefix web run build``, or the path
+in ``WEB_DIST``), the same app serves it: hashed files under /assets with a
+long cache, other files from the build root, and index.html for every other
+non-API path so the React routes work on reload.
 """
 
 from __future__ import annotations
 
+import os
 from collections import OrderedDict
 from contextlib import asynccontextmanager
+from pathlib import Path
 from urllib.parse import parse_qsl, urlencode
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from .routers import meta, morphometrics, phenology, recoveries, summary, trends, weather
-from .store import DataStore, get_settings
+from .store import REPO, DataStore, get_settings
 
 CACHE_CONTROL = "public, max-age=600"
 CACHE_ENTRIES = 1024
@@ -47,7 +56,36 @@ class ResponseCache:
             self.items.popitem(last=False)
 
 
-def create_app(store: DataStore | None = None) -> FastAPI:
+class ImmutableStatic(StaticFiles):
+    """Vite's hashed build files never change under the same name."""
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
+
+def mount_frontend(app: FastAPI, dist: Path) -> None:
+    index = dist / "index.html"
+    if not index.is_file():
+        return
+    if (dist / "assets").is_dir():
+        app.mount("/assets", ImmutableStatic(directory=dist / "assets"), name="assets")
+    root = dist.resolve()
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def frontend(full_path: str) -> FileResponse:
+        if full_path == "api" or full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not Found")
+        candidate = (root / full_path).resolve()
+        if full_path and candidate.is_file() and candidate.is_relative_to(root):
+            return FileResponse(candidate)
+        # Client-side route: always fetch a fresh index.html, which names the hashed files.
+        return FileResponse(index, headers={"Cache-Control": "no-cache"})
+
+
+def create_app(store: DataStore | None = None, web_dist: Path | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         own = store is None
@@ -99,6 +137,9 @@ def create_app(store: DataStore | None = None) -> FastAPI:
 
     for module in (meta, summary, trends, morphometrics, phenology, recoveries, weather):
         app.include_router(module.router, prefix="/api")
+    # Last, so the catch-all route never shadows the API.
+    # Read WEB_DIST directly: get_settings() would load .env at import time.
+    mount_frontend(app, web_dist or Path(os.getenv("WEB_DIST", str(REPO / "web" / "dist"))))
     return app
 
 

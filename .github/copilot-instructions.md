@@ -69,6 +69,9 @@ ringing/
 │   ├── metadata/                     # artfakta_species_metadata.csv, ebird_species_info.csv
 │   ├── processed/                    # combined_species_metadata.csv (needed by the converter), weather CSVs, …
 │   └── raw/                          # Legacy yearly exports 0016år-<YEAR>.txt + per-year folders (1980–2025)
+├── web/                              # Vite + React + TypeScript frontend for the new site (see §7b)
+├── config/                           # analysis.json (seasons, gap years, periods, windows), euring_countries.csv
+├── design/                           # Approved design (reference only), tokens.json
 ├── notebooks/exploration.ipynb
 ├── figures/                          # Exported HTML/SVG exploration plots + outreach/ screenshots
 ├── .github/workflows/docker-publish.yml
@@ -656,6 +659,36 @@ def update_my_plot(species_codes, start_date, end_date):
 - Keep `pandas` imported first in `app.py`. There's a pandas 3 import-order
   workaround at the top of the file.
 
+## 7b. New frontend (`web/`)
+
+Vite + React 19 + TypeScript, React Router 7 (declarative routes in
+`src/App.tsx`), TanStack Query. Being built page by page (HANDOFF.md §9);
+the Dash app keeps running until phase 7.
+
+- `src/lib/api.ts`: `useApi(path, params)` / `useMeta()`; `staleTime:
+  Infinity` because data only changes with a rebuild. Types from
+  `src/lib/api-types.ts`, generated (`npm run gen:api`) from the pydantic
+  models via `web/openapi.json`.
+- `src/lib/urlState.ts`: `arter` (comma list, max 6, colours by order from
+  `speciesPalette`), `period`, `sasong`; `useSpeciesSelection`,
+  `useChoiceParam`, `sharedSearch` (what the menu carries between pages).
+- `src/lib/format.ts`: Swedish numbers (NBSP thousands, decimal comma, "−"),
+  `formatTrend` (one decimal under 10), dates "19 apr", `formatDoy`,
+  `formatWeek` ("v.12 · 19–25 mar", 7-day weeks), `formatDateTime`
+  (Swedish time).
+- `src/components/`: `Layout` (skip link, focus and title per route), `Nav`,
+  `Footer`, `SpeciesPicker`, `SegmentedControl`, `ChartCard` (loading,
+  empty, error with retry, "Data från …"), `TrendBadge`, `Legend`,
+  `PageFrame` (`PageHeader`, `StickyBar`, `Section`).
+- `src/pages/`: one file per page; `registry.ts` holds paths and labels;
+  `shared/selection.tsx` holds the selection bar and per-page defaults.
+- Styling: CSS modules plus CSS variables generated from
+  `design/tokens.json` (`scripts/gen-tokens.mjs`, runs before dev, build,
+  test and typecheck; the output is git-ignored).
+- Tests: Vitest unit tests next to the code (`*.test.ts(x)`), Playwright
+  end-to-end tests in `e2e/` (desktop and Pixel 7) that start uvicorn on
+  port 8765 against the real DB and the built site.
+
 ## 8. Running and deploying
 
 ```bash
@@ -695,6 +728,11 @@ The real pytest suites (`pyproject.toml` limits collection to them, so a bare
   the real DB (skipped if the `agg_*` tables are missing).
 - `test_api.py`: every endpoint on the fixture DB, with hand-computed
   expectations, plus validation, ETag, cache and gzip.
+- `test_api.py` also checks serving the built frontend (SPA fallback,
+  immutable assets, no shadowing of `/api`) and that `web/openapi.json`
+  matches the API.
+- Frontend: `npm --prefix web test` (Vitest) and `npm --prefix web run e2e`
+  (Playwright; needs `npm --prefix web run build` first).
 - `test_api_parity.py`: the API against the Dash queries on the real DB,
   pinning the intended differences (new ringings vs `ring_records`,
   centre-aware recovery join, one inbound row per bird).

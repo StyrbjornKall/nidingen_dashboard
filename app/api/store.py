@@ -40,6 +40,7 @@ API_VERSION = "2"
 class Settings:
     db_path: Path
     config_dir: Path
+    web_dist: Path = REPO / "web" / "dist"
 
 
 def get_settings() -> Settings:
@@ -47,6 +48,7 @@ def get_settings() -> Settings:
     return Settings(
         db_path=Path(os.getenv("DUCKDB_PATH", str(REPO / "data" / "bird_ringing_0016.duckdb"))),
         config_dir=Path(os.getenv("NIDINGEN_CONFIG_DIR", str(REPO / "config"))),
+        web_dist=Path(os.getenv("WEB_DIST", str(REPO / "web" / "dist"))),
     )
 
 

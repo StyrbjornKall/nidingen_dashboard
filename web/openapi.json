@@ -1,0 +1,3242 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Nidingen ringmärkning API",
+    "version": "1"
+  },
+  "paths": {
+    "/api/meta": {
+      "get": {
+        "summary": "Meta",
+        "operationId": "meta_api_meta_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/summary/kpis": {
+      "get": {
+        "summary": "Kpis",
+        "operationId": "kpis_api_summary_kpis_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kpis"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/summary/timeseries": {
+      "get": {
+        "summary": "Timeseries",
+        "operationId": "timeseries_api_summary_timeseries_get",
+        "parameters": [
+          {
+            "name": "species",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated codes, e.g. RÖHAK,LÖSÅN (ALLA = all)",
+              "title": "Species"
+            },
+            "description": "Comma-separated codes, e.g. RÖHAK,LÖSÅN (ALLA = all)"
+          },
+          {
+            "name": "grain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "day",
+                "week",
+                "month",
+                "year"
+              ],
+              "type": "string",
+              "default": "year",
+              "title": "Grain"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Period id from /api/meta",
+              "title": "Period"
+            },
+            "description": "Period id from /api/meta"
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A single year instead of a period",
+              "title": "Year"
+            },
+            "description": "A single year instead of a period"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeSeries"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/summary/top-species": {
+      "get": {
+        "summary": "Top Species",
+        "operationId": "top_species_api_summary_top_species_get",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "species",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Selected species, listed first",
+              "title": "Species"
+            },
+            "description": "Selected species, listed first"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopSpecies"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trends": {
+      "get": {
+        "summary": "Trends",
+        "operationId": "trends_api_trends_get",
+        "parameters": [
+          {
+            "name": "species",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated codes (max 6)",
+              "title": "Species"
+            },
+            "description": "Comma-separated codes (max 6)"
+          },
+          {
+            "name": "season",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "var",
+                "host",
+                "helar"
+              ],
+              "type": "string",
+              "default": "host",
+              "title": "Season"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Trends"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trends/overview": {
+      "get": {
+        "summary": "Overview",
+        "operationId": "overview_api_trends_overview_get",
+        "parameters": [
+          {
+            "name": "season",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "var",
+                "host",
+                "helar"
+              ],
+              "type": "string",
+              "default": "host",
+              "title": "Season"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          },
+          {
+            "name": "species",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Selected species, listed first",
+              "title": "Species"
+            },
+            "description": "Selected species, listed first"
+          },
+          {
+            "name": "min_total",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Leave out species with fewer birds in the period",
+              "default": 0,
+              "title": "Min Total"
+            },
+            "description": "Leave out species with fewer birds in the period"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrendOverview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/morphometrics/means": {
+      "get": {
+        "summary": "Means",
+        "operationId": "means_api_morphometrics_means_get",
+        "parameters": [
+          {
+            "name": "season",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "var",
+                "host",
+                "helar"
+              ],
+              "type": "string",
+              "default": "host",
+              "title": "Season"
+            }
+          },
+          {
+            "name": "min_n",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Minimum weighed and measured birds per species",
+              "default": 10,
+              "title": "Min N"
+            },
+            "description": "Minimum weighed and measured birds per species"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MorphMeans"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/morphometrics/detail": {
+      "get": {
+        "summary": "Detail",
+        "operationId": "detail_api_morphometrics_detail_get",
+        "parameters": [
+          {
+            "name": "species",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated codes (max 6, not ALLA)",
+              "title": "Species"
+            },
+            "description": "Comma-separated codes (max 6, not ALLA)"
+          },
+          {
+            "name": "season",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "var",
+                "host",
+                "helar"
+              ],
+              "type": "string",
+              "default": "host",
+              "title": "Season"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MorphDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/phenology/calendar": {
+      "get": {
+        "summary": "Migration Calendar",
+        "operationId": "migration_calendar_api_phenology_calendar_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "'avg' (mean over all non-gap years) or a year",
+              "default": "avg",
+              "title": "Year"
+            },
+            "description": "'avg' (mean over all non-gap years) or a year"
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "5",
+                "10",
+                "15",
+                "all"
+              ],
+              "type": "string",
+              "default": "10",
+              "title": "Top"
+            }
+          },
+          {
+            "name": "species",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Selected species, listed first",
+              "title": "Species"
+            },
+            "description": "Selected species, listed first"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Calendar"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/phenology/ridges": {
+      "get": {
+        "summary": "Ridges",
+        "operationId": "ridges_api_phenology_ridges_get",
+        "parameters": [
+          {
+            "name": "species",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated codes (max 6)",
+              "title": "Species"
+            },
+            "description": "Comma-separated codes (max 6)"
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ridges"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/phenology/season-to-date": {
+      "get": {
+        "summary": "Season To Date",
+        "operationId": "season_to_date_api_phenology_season_to_date_get",
+        "parameters": [
+          {
+            "name": "species",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "One species code (ALLA allowed)",
+              "title": "Species"
+            },
+            "description": "One species code (ALLA allowed)"
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Defaults to the current year",
+              "title": "Year"
+            },
+            "description": "Defaults to the current year"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeasonToDate"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/phenology/table": {
+      "get": {
+        "summary": "Species Table",
+        "operationId": "species_table_api_phenology_table_get",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          },
+          {
+            "name": "species",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Selected species, listed first",
+              "title": "Species"
+            },
+            "description": "Selected species, listed first"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhenologyTable"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recoveries": {
+      "get": {
+        "summary": "Recoveries",
+        "operationId": "recoveries_api_recoveries_get",
+        "parameters": [
+          {
+            "name": "species",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "One species code; omit or ALLA for all",
+              "title": "Species"
+            },
+            "description": "One species code; omit or ALLA for all"
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "both",
+                "out",
+                "in"
+              ],
+              "type": "string",
+              "default": "both",
+              "title": "Direction"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recoveries"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/weather": {
+      "get": {
+        "summary": "Weather",
+        "operationId": "weather_api_weather_get",
+        "parameters": [
+          {
+            "name": "season",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "var",
+                "host"
+              ],
+              "type": "string",
+              "default": "host",
+              "title": "Season"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Defaults to the last complete year",
+              "title": "Year"
+            },
+            "description": "Defaults to the last complete year"
+          },
+          {
+            "name": "species",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Species whose catch is shown",
+              "default": "ALLA",
+              "title": "Species"
+            },
+            "description": "Species whose catch is shown"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Weather"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BandPoint": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "fit": {
+            "type": "number",
+            "title": "Fit"
+          },
+          "lo": {
+            "type": "number",
+            "title": "Lo"
+          },
+          "hi": {
+            "type": "number",
+            "title": "Hi"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "fit",
+          "lo",
+          "hi"
+        ],
+        "title": "BandPoint"
+      },
+      "Bucket": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "title": "End"
+          },
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "index": {
+            "type": "integer",
+            "title": "Index"
+          },
+          "is_gap_year": {
+            "type": "boolean",
+            "title": "Is Gap Year"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "year",
+          "index",
+          "is_gap_year"
+        ],
+        "title": "Bucket"
+      },
+      "BuildInfo": {
+        "properties": {
+          "built_at_utc": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Built At Utc"
+          },
+          "ringing_min_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Ringing Min Date"
+          },
+          "ringing_max_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Ringing Max Date"
+          },
+          "recoveries_max_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recoveries Max Date"
+          },
+          "weather_max_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weather Max Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "built_at_utc",
+          "ringing_min_date",
+          "ringing_max_date",
+          "recoveries_max_date",
+          "weather_max_date"
+        ],
+        "title": "BuildInfo"
+      },
+      "Calendar": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "avg",
+              "year"
+            ],
+            "title": "Mode"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          },
+          "reference_years": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Reference Years"
+          },
+          "weeks": {
+            "items": {
+              "$ref": "#/components/schemas/WeekInfo"
+            },
+            "type": "array",
+            "title": "Weeks"
+          },
+          "max_value": {
+            "type": "number",
+            "title": "Max Value"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/CalendarRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mode",
+          "year",
+          "reference_years",
+          "weeks",
+          "max_value",
+          "rows"
+        ],
+        "title": "Calendar"
+      },
+      "CalendarRow": {
+        "properties": {
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "selected": {
+            "type": "boolean",
+            "title": "Selected"
+          },
+          "total": {
+            "type": "number",
+            "title": "Total"
+          },
+          "values": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Values"
+          },
+          "scaled": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Scaled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "species",
+          "name",
+          "selected",
+          "total",
+          "values",
+          "scaled"
+        ],
+        "title": "CalendarRow"
+      },
+      "Category": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "n": {
+            "type": "integer",
+            "title": "N"
+          },
+          "share": {
+            "type": "number",
+            "title": "Share"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "n",
+          "share"
+        ],
+        "title": "Category"
+      },
+      "CountryCount": {
+        "properties": {
+          "country": {
+            "type": "string",
+            "title": "Country"
+          },
+          "n": {
+            "type": "integer",
+            "title": "N"
+          }
+        },
+        "type": "object",
+        "required": [
+          "country",
+          "n"
+        ],
+        "title": "CountryCount"
+      },
+      "Fit": {
+        "properties": {
+          "slope": {
+            "type": "number",
+            "title": "Slope"
+          },
+          "ci_low": {
+            "type": "number",
+            "title": "Ci Low"
+          },
+          "ci_high": {
+            "type": "number",
+            "title": "Ci High"
+          },
+          "n_years": {
+            "type": "integer",
+            "title": "N Years"
+          },
+          "mean": {
+            "type": "number",
+            "title": "Mean"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down",
+              "none"
+            ],
+            "title": "Verdict"
+          },
+          "band": {
+            "items": {
+              "$ref": "#/components/schemas/BandPoint"
+            },
+            "type": "array",
+            "title": "Band"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slope",
+          "ci_low",
+          "ci_high",
+          "n_years",
+          "mean",
+          "verdict",
+          "band"
+        ],
+        "title": "Fit"
+      },
+      "GapYears": {
+        "properties": {
+          "year_from": {
+            "type": "integer",
+            "title": "Year From"
+          },
+          "year_to": {
+            "type": "integer",
+            "title": "Year To"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year_from",
+          "year_to",
+          "reason"
+        ],
+        "title": "GapYears"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HistBin": {
+        "properties": {
+          "low": {
+            "type": "number",
+            "title": "Low"
+          },
+          "high": {
+            "type": "number",
+            "title": "High"
+          },
+          "n": {
+            "type": "integer",
+            "title": "N"
+          }
+        },
+        "type": "object",
+        "required": [
+          "low",
+          "high",
+          "n"
+        ],
+        "title": "HistBin"
+      },
+      "Kpis": {
+        "properties": {
+          "n_new": {
+            "type": "integer",
+            "title": "N New"
+          },
+          "n_recap": {
+            "type": "integer",
+            "title": "N Recap"
+          },
+          "n_recoveries": {
+            "type": "integer",
+            "title": "N Recoveries"
+          },
+          "n_species": {
+            "type": "integer",
+            "title": "N Species"
+          },
+          "n_species_named": {
+            "type": "integer",
+            "title": "N Species Named"
+          },
+          "first_year": {
+            "type": "integer",
+            "title": "First Year"
+          },
+          "last_year": {
+            "type": "integer",
+            "title": "Last Year"
+          }
+        },
+        "type": "object",
+        "required": [
+          "n_new",
+          "n_recap",
+          "n_recoveries",
+          "n_species",
+          "n_species_named",
+          "first_year",
+          "last_year"
+        ],
+        "title": "Kpis"
+      },
+      "Measure": {
+        "properties": {
+          "n": {
+            "type": "integer",
+            "title": "N"
+          },
+          "mean": {
+            "type": "number",
+            "title": "Mean"
+          },
+          "q25": {
+            "type": "number",
+            "title": "Q25"
+          },
+          "median": {
+            "type": "number",
+            "title": "Median"
+          },
+          "q75": {
+            "type": "number",
+            "title": "Q75"
+          },
+          "bins": {
+            "items": {
+              "$ref": "#/components/schemas/HistBin"
+            },
+            "type": "array",
+            "title": "Bins"
+          }
+        },
+        "type": "object",
+        "required": [
+          "n",
+          "mean",
+          "q25",
+          "median",
+          "q75",
+          "bins"
+        ],
+        "title": "Measure"
+      },
+      "Meta": {
+        "properties": {
+          "species": {
+            "items": {
+              "$ref": "#/components/schemas/SpeciesInfo"
+            },
+            "type": "array",
+            "title": "Species"
+          },
+          "seasons": {
+            "items": {
+              "$ref": "#/components/schemas/SeasonInfo"
+            },
+            "type": "array",
+            "title": "Seasons"
+          },
+          "periods": {
+            "items": {
+              "$ref": "#/components/schemas/PeriodInfo"
+            },
+            "type": "array",
+            "title": "Periods"
+          },
+          "gap_years": {
+            "$ref": "#/components/schemas/GapYears"
+          },
+          "first_year": {
+            "type": "integer",
+            "title": "First Year"
+          },
+          "current_year": {
+            "type": "integer",
+            "title": "Current Year"
+          },
+          "complete_through": {
+            "type": "integer",
+            "title": "Complete Through"
+          },
+          "max_compare_species": {
+            "type": "integer",
+            "title": "Max Compare Species"
+          },
+          "default_selection": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Default Selection"
+          },
+          "median_min_birds": {
+            "type": "integer",
+            "title": "Median Min Birds"
+          },
+          "single_season_threshold": {
+            "type": "number",
+            "title": "Single Season Threshold"
+          },
+          "weather_window": {
+            "$ref": "#/components/schemas/WeatherWindow"
+          },
+          "build": {
+            "$ref": "#/components/schemas/BuildInfo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "species",
+          "seasons",
+          "periods",
+          "gap_years",
+          "first_year",
+          "current_year",
+          "complete_through",
+          "max_compare_species",
+          "default_selection",
+          "median_min_birds",
+          "single_season_threshold",
+          "weather_window",
+          "build"
+        ],
+        "title": "Meta"
+      },
+      "MorphDetail": {
+        "properties": {
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "n": {
+            "type": "integer",
+            "title": "N"
+          },
+          "n_total_since_1980": {
+            "type": "integer",
+            "title": "N Total Since 1980"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Measure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Measure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "age": {
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            },
+            "type": "array",
+            "title": "Age"
+          },
+          "sex": {
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            },
+            "type": "array",
+            "title": "Sex"
+          }
+        },
+        "type": "object",
+        "required": [
+          "species",
+          "n",
+          "n_total_since_1980",
+          "weight",
+          "wing",
+          "age",
+          "sex"
+        ],
+        "title": "MorphDetail"
+      },
+      "MorphDetails": {
+        "properties": {
+          "season": {
+            "type": "string",
+            "title": "Season"
+          },
+          "species": {
+            "items": {
+              "$ref": "#/components/schemas/MorphDetail"
+            },
+            "type": "array",
+            "title": "Species"
+          }
+        },
+        "type": "object",
+        "required": [
+          "season",
+          "species"
+        ],
+        "title": "MorphDetails"
+      },
+      "MorphMean": {
+        "properties": {
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "n": {
+            "type": "integer",
+            "title": "N"
+          },
+          "n_total_since_1980": {
+            "type": "integer",
+            "title": "N Total Since 1980"
+          },
+          "weight_mean": {
+            "type": "number",
+            "title": "Weight Mean"
+          },
+          "weight_median": {
+            "type": "number",
+            "title": "Weight Median"
+          },
+          "wing_mean": {
+            "type": "number",
+            "title": "Wing Mean"
+          },
+          "wing_median": {
+            "type": "number",
+            "title": "Wing Median"
+          }
+        },
+        "type": "object",
+        "required": [
+          "species",
+          "name",
+          "n",
+          "n_total_since_1980",
+          "weight_mean",
+          "weight_median",
+          "wing_mean",
+          "wing_median"
+        ],
+        "title": "MorphMean"
+      },
+      "MorphMeans": {
+        "properties": {
+          "season": {
+            "type": "string",
+            "title": "Season"
+          },
+          "min_n": {
+            "type": "integer",
+            "title": "Min N"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/MorphMean"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "season",
+          "min_n",
+          "rows"
+        ],
+        "title": "MorphMeans"
+      },
+      "PeriodInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "year_from": {
+            "type": "integer",
+            "title": "Year From"
+          },
+          "year_to": {
+            "type": "integer",
+            "title": "Year To"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "year_from",
+          "year_to"
+        ],
+        "title": "PeriodInfo"
+      },
+      "PhenologyTable": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodInfo"
+          },
+          "latest_year": {
+            "type": "integer",
+            "title": "Latest Year"
+          },
+          "avg_years": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Avg Years"
+          },
+          "spark_years": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Spark Years"
+          },
+          "spark_gap": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Spark Gap"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/TableRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "latest_year",
+          "avg_years",
+          "spark_years",
+          "spark_gap",
+          "rows"
+        ],
+        "title": "PhenologyTable"
+      },
+      "Recoveries": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodInfo"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "both",
+              "out",
+              "in"
+            ],
+            "title": "Direction"
+          },
+          "species": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Species"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/RecoveryPoint"
+            },
+            "type": "array",
+            "title": "Points"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/RecoverySummary"
+          },
+          "countries": {
+            "items": {
+              "$ref": "#/components/schemas/CountryCount"
+            },
+            "type": "array",
+            "title": "Countries"
+          },
+          "longest": {
+            "items": {
+              "$ref": "#/components/schemas/RecoveryPoint"
+            },
+            "type": "array",
+            "title": "Longest"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "direction",
+          "species",
+          "points",
+          "summary",
+          "countries",
+          "longest"
+        ],
+        "title": "Recoveries"
+      },
+      "RecoveryPoint": {
+        "properties": {
+          "direction": {
+            "type": "string",
+            "enum": [
+              "out",
+              "in"
+            ],
+            "title": "Direction"
+          },
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "ring_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ring Date"
+          },
+          "find_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Find Date"
+          },
+          "days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "place": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Place"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "distance_km": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Km"
+          },
+          "find_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Find Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "direction",
+          "species",
+          "ring_date",
+          "find_date",
+          "days",
+          "lat",
+          "lon",
+          "place",
+          "country",
+          "distance_km",
+          "find_type"
+        ],
+        "title": "RecoveryPoint"
+      },
+      "RecoverySummary": {
+        "properties": {
+          "n_out": {
+            "type": "integer",
+            "title": "N Out"
+          },
+          "n_in": {
+            "type": "integer",
+            "title": "N In"
+          },
+          "n_points": {
+            "type": "integer",
+            "title": "N Points"
+          },
+          "longest_km": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longest Km"
+          },
+          "median_km": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Km"
+          }
+        },
+        "type": "object",
+        "required": [
+          "n_out",
+          "n_in",
+          "n_points",
+          "longest_km",
+          "median_km"
+        ],
+        "title": "RecoverySummary"
+      },
+      "RidgeSeason": {
+        "properties": {
+          "weeks": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Weeks"
+          },
+          "mean": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Mean"
+          },
+          "latest": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Latest"
+          },
+          "median_doy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Doy"
+          },
+          "q25_doy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q25 Doy"
+          },
+          "q75_doy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q75 Doy"
+          },
+          "years_used": {
+            "type": "integer",
+            "title": "Years Used"
+          }
+        },
+        "type": "object",
+        "required": [
+          "weeks",
+          "mean",
+          "latest",
+          "median_doy",
+          "q25_doy",
+          "q75_doy",
+          "years_used"
+        ],
+        "title": "RidgeSeason"
+      },
+      "RidgeSpecies": {
+        "properties": {
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "single_season": {
+            "type": "boolean",
+            "title": "Single Season"
+          },
+          "single_season_season": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Single Season Season"
+          },
+          "y_max": {
+            "type": "number",
+            "title": "Y Max"
+          },
+          "var": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RidgeSeason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "host": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RidgeSeason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "species",
+          "single_season",
+          "single_season_season",
+          "y_max",
+          "var",
+          "host"
+        ],
+        "title": "RidgeSpecies"
+      },
+      "Ridges": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodInfo"
+          },
+          "reference_years": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Reference Years"
+          },
+          "latest_year": {
+            "type": "integer",
+            "title": "Latest Year"
+          },
+          "weeks": {
+            "items": {
+              "$ref": "#/components/schemas/WeekInfo"
+            },
+            "type": "array",
+            "title": "Weeks"
+          },
+          "species": {
+            "items": {
+              "$ref": "#/components/schemas/RidgeSpecies"
+            },
+            "type": "array",
+            "title": "Species"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "reference_years",
+          "latest_year",
+          "weeks",
+          "species"
+        ],
+        "title": "Ridges"
+      },
+      "SeasonInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "months": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Months"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "months"
+        ],
+        "title": "SeasonInfo"
+      },
+      "SeasonToDate": {
+        "properties": {
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "data_through_doy": {
+            "type": "integer",
+            "title": "Data Through Doy"
+          },
+          "reference_years": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Reference Years"
+          },
+          "mean": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Mean"
+          },
+          "sd_low": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Sd Low"
+          },
+          "sd_high": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Sd High"
+          },
+          "current": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Current"
+          },
+          "top": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/YearCurve"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "worst": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/YearCurve"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "summary": {
+            "$ref": "#/components/schemas/SeasonToDateSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "species",
+          "year",
+          "data_through_doy",
+          "reference_years",
+          "mean",
+          "sd_low",
+          "sd_high",
+          "current",
+          "top",
+          "worst",
+          "summary"
+        ],
+        "title": "SeasonToDate"
+      },
+      "SeasonToDateSummary": {
+        "properties": {
+          "current_total": {
+            "type": "integer",
+            "title": "Current Total"
+          },
+          "normal_at_date": {
+            "type": "number",
+            "title": "Normal At Date"
+          },
+          "diff": {
+            "type": "number",
+            "title": "Diff"
+          },
+          "mean_annual_total": {
+            "type": "number",
+            "title": "Mean Annual Total"
+          },
+          "sd_annual_total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sd Annual Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_total",
+          "normal_at_date",
+          "diff",
+          "mean_annual_total",
+          "sd_annual_total"
+        ],
+        "title": "SeasonToDateSummary"
+      },
+      "Series": {
+        "properties": {
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "new": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "New"
+          },
+          "recap": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Recap"
+          },
+          "total_new": {
+            "type": "integer",
+            "title": "Total New"
+          },
+          "total_recap": {
+            "type": "integer",
+            "title": "Total Recap"
+          }
+        },
+        "type": "object",
+        "required": [
+          "species",
+          "new",
+          "recap",
+          "total_new",
+          "total_recap"
+        ],
+        "title": "Series"
+      },
+      "SpeciesInfo": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "name_sv": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Sv"
+          },
+          "name_sci": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Sci"
+          },
+          "name_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name En"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order"
+          },
+          "family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family"
+          },
+          "n_new_total": {
+            "type": "integer",
+            "title": "N New Total"
+          },
+          "n_recap_total": {
+            "type": "integer",
+            "title": "N Recap Total"
+          },
+          "share_var": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Var"
+          },
+          "single_season": {
+            "type": "boolean",
+            "title": "Single Season"
+          },
+          "single_season_season": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Single Season Season"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "name_sv",
+          "name_sci",
+          "name_en",
+          "order",
+          "family",
+          "n_new_total",
+          "n_recap_total",
+          "share_var",
+          "single_season",
+          "single_season_season"
+        ],
+        "title": "SpeciesInfo"
+      },
+      "TableRow": {
+        "properties": {
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "name_sci": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Sci"
+          },
+          "selected": {
+            "type": "boolean",
+            "title": "Selected"
+          },
+          "latest_n": {
+            "type": "integer",
+            "title": "Latest N"
+          },
+          "avg_n": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg N"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "trend_slope": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Slope"
+          },
+          "trend_ci_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Ci Low"
+          },
+          "trend_ci_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Ci High"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down",
+              "none"
+            ],
+            "title": "Verdict"
+          },
+          "median_var_doy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Var Doy"
+          },
+          "median_host_doy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Host Doy"
+          },
+          "single_season": {
+            "type": "boolean",
+            "title": "Single Season"
+          },
+          "single_season_season": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Single Season Season"
+          },
+          "spark": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Spark"
+          }
+        },
+        "type": "object",
+        "required": [
+          "species",
+          "name",
+          "name_sci",
+          "selected",
+          "latest_n",
+          "avg_n",
+          "total",
+          "trend_slope",
+          "trend_ci_low",
+          "trend_ci_high",
+          "verdict",
+          "median_var_doy",
+          "median_host_doy",
+          "single_season",
+          "single_season_season",
+          "spark"
+        ],
+        "title": "TableRow"
+      },
+      "TimeSeries": {
+        "properties": {
+          "grain": {
+            "type": "string",
+            "enum": [
+              "day",
+              "week",
+              "month",
+              "year"
+            ],
+            "title": "Grain"
+          },
+          "period": {
+            "$ref": "#/components/schemas/PeriodInfo"
+          },
+          "buckets": {
+            "items": {
+              "$ref": "#/components/schemas/Bucket"
+            },
+            "type": "array",
+            "title": "Buckets"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/Series"
+            },
+            "type": "array",
+            "title": "Series"
+          }
+        },
+        "type": "object",
+        "required": [
+          "grain",
+          "period",
+          "buckets",
+          "series"
+        ],
+        "title": "TimeSeries"
+      },
+      "TopSpecies": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodInfo"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "n_species": {
+            "type": "integer",
+            "title": "N Species"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/TopSpeciesRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "total",
+          "n_species",
+          "rows"
+        ],
+        "title": "TopSpecies"
+      },
+      "TopSpeciesRow": {
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "n": {
+            "type": "integer",
+            "title": "N"
+          },
+          "share": {
+            "type": "number",
+            "title": "Share"
+          },
+          "selected": {
+            "type": "boolean",
+            "title": "Selected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rank",
+          "species",
+          "name",
+          "n",
+          "share",
+          "selected"
+        ],
+        "title": "TopSpeciesRow"
+      },
+      "TrendOverview": {
+        "properties": {
+          "season": {
+            "type": "string",
+            "title": "Season"
+          },
+          "period": {
+            "$ref": "#/components/schemas/PeriodInfo"
+          },
+          "excluded_years": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Excluded Years"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/TrendRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "season",
+          "period",
+          "excluded_years",
+          "rows"
+        ],
+        "title": "TrendOverview"
+      },
+      "TrendRow": {
+        "properties": {
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slope": {
+            "type": "number",
+            "title": "Slope"
+          },
+          "ci_low": {
+            "type": "number",
+            "title": "Ci Low"
+          },
+          "ci_high": {
+            "type": "number",
+            "title": "Ci High"
+          },
+          "n_years": {
+            "type": "integer",
+            "title": "N Years"
+          },
+          "mean": {
+            "type": "number",
+            "title": "Mean"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down",
+              "none"
+            ],
+            "title": "Verdict"
+          },
+          "selected": {
+            "type": "boolean",
+            "title": "Selected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "species",
+          "name",
+          "slope",
+          "ci_low",
+          "ci_high",
+          "n_years",
+          "mean",
+          "total",
+          "verdict",
+          "selected"
+        ],
+        "title": "TrendRow"
+      },
+      "TrendSeries": {
+        "properties": {
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "years": {
+            "items": {
+              "$ref": "#/components/schemas/YearCount"
+            },
+            "type": "array",
+            "title": "Years"
+          },
+          "fit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Fit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "species",
+          "years",
+          "fit"
+        ],
+        "title": "TrendSeries"
+      },
+      "Trends": {
+        "properties": {
+          "season": {
+            "type": "string",
+            "title": "Season"
+          },
+          "period": {
+            "$ref": "#/components/schemas/PeriodInfo"
+          },
+          "excluded_years": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Excluded Years"
+          },
+          "species": {
+            "items": {
+              "$ref": "#/components/schemas/TrendSeries"
+            },
+            "type": "array",
+            "title": "Species"
+          }
+        },
+        "type": "object",
+        "required": [
+          "season",
+          "period",
+          "excluded_years",
+          "species"
+        ],
+        "title": "Trends"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Weather": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "season": {
+            "type": "string",
+            "title": "Season"
+          },
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "is_gap_year": {
+            "type": "boolean",
+            "title": "Is Gap Year"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/WeatherDay"
+            },
+            "type": "array",
+            "title": "Days"
+          },
+          "wind_rose": {
+            "items": {
+              "$ref": "#/components/schemas/WindSector"
+            },
+            "type": "array",
+            "title": "Wind Rose"
+          },
+          "best_days": {
+            "items": {
+              "$ref": "#/components/schemas/WeatherDay"
+            },
+            "type": "array",
+            "title": "Best Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "season",
+          "species",
+          "is_gap_year",
+          "days",
+          "wind_rose",
+          "best_days"
+        ],
+        "title": "Weather"
+      },
+      "WeatherDay": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "doy": {
+            "type": "integer",
+            "title": "Doy"
+          },
+          "catch": {
+            "type": "integer",
+            "title": "Catch"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "temp_mean": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temp Mean"
+          },
+          "temp_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temp Min"
+          },
+          "temp_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temp Max"
+          },
+          "wind_speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Speed"
+          },
+          "wind_dir": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Dir"
+          },
+          "gust_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gust Max"
+          },
+          "pressure": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pressure"
+          },
+          "precipitation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precipitation"
+          },
+          "visibility_km": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visibility Km"
+          },
+          "cloud_cover": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cloud Cover"
+          },
+          "humidity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Humidity"
+          },
+          "precipitation_from_vinga": {
+            "type": "boolean",
+            "title": "Precipitation From Vinga"
+          },
+          "pressure_from_vinga": {
+            "type": "boolean",
+            "title": "Pressure From Vinga"
+          },
+          "visibility_from_vinga": {
+            "type": "boolean",
+            "title": "Visibility From Vinga"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "doy",
+          "catch",
+          "active",
+          "temp_mean",
+          "temp_min",
+          "temp_max",
+          "wind_speed",
+          "wind_dir",
+          "gust_max",
+          "pressure",
+          "precipitation",
+          "visibility_km",
+          "cloud_cover",
+          "humidity",
+          "precipitation_from_vinga",
+          "pressure_from_vinga",
+          "visibility_from_vinga"
+        ],
+        "title": "WeatherDay"
+      },
+      "WeatherWindow": {
+        "properties": {
+          "from_hour": {
+            "type": "integer",
+            "title": "From Hour"
+          },
+          "to_hour": {
+            "type": "integer",
+            "title": "To Hour"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_hour",
+          "to_hour",
+          "timezone",
+          "note"
+        ],
+        "title": "WeatherWindow"
+      },
+      "WeekInfo": {
+        "properties": {
+          "week": {
+            "type": "integer",
+            "title": "Week"
+          },
+          "start_month": {
+            "type": "integer",
+            "title": "Start Month"
+          },
+          "start_day": {
+            "type": "integer",
+            "title": "Start Day"
+          },
+          "end_month": {
+            "type": "integer",
+            "title": "End Month"
+          },
+          "end_day": {
+            "type": "integer",
+            "title": "End Day"
+          },
+          "season": {
+            "type": "string",
+            "title": "Season"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week",
+          "start_month",
+          "start_day",
+          "end_month",
+          "end_day",
+          "season"
+        ],
+        "title": "WeekInfo"
+      },
+      "WindSector": {
+        "properties": {
+          "sector": {
+            "type": "integer",
+            "title": "Sector"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "days": {
+            "type": "integer",
+            "title": "Days"
+          },
+          "mean_catch": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Catch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sector",
+          "label",
+          "days",
+          "mean_catch"
+        ],
+        "title": "WindSector"
+      },
+      "YearCount": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "n": {
+            "type": "integer",
+            "title": "N"
+          },
+          "is_gap_year": {
+            "type": "boolean",
+            "title": "Is Gap Year"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "n",
+          "is_gap_year"
+        ],
+        "title": "YearCount"
+      },
+      "YearCurve": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "cumulative": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Cumulative"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "total",
+          "cumulative"
+        ],
+        "title": "YearCurve"
+      }
+    }
+  }
+}

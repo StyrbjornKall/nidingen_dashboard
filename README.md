@@ -119,6 +119,7 @@ app/
     preprocess_data/           Weather fetcher, lookup-table rebuild, legacy scripts
   tests/                 pytest suites (aggregates, API, parity, fetcher) + exploratory scripts
 config/                  Analysis rules (seasons, gap years, periods) and EURING country names
+web/                     New React frontend (Vite + TypeScript), served by the API when built
 design/                  Approved design for the new site (reference only)
 data/                    Databases and raw/processed data (not in git)
 notebooks/               Jupyter exploration
@@ -153,6 +154,11 @@ docker run -p 8000:8000 -v "$PWD/data:/home/appuser/data" nidingen-dashboard
 - The new backend runs with `uv run uvicorn app.api.main:app --reload --port 8000`;
   its endpoints are documented at http://localhost:8000/api/docs. It reads
   the `agg_*` tables, so run `build_aggregates.py` first.
+- The new frontend (Node 24): `npm --prefix web install`, then
+  `npm --prefix web run dev` (http://localhost:5173, with /api proxied to the
+  backend) or `npm --prefix web run build`, after which the backend serves
+  the whole site at http://localhost:8000. Tests: `npm --prefix web test`
+  and `npm --prefix web run e2e`.
 
 ## Technology
 

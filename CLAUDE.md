@@ -41,14 +41,17 @@ uv run python app/src/preprocess_data/rebuild_precomputed_tables.py  # refresh s
 uv run python app/src/build_aggregates.py                        # agg_* tables, after every DB rebuild and weather fetch
 uv run pytest                                                    # real suites only (see pyproject.toml)
 uv run uvicorn app.api.main:app --reload --port 8000             # new API; docs at /api/docs (restart after a DB rebuild)
+npm --prefix web install                                         # frontend deps (Node 24)
+npm --prefix web run dev                                         # frontend on :5173, proxies /api to :8000
+npm --prefix web run build                                       # web/dist, served by the API at / (reload the API)
+npm --prefix web test                                            # Vitest unit tests
+npm --prefix web run e2e                                         # Playwright against the API + built site + real DB
+npm --prefix web run gen:api                                     # after changing app/api/schemas.py: openapi.json + TS types
 ```
 
-Targets for the new stack (set up in phases 4 and 6; keep this list accurate
-as they become real):
+Still a target (phase 6; keep this list accurate as it becomes real):
 
 ```bash
-npm --prefix web install && npm --prefix web run dev        # frontend in dev (proxy /api to :8000)
-npm --prefix web run build                                  # static build served by FastAPI
 docker build -f app/Dockerfile -t nidingen-dashboard .      # single container
 ```
 
@@ -114,6 +117,12 @@ design/                 Design reference (read-only)
 - When printing query results in the Windows terminal, set
   `PYTHONIOENCODING=utf-8`, otherwise Swedish letters show up as `�`. The
   data itself is correct.
+- Frontend: colours, fonts and radii come from `design/tokens.json` via
+  `web/scripts/gen-tokens.mjs` (CSS variables, never hard-coded hex in new
+  components). API types come from `web/src/lib/api-types.ts`, generated from
+  the pydantic models; `test_api.py` fails if `web/openapi.json` is stale.
+- The root `.gitignore` ignores `lib/`; `web/.gitignore` re-includes
+  `web/src/lib/`. Check `git status` shows new files there.
 - Many tracked files under `app/` use **CRLF** line endings (no
   `.gitattributes`). Preserve them when editing, or the whole file shows as changed.
 - Don't commit anything under `data/` or the `.env` file (it holds API keys).
