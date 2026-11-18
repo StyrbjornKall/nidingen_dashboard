@@ -1,0 +1,49 @@
+code,name_sv,note
+SV,Sverige,
+DK,Danmark,
+NO,Norge,
+SF,Finland,Includes Åland
++A,Svalbard,+ASV Svalbard and +ABI Bjørnøya
+GD,Grönland,
+DE,Tyskland,
+DF,Tyskland,Helgoland
+DD,Tyskland,Former East Germany (DDR)
+NL,Nederländerna,
+BL,Belgien,
+KN,Luxemburg,
+FR,Frankrike,
+CI,Kanalöarna,Jersey and Guernsey
+GB,Storbritannien,
+ER,Irland,
+ES,Spanien,
+PO,Portugal,
+IA,Italien,
+ML,Malta,
+HE,Schweiz,
+AU,Österrike,
+PL,Polen,
+CZ,Tjeckien,
+CS,Tjeckoslovakien,Historical code
+SK,Slovakien,
+HG,Ungern,
+HR,Kroatien,
+GR,Grekland,
+TU,Turkiet,
+LI,Litauen,
+RU,Ryssland,
+SU,Sovjetunionen,"Historical code; places in present-day Estonia, Belarus and Ukraine"
+MA,Marocko,
+ND,Västsahara,
+AG,Algeriet,
+TO,Tunisien,
+LT,Libyen,
+NM,Mauretanien,
+NU,Senegal,
+VM,Gambia,
+GQ,Guinea-Bissau,
+EM,Mali,
+GH,Ghana,
+FM,Namibia,
+-B,Nordsjön,At sea
+-D,Biscayabukten,At sea
+-H,Atlanten utanför Iberiska halvön,At sea

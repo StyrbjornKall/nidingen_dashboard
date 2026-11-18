@@ -45,6 +45,7 @@ Answered by the owner in phase 1 (2026-11-18) unless marked **open**.
 - **Feature parity kept** beyond the design: the weather variable choice ("Visa" chips) with values gap-filled from Vinga A marked as such (precipitation, pressure, visibility); recaptures as data; species codes without a Swedish name (78 codes, for example `KASS`, `KETÄR`) stay selectable by code, with the code as fallback name.
 - **Dropped from the Dash app:** free date ranges, heatmap top-N 30 / 50 / 100 (the design's Topp 5 / 10 / 15 / Alla only), violin plots (replaced by 50-bin histograms), fat score, and later (phase 7) the `TOTAL` rows in `ring_records`.
 - **Återfynd** filters its period on the **find date**, as the Dash app does. Recoveries are not subject to the gap-year rule (no trend is computed).
+- **Weeks** are 7-day periods counted from 1 January (week 1 = 1–7 January, week 52 = 24–31 December), never calendar (ISO) week numbers, on every page. The Om page explains this; the copy is in `design/README.md`. Decided 2026-11-18.
 - **Morfometri** aggregates use **all years** (descriptive statistics, no trend).
 - **Current year** = the latest year in `ringon`; **complete years** end at the upper bound of `period_options`. The "idag" marker uses the real date.
 - **Species count on Hem:** the real number of ringed species codes (210 today, of which 132 have a Swedish name) is computed from the data. The design's "133" is the number of mapped names; settle the wording in the Hem PR.
@@ -95,6 +96,14 @@ All tables carry `is_gap_year BOOLEAN` where relevant, so every consumer can fil
 | `agg_recoveries` | one row per recovery | `species, direction ('out'/'in'), ring_date, find_date, days, lat, lon, place, country, distance_km, bearing_deg` | Återfynd (about 6 000 rows, sent to the client after filtering) |
 
 Weather stays as it is (`weather_daily`, about 16 000 rows) and is queried live.
+
+**As built in phase 2** (full column reference: `.github/copilot-instructions.md` §5.3b). Differences from the suggestions above:
+- `week` replaces `iso_week`: `(doy − 1) // 7 + 1` on a non-leap calendar, capped at 52, so weeks never cross a year boundary. A week's season is the season of its 4th day.
+- Extra tables: `agg_species` (names, totals, single-season flag), `euring_countries` and `agg_build_info` (build time for ETags and "Senast uppdaterad").
+- `agg_counts_year_season` also has `season = 'helar'` (Trender's Helår) and is dense, so trends see years with zero birds.
+- `agg_trend` also stores `intercept`, `slope_se`, `t_crit`, `residual_se`, `x_mean` and `sxx`, enough to draw the CI band without the raw points.
+- `agg_morph_hist` uses one bin per measurement step (1 mm, 0.1 g) when the range has fewer than 50 steps, so integer wing lengths don't produce a comb of empty bins.
+- `agg_recoveries`: inbound is one row per foreign-ringed bird (its first encounter), and outbound joins on ring number **and** centre.
 
 ### 4.3 Calculated live (API or browser)
 

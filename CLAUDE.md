@@ -38,15 +38,14 @@ uv run python app/app.py                                         # Dash dev serv
 uv run python app/src/convert_mdb_to_duckdb.py                   # rebuild DB from data/RingDb0016.mdb (Windows + Access ODBC)
 uv run python app/src/preprocess_data/fetch_smhi_weather.py      # refresh SMHI weather + weather_daily
 uv run python app/src/preprocess_data/rebuild_precomputed_tables.py  # refresh start-up lookup tables only
-uv run pytest app/tests/test_fetch_observations.py               # the only real pytest suite today
+uv run python app/src/build_aggregates.py                        # agg_* tables, after every DB rebuild and weather fetch
+uv run pytest                                                    # real suites only (see pyproject.toml)
 ```
 
-Targets for the new stack (set up in phases 2–4; keep this list accurate as
+Targets for the new stack (set up in phases 3–4; keep this list accurate as
 they become real):
 
 ```bash
-uv run python app/src/build_aggregates.py                   # agg_* tables, after every DB rebuild and weather fetch
-uv run pytest                                               # tests
 uv run uvicorn app.api.main:app --reload --port 8000        # API in dev
 npm --prefix web install && npm --prefix web run dev        # frontend in dev (proxy /api to :8000)
 npm --prefix web run build                                  # static build served by FastAPI
@@ -81,6 +80,8 @@ design/                 Design reference (read-only)
   species × year × season.
 - **Single-season species:** more than 90 % of new ringings in one season →
   one median, for that season only; otherwise a median for both seasons.
+- **Weeks** are 7-day periods from 1 January (`agg_*.week`), never ISO week
+  numbers. Om explains this to visitors.
 - **Age:** show raw `age_code` values (`10`, `2+`, `20` …), never grouped.
 - **Trends are absolute:** birds per year, or days for timing. Never percent.
 - **Use the exact t quantile** for confidence intervals (`df = n − 2`).

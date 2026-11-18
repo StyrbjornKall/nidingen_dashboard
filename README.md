@@ -39,6 +39,7 @@ uv sync
 # 2. Get the database. Either copy bird_ringing_0016.duckdb into data/, or build it:
 uv run python app/src/convert_mdb_to_duckdb.py              # data/RingDb0016.mdb → data/bird_ringing_0016.duckdb
 uv run python app/src/preprocess_data/fetch_smhi_weather.py # add SMHI weather (Nidingen A + Vinga A)
+uv run python app/src/build_aggregates.py                   # agg_* tables for the new dashboard
 
 # 3. Tell the app where the database is (.env in the repo root)
 echo DUCKDB_PATH=/absolute/path/to/data/bird_ringing_0016.duckdb >> .env
@@ -64,11 +65,17 @@ SMHI Open Data API ───────────────────┴�
   71190) and Vinga A (71380). It fills Nidingen's gaps in precipitation,
   pressure and visibility from Vinga and builds the `weather_daily` table.
 - **`rebuild_precomputed_tables.py`** refreshes only the small lookup tables.
+- **`build_aggregates.py`** builds the `agg_*` tables that the new
+  FastAPI/React dashboard reads (counts, phenology medians, trends,
+  morphometry, recoveries). Rules such as seasons, the partly staffed years
+  1990–2004 and the minimum sample come from `config/analysis.json`.
+  **Run it after every database rebuild and weather fetch.**
 - **`fetch_observation_data.py`** (optional) downloads Artportalen sightings
   into a separate `bird_observations.db`. The dashboard doesn't use it yet.
 
-To add a new season, get an updated `RingDb0016.mdb` from the station and
-re-run the converter.
+To add a new season, get an updated `RingDb0016.mdb` from the station,
+re-run the converter, the weather fetcher and `build_aggregates.py`, then
+run `uv run pytest`.
 
 ## Database overview
 

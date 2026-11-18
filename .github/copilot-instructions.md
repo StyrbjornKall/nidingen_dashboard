@@ -82,6 +82,7 @@ RingDb0016.mdb ──(convert_mdb_to_duckdb.py, Windows + Access ODBC driver)─
 data/processed/combined_species_metadata.csv ──┘   (artkod_lookup, species_metadata)
 SMHI Open Data API ──(fetch_smhi_weather.py)──► weather_data, weather_data_vinga, weather_daily
                     (rebuild_precomputed_tables.py)──► species_list, year_list, date_range_cache, … (refresh only)
+config/analysis.json + config/euring_countries.csv ──(build_aggregates.py)──► agg_* tables (for the new API)
 Artdatabanken SOS API ──(fetch_observation_data.py)──► bird_observations.db  (separate file)
 ```
 
@@ -93,13 +94,15 @@ uv run python app/src/convert_mdb_to_duckdb.py           # drops and recreates a
 uv run python app/src/preprocess_data/fetch_smhi_weather.py   # downloads Nidingen A + Vinga A, gap-fills, builds weather_daily
 # optional, only if lookup tables are stale or missing:
 uv run python app/src/preprocess_data/rebuild_precomputed_tables.py
+uv run python app/src/build_aggregates.py                # agg_* tables; run after every rebuild and weather fetch
 ```
 
 - The converter needs the **Microsoft Access Driver (*.mdb, *.accdb)**
   (Windows) and decodes text as **cp1252**.
 - Converter options: `--mdb PATH --db PATH`. Weather fetcher options:
   `--db-path`, `--dry-run`, `--no-vinga`, `--output-nidingen-csv`,
-  `--output-vinga-csv`. Rebuild script option: `--db PATH`.
+  `--output-vinga-csv`. Rebuild script option: `--db PATH`. Aggregate
+  builder options: `--db PATH --config-dir PATH`.
 - To add a new season, get an updated `RingDb0016.mdb` from the station and
   re-run the converter. Do **not** append CSVs. The old
   `load_csv_to_table`/`initialize_database.py` route targets the legacy schema.
@@ -380,6 +383,42 @@ warbler), ÄNPIP (meadow pipit), KUFÅG (goldcrest) and SKPIP (rock pipit).
 If they're missing, `app.py` falls back to slow direct queries and prints a
 warning.
 
+### 5.3b Aggregate tables for the new API (`build_aggregates.py`)
+
+Built from `ringon`, `kontr`, `fynd` and `frring` by
+`app/src/build_aggregates.py` (about 10 s, one transaction, safe to re-run).
+All rules come from `config/analysis.json`; see `HANDOFF.md` §4–5 for why.
+The Dash app does not read these tables.
+
+Conventions shared by all `agg_*` tables:
+- **`ALLA`** is the all-species total (it replaces `TOTAL`). It exists in
+  the count, species and phenology tables, not in the morphometry tables.
+- Counts of "ringmärkta" are **new ringings** (`ringon`); recaptures
+  (`kontr`) are `n_recap`.
+- **`season`** is `'var'` (Jan–Jun) or `'host'` (Jul–Dec); `'helar'` is the
+  whole year.
+- **`doy`** is the day of year on a non-leap calendar (29 Feb counts as
+  28 Feb), so a date has the same `doy` every year.
+- **`week`** = `(doy − 1) // 7 + 1`, capped at 52. A week's season is the
+  season of its 4th day (week 26 = vår, week 27 = höst).
+- **`is_gap_year`** is TRUE for 1990–2004 (`trend_excluded_years`).
+
+| Table | Rows | Grain and key columns |
+|---|---:|---|
+| `agg_species` | 216 | One row per species code (incl. codes seen only as recaptures) + `ALLA`: `swedish_name` (NULL for 78 unmapped codes), `scientific_name`, `english_name`, `order_name`, `family_name`, `taxon_order`, `n_new_total`, `n_recap_total`, `n_new_var/host`, `share_var`, `single_season`, `single_season_season`, `first_date`, `last_date` |
+| `agg_counts_day` | 85 k | species × date with any capture: `year, doy, month, week, season, n_new, n_recap, is_gap_year` |
+| `agg_counts_year_season` | 30 k | species × year × season (`var`/`host`/`helar`), **dense**: years with no birds are 0, from the first data year to the end of the longest period |
+| `agg_counts_week` | 32 k | species × year × week (sparse): `season, n` (new), `n_recap`, `is_gap_year` |
+| `agg_phenology_median` | 7 k | species × year × season: `n`, `q25_doy`, `median_doy`, `q75_doy` (first doy where the cumulative count reaches 25/50/75 % of the season total), `meets_min_sample` (n ≥ `median_min_birds`), `is_gap_year` |
+| `agg_phenology_species` | 876 | species × season × `period_id`: `mean_median_doy`, `mean_q25_doy`, `mean_q75_doy` = mean of the yearly values over usable years (not gap, enough birds); `years_used` (0 → no median), `n_birds_used`, `single_season`. Single-season species only have their majority season |
+| `agg_trend` | 1.5 k | species × season × `period_id`: OLS of yearly `n_new` on year, gap years removed, zeros kept. `slope_per_year`, `ci_low`/`ci_high` (95 %, exact t, df = n − 2), `n_years`, `mean`, `intercept`, `slope_se`, `t_crit`, `residual_se`, `x_mean`, `sxx` (enough to draw the CI band of the line), `total`, `first_year`, `last_year`. Only species with ≥ 1 bird in the period |
+| `agg_morph_species` | 561 | species × season (`var`/`host`/`helar`), from `ringon`, all years: `n`, `weight_n/mean/q25/med/q75` (weight rounded to 0.1 g), `wing_n/mean/q25/med/q75`, `n_total_since_1980` |
+| `agg_morph_hist` | 28 k | species × season × `variable` (`weight`/`wing`) × `bin`: `bin_low`, `bin_high`, `n`. Range = 0.5–99.5 % quantiles (actual values); 50 equal bins, or one bin per measurement step (1 mm, 0.1 g) when the range has fewer than 50 steps. Zero bins included |
+| `agg_age_sex` | 3 k | species × season × `kind` (`age`/`sex`) × `category`: **raw** `age_code` / `sex` values, NULL = missing (`''` or NULL). Shown ungrouped |
+| `agg_recoveries` | 5 948 | `direction` `'out'`: one row per report of a Nidingen bird found outside the Nidingen box (join `fynd`→`ringon` on ring **and** centre); point = find site. `'in'`: one row per foreign-ringed bird, at its first encounter in `fynd`; point = its ringing site (`frring`). Columns: `species, ring_number, case_number, ring_date, find_date, find_year, days, lat, lon, place, province_code, country_code, country, distance_km, bearing_deg, find_type` |
+| `euring_countries` | 48 | `code` (2-char EURING prefix of `province_code`) → `name_sv`, from `config/euring_countries.csv`. Historical codes (`SU`, `DD`, `CS`) and at-sea codes (`-B`, `-D`, `-H`) included; `+A` = Svalbard |
+| `agg_build_info` | 1 | `built_at_utc`, `ringing_min_date`, `ringing_max_date`, `recoveries_max_date`, `weather_max_date`, `config_digest` (for ETags and "Senast uppdaterad") |
+
 ### 5.4 Join cheat-sheet
 
 ```sql
@@ -618,11 +657,15 @@ docker run -p 8000:8000 -v "$PWD/data:/home/appuser/data" nidingen-dashboard
 `app/tests/` is mostly **exploratory scripts** that print results or write
 HTML figures to `figures/`, not assertions. Several still point at the
 legacy `data/bird_ringing.db` (`test_setup.py`, `test_correlations.py`).
-The one real pytest suite is `test_fetch_observations.py`, which uses
-temporary DBs and mocks:
+The real pytest suites are `test_fetch_observations.py` (temporary DBs and
+mocks) and `test_aggregates.py` (fixture DB with known answers, plus
+reconciliation against the real DB, skipped if the `agg_*` tables are
+missing). `pyproject.toml` limits collection to these files, so a bare
+`uv run pytest` works:
 
 ```bash
-uv run pytest app/tests/test_fetch_observations.py
+uv run pytest                                   # both suites
+uv run pytest app/tests/test_aggregates.py -v   # aggregates only; DUCKDB_PATH overrides the DB
 ```
 
 To check a query, run it directly against the real DB:

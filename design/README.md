@@ -49,6 +49,14 @@ Apply these when building each page. HANDOFF.md §2 and §2b hold the reasoning.
 - **Väder**: keeps the "Visa" variable chips and marks values gap-filled from Vinga A (precipitation, pressure, visibility).
 - **Species picker**: species codes without a Swedish name are selectable, shown by code.
 - **Om**: add an FAQ entry on the partly staffed years 1990–2004, and replace the `claudeusercontent.com` contact links with real ones.
+- **Weeks are 7-day periods from 1 January, never calendar (ISO) week numbers**, everywhere on the site (Sammanfattning "Vecka", Flyttningskalendern, ridgelines). Labels such as "v.12" stay, but hover readouts should also show the dates ("v.12 · 19–25 mar"). Om must explain this with the text below.
+
+  FAQ entry for Om:
+
+  > **Varför stämmer inte veckorna med almanackan?**
+  > När data visas per vecka använder vi inte kalenderveckor. En vecka här är en period på sju dagar räknad från den 1 januari: vecka 1 är 1–7 januari, vecka 2 är 8–14 januari och så vidare. Flyttfåglarna bryr sig inte om veckonummer, och på det här sättet hamnar samma datum i samma vecka varje år, så att åren går att jämföra. Vecka 12 på webbplatsen är alltså alltid 19–25 mars, inte kalendervecka 12. Vecka 52 omfattar årets sista åtta dagar (24–31 december), och skottdagen 29 februari räknas till samma vecka som 28 februari.
+
+  Glossary entry for Om: **Vecka** — sju dagar räknat från 1 januari (vecka 1 = 1–7 januari), inte kalendervecka.
 - **Footer** "Senast uppdaterad" and the "Data från …" labels read a build timestamp written by `build_aggregates.py`.
 
 ## Asset URLs in the files
