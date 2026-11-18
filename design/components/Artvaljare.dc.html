@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Artväljare</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="position: relative; font-family: 'Hanken Grotesk', system-ui, sans-serif; color: #1D2923">
+  <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+    <sc-for list="{{chips}}" as="c" hint-placeholder-count="2">
+      <span style="display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 4px 0 12px; border-radius: 999px; background: #FFFFFF; border: 1.5px solid {{c.color}}; font-size: 14px; font-weight: 600">
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: {{c.color}}"></span>
+        {{c.sv}}
+        <button type="button" aria-label="{{c.removeLabel}}" onClick="{{c.remove}}" style="all: unset; cursor: pointer; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: #53605A">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"></path></svg>
+        </button>
+      </span>
+    </sc-for>
+    <button type="button" aria-expanded="{{open}}" onClick="{{toggleOpen}}" style="all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border-radius: 999px; background: #1D2923; color: #FFFFFF; font-size: 14px; font-weight: 500">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 2v10M2 7h10"></path></svg>
+      {{addLabel}}
+    </button>
+  </div>
+
+  <sc-if value="{{open}}" hint-placeholder-val="{{true}}">
+    <div style="position: absolute; z-index: 30; top: calc(100% + 8px); left: 0; width: min(380px, 92vw); background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 16px; box-shadow: 0 18px 40px rgba(29,41,35,0.16); padding: 14px; display: flex; flex-direction: column; gap: 10px">
+      <label for="artsok-input" style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #53605A">Sök art</label>
+      <input id="artsok-input" type="search" value="{{q}}" onChange="{{onQuery}}" placeholder="Namn, ringkod eller latinskt namn" style="box-sizing: border-box; width: 100%; min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid #D5DDD2; background: #F4F7F2; font: 400 15px 'Hanken Grotesk', system-ui, sans-serif; color: #1D2923">
+      <div style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px">
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+          <button type="button" aria-pressed="{{r.on}}" disabled="{{r.disabled}}" onClick="{{r.toggle}}" style="all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 22px 1fr auto; gap: 12px; align-items: center; min-height: 46px; padding: 6px 10px; border-radius: 10px; background: {{r.bg}}; opacity: {{r.op}}">
+            <span style="width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid {{r.box}}; background: {{r.fill}}; display: inline-flex; align-items: center; justify-content: center">
+              <sc-if value="{{r.on}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5l2.5 2.5 4.5-6"></path></svg></sc-if>
+            </span>
+            <span style="display: flex; flex-direction: column; line-height: 1.2"><span style="font-size: 15px; font-weight: 600">{{r.sv}}</span><span style="font-size: 12.5px; font-style: italic; color: #53605A">{{r.sci}}</span></span>
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #53605A">{{r.id}}</span>
+          </button>
+        </sc-for>
+        <sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 14px 10px; color: #53605A">Ingen art matchar.</p></sc-if>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 8px; border-top: 1px solid #E3E9DF">
+        <span style="font-size: 13px; color: #53605A">{{countLabel}}</span>
+        <button type="button" onClick="{{toggleOpen}}" style="all: unset; cursor: pointer; min-height: 40px; padding: 0 16px; border-radius: 999px; background: #36775B; color: #FFFFFF; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center">Klar</button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"selected":{"editor":null,"default":null},"onToggle":{"editor":null,"default":null},"max":{"editor":"int","default":6,"min":1,"max":6},"startOpen":{"editor":"boolean","default":true},"$preview":{"width":960,"height":560}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { open: props.startOpen ?? true, q: '', own: ['RÖHAK', 'LÖSÅN'] };
+  }
+  SP() {
+    return [
+      ['ALLA', 'Alla arter', 'Summa av samtliga arter'],
+      ['RÖHAK', 'Rödhake', 'Erithacus rubecula'], ['LÖSÅN', 'Lövsångare', 'Phylloscopus trochilus'],
+      ['KUFÅG', 'Kungsfågel', 'Regulus regulus'], ['ÄNPIP', 'Ängspiplärka', 'Anthus pratensis'],
+      ['GRSÅN', 'Gransångare', 'Phylloscopus collybita'], ['SVHÄT', 'Svarthätta', 'Sylvia atricapilla'],
+      ['TRSÅN', 'Trädgårdssångare', 'Sylvia borin'], ['KOTRA', 'Koltrast', 'Turdus merula'],
+      ['TATRA', 'Taltrast', 'Turdus philomelos'], ['RÖTRA', 'Rödvingetrast', 'Turdus iliacus'],
+      ['BOFIN', 'Bofink', 'Fringilla coelebs'], ['JÄSPA', 'Järnsparv', 'Prunella modularis'],
+      ['BLMES', 'Blåmes', 'Cyanistes caeruleus'], ['SKPIP', 'Skärpiplärka', 'Anthus petrosus'],
+      ['LASVA', 'Ladusvala', 'Hirundo rustica']
+    ];
+  }
+  renderVals() {
+    const PAL = ['#36775B', '#C2624C', '#6595B6', '#1D2923', '#A58D54', '#7E6AA6'];
+    const max = this.props.max ?? 6;
+    const controlled = Array.isArray(this.props.selected);
+    const sel = controlled ? this.props.selected : this.state.own;
+    const toggle = id => {
+      if (controlled && this.props.onToggle) { this.props.onToggle(id); return; }
+      const cur = this.state.own;
+      this.setState({ own: cur.indexOf(id) >= 0 ? cur.filter(x => x !== id) : (cur.length < max ? cur.concat([id]) : cur) });
+    };
+    const all = this.SP();
+    const byId = {};
+    all.forEach(s => { byId[s[0]] = s; });
+    const q = (this.state.q || '').trim().toLowerCase();
+    const rows = all.filter(s => !q || (s[0] + ' ' + s[1] + ' ' + s[2]).toLowerCase().indexOf(q) >= 0).map(s => {
+      const idx = sel.indexOf(s[0]);
+      const on = idx >= 0;
+      const disabled = !on && sel.length >= max;
+      return {
+        id: s[0] === 'ALLA' ? 'Σ' : s[0], sv: s[1], sci: s[2], on: on, disabled: disabled,
+        bg: on ? '#E6F0EA' : 'transparent', op: disabled ? 0.45 : 1,
+        box: on ? PAL[idx % 6] : '#9AA89F', fill: on ? PAL[idx % 6] : '#FFFFFF',
+        toggle: () => toggle(s[0])
+      };
+    });
+    return {
+      chips: sel.filter(id => byId[id]).map((id, i) => ({
+        sv: byId[id][1], color: PAL[i % 6],
+        removeLabel: 'Ta bort ' + byId[id][1], remove: () => toggle(id)
+      })),
+      addLabel: sel.length ? 'Lägg till art' : 'Välj art',
+      open: this.state.open,
+      toggleOpen: () => this.setState({ open: !this.state.open }),
+      q: this.state.q, onQuery: e => this.setState({ q: e.target.value }),
+      rows: rows, empty: rows.length === 0,
+      countLabel: sel.length + ' av ' + max + ' valda' + (sel.length >= max ? ' — ta bort en för att byta' : '')
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Trender — Nidingens Fågelstation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2F6B50}a:hover{color:#234F3C}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:999px;background:#D4D6CF}
+.seg button{all:unset;cursor:pointer;min-height:40px;padding:0 15px;border-radius:999px;font:500 14px/40px 'Hanken Grotesk',system-ui,sans-serif;color:#35423B;transition:background .2s,color .2s}
+.seg button:hover{background:#C8CCC4;color:#1D2923}
+.seg button[aria-pressed="true"]{background:#1D2923;color:#fff}
+.seg button:focus-visible,.rowf:focus-visible{outline:2px solid #36775B;outline-offset:2px}
+.rowf{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:170px minmax(0,1fr) 130px;gap:20px;align-items:center;width:100%;min-height:42px;padding:2px 12px;border-radius:10px;transition:background .18s}
+.rowf:hover{background:#F0F4EE}
+.rowf[aria-pressed="true"]{background:#E6F0EA}
+.pt{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;border:2px solid;box-sizing:border-box;transition:left .6s cubic-bezier(.2,.8,.2,1),background .2s}
+.wh{position:absolute;top:50%;height:2px;margin-top:-1px;border-radius:2px;transition:left .6s cubic-bezier(.2,.8,.2,1),width .6s cubic-bezier(.2,.8,.2,1)}
+.dot{position:absolute;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;transition:top .55s cubic-bezier(.2,.8,.2,1),left .55s cubic-bezier(.2,.8,.2,1)}
+.tl{transition:d .6s cubic-bezier(.2,.8,.2,1)}
+.wipeA{animation:wipeA 1s cubic-bezier(.3,.7,.2,1) both}
+.wipeB{animation:wipeB 1s cubic-bezier(.3,.7,.2,1) both}
+@keyframes wipeA{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes wipeB{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+.card-in{animation:cardIn .55s cubic-bezier(.2,.8,.2,1) both}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #E8E7E3; color: #1D2923; font-family: 'Hanken Grotesk', system-ui, sans-serif">
+  <dc-import name="Nav" active="Trender" hint-size="100%,96px"></dc-import>
+
+  <header style="max-width: 1280px; margin: 0 auto; padding: 40px 32px 28px">
+    <h1 style="margin: 0; font-size: clamp(36px, 4.6vw, 54px); line-height: 1.02; letter-spacing: -0.03em; font-weight: 800">Trender</h1>
+    <p style="margin: 12px 0 0; max-width: 720px; font-size: 18px; line-height: 1.55; color: #3F4B44">Ökar eller minskar arterna? Varje diagram visar ett värde per år, en anpassad trendlinje och ett skuggat band för hur säker linjen är (95 % konfidensintervall).</p>
+  </header>
+
+  <div style="position: sticky; top: 0; z-index: 20; background: #E8E7E3; border-top: 1px solid #D5DDD2; border-bottom: 1px solid #D5DDD2">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 12px 32px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center">
+      <span style="font-size: 17px; font-weight: 600">Jämför</span>
+      <dc-import name="Artvaljare" selected="{{sel}}" on-toggle="{{toggleSp}}" start-open="{{false}}" max="{{6}}" hint-size="420px,40px"></dc-import>
+      <span style="font-size: 17px; font-weight: 600">under</span>
+      <div class="seg" role="group" aria-label="Säsong">
+        <sc-for list="{{seasons}}" as="o" hint-placeholder-count="3"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for>
+      </div>
+      <div class="seg" role="group" aria-label="Period">
+        <sc-for list="{{ranges}}" as="o" hint-placeholder-count="3"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for>
+      </div>
+    </div>
+  </div>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 36px 32px 0">
+    <article style="background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 20px; padding: 24px 26px 22px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: flex-start; justify-content: space-between">
+        <div>
+          <h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em">Antal ringmärkta per år, valda arter</h2>
+          <p style="margin: 6px 0 0; max-width: 640px; font-size: 14px; line-height: 1.5; color: #53605A">Faktiskt antal fåglar per år, alla arter på samma skala. Den heldragna linjen är den anpassade trenden i fåglar per år och bandet visar hur säker den är (95 % konfidensintervall).</p>
+        </div>
+        <span class="mono" style="font-size: 13px; color: #1D2923; min-height: 20px">{{idxRead}}</span>
+      </div>
+      <div>
+        <div style="position: relative; height: 360px; margin-left: 52px">
+          <sc-for list="{{idx.ticks}}" as="t" hint-placeholder-count="5">
+            <div style="position: absolute; left: 0; right: 0; top: {{t.top}}%; border-top: {{t.line}}"></div>
+            <div class="mono" style="position: absolute; left: -52px; width: 44px; text-align: right; top: {{t.top}}%; transform: translateY(-50%); font-size: 11px; color: #53605A">{{t.label}}</div>
+          </sc-for>
+          <sc-for list="{{idx.series}}" as="s" hint-placeholder-count="3">
+            <svg class="{{wipe}}" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible">
+              <path class="tl" d="{{s.band}}" style="d: path('{{s.band}}')" fill="{{s.color}}" fill-opacity="0.12" stroke="none"></path>
+              <path d="{{s.raw}}" fill="none" stroke="{{s.color}}" stroke-opacity="0.45" stroke-width="1.4" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+              <path class="tl" d="{{s.fit}}" style="d: path('{{s.fit}}')" fill="none" stroke="{{s.color}}" stroke-width="3" stroke-linecap="round" vector-effect="non-scaling-stroke"></path>
+            </svg>
+          </sc-for>
+          <sc-if value="{{hoverOn}}" hint-placeholder-val="{{false}}">
+            <div style="position: absolute; top: 0; bottom: 0; left: {{hx}}%; border-left: 1.5px solid #1D2923; pointer-events: none"></div>
+          </sc-if>
+          <div onMouseMove="{{onMove}}" onMouseLeave="{{onLeave}}" style="position: absolute; inset: 0; cursor: crosshair"></div>
+        </div>
+        <div style="position: relative; height: 20px; margin: 8px 0 0 52px">
+          <sc-for list="{{xl}}" as="x" hint-placeholder-count="10">
+            <span class="mono" style="position: absolute; left: {{x.left}}%; transform: translateX(-50%); font-size: 11px; color: #53605A">{{x.label}}</span>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; padding-top: 14px; border-top: 1px solid #E3E9DF">
+        <sc-for list="{{legend}}" as="l" hint-placeholder-count="3">
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 12px; background: #F4F7F2">
+            <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700"><span style="width: 18px; height: 4px; border-radius: 2px; background: {{l.color}}"></span>{{l.sv}}</span>
+            <span style="display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center"><span style="font-size: 12.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: {{l.bg}}; color: {{l.fg}}">{{l.verdict}}</span><span class="mono" style="font-size: 13px">{{l.slope}}</span></span>
+            <span class="mono" style="font-size: 12px; color: #53605A">{{l.ci}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </article>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 40px 32px 0">
+    <h2 style="margin: 0; font-size: 28px; letter-spacing: -0.02em; font-weight: 700">Art för art</h2>
+    <p style="margin: 8px 0 0; font-size: 16px; color: #3F4B44">Faktiskt antal ringmärkta per år, var art på sin egen skala.</p>
+    <div style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); gap: 16px">
+      <sc-for list="{{cards}}" as="c" hint-placeholder-count="3">
+        <article class="card-in" style="background: #FFFFFF; border: 1px solid #D5DDD2; border-top: 4px solid {{c.color}}; border-radius: 18px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
+          <div style="display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap">
+            <h3 style="margin: 0; font-size: 19px; font-weight: 700">{{c.sv}}</h3>
+            <span style="font-size: 13px; font-style: italic; color: #53605A">{{c.sci}}</span>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #3F4B44; margin-bottom: 6px"><span style="font-weight: 600">Antal ringmärkta per år</span><span class="mono">{{c.cntSlope}}</span></div>
+            <div style="position: relative; height: 130px; margin-left: 38px">
+              <sc-for list="{{c.cnt.ticks}}" as="t" hint-placeholder-count="3">
+                <div style="position: absolute; left: 0; right: 0; top: {{t.top}}%; border-top: 1px solid #E8EDE5"></div>
+                <div class="mono" style="position: absolute; left: -38px; width: 32px; text-align: right; top: {{t.top}}%; transform: translateY(-50%); font-size: 10px; color: #53605A">{{t.label}}</div>
+              </sc-for>
+              <svg class="{{wipe}}" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible">
+                <path d="{{c.cnt.bars}}" fill="{{c.color}}" fill-opacity="0.55"></path>
+                <path class="tl" d="{{c.cnt.band}}" style="d: path('{{c.cnt.band}}')" fill="#1D2923" fill-opacity="0.12"></path>
+                <path class="tl" d="{{c.cnt.line}}" style="d: path('{{c.cnt.line}}')" fill="none" stroke="#1D2923" stroke-width="2.2" stroke-linecap="round" vector-effect="non-scaling-stroke"></path>
+              </svg>
+            </div>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <span style="font-size: 12.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: {{c.cv.bg}}; color: {{c.cv.fg}}">Antal: {{c.cv.verdict}}</span>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 40px 32px 96px">
+    <article style="background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 20px; padding: 24px 26px; display: flex; flex-direction: column; gap: 14px">
+      <div>
+        <h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em">Alla arter</h2>
+        <p style="margin: 6px 0 0; max-width: 780px; font-size: 14px; line-height: 1.5; color: #53605A">Punkten är den skattade förändringen i antal ringmärkta fåglar per år, strecket dess 95 % konfidensintervall. Ihålig punkt betyder att intervallet korsar noll, alltså ingen säker trend. Klicka på en art för att lägga till den i jämförelsen. Valda arter ligger överst, därefter sorteras övriga efter förändring.</p>
+      </div>
+      <div style="overflow-x: auto">
+        <div style="min-width: 700px; display: flex; flex-direction: column; gap: 2px">
+          <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr) 130px; gap: 20px; padding: 6px 12px 10px; border-bottom: 1px solid #E3E9DF">
+            <span></span>
+            <sc-for list="{{forestCols}}" as="fc" hint-placeholder-count="1">
+              <div>
+                <div style="font-size: 13px; font-weight: 700">{{fc.title}}</div>
+                <div style="position: relative; height: 16px; margin-top: 6px">
+                  <sc-for list="{{fc.ticks}}" as="t" hint-placeholder-count="5">
+                    <span class="mono" style="position: absolute; left: {{t.left}}%; transform: translateX(-50%); font-size: 10.5px; color: #53605A">{{t.label}}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+            <span style="font-size: 13px; font-weight: 700; text-align: right">Trend</span>
+          </div>
+          <sc-for list="{{forest}}" as="r" hint-placeholder-count="15">
+            <button type="button" class="rowf" aria-pressed="{{r.on}}" onClick="{{r.pick}}">
+              <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: {{r.fw}}"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{r.dot}}; box-shadow: inset 0 0 0 1px {{r.ring}}"></span>{{r.sv}}</span>
+              <sc-for list="{{r.cells}}" as="k" hint-placeholder-count="1">
+                <span style="position: relative; display: block; height: 34px">
+                  <span style="position: absolute; top: 4px; bottom: 4px; left: {{k.zero}}%; border-left: 1px dashed #9AA89F"></span>
+                  <sc-if value="{{k.has}}" hint-placeholder-val="{{true}}">
+                    <span class="wh" style="left: {{k.lo}}%; width: {{k.w}}%; background: {{k.color}}"></span>
+                    <span class="pt" title="{{k.tip}}" style="left: {{k.est}}%; border-color: {{k.color}}; background: {{k.fill}}"></span>
+                  </sc-if>
+                </span>
+              </sc-for>
+              <span class="mono" style="font-size: 13px; text-align: right; color: #1D2923">{{r.val}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: #53605A">Illustrativ data. Hela säsonger sammanställda från 1980–1995 samt 2005-2025; 2026 pågår och ingår inte.</p>
+    </article>
+  </section>
+
+  <dc-import name="Footer" hint-size="100%,80px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: ['RÖHAK', 'LÖSÅN', 'KUFÅG'], se: 'host', rg: 'all', hover: -1, flip: false };
+    this._c = {};
+  }
+  SP() {
+    if (this._sp) return this._sp;
+    const rows = [
+      ['RÖHAK', 'Rödhake', 'Erithacus rubecula', 1500, .012, .22, .32, 105, 10, 278, 13, 16.4, .006, 71.5, 1.6],
+      ['LÖSÅN', 'Lövsångare', 'Phylloscopus trochilus', 1100, -.018, .2, .42, 133, 9, 228, 12, 9.2, -.004, 66, -1.8],
+      ['KUFÅG', 'Kungsfågel', 'Regulus regulus', 1000, .004, .45, .15, 98, 10, 287, 12, 5.6, .002, 54.5, 2.2],
+      ['ÄNPIP', 'Ängspiplärka', 'Anthus pratensis', 700, -.011, .24, .3, 100, 9, 262, 12, 18.9, -.007, 80, .8],
+      ['GRSÅN', 'Gransångare', 'Phylloscopus collybita', 520, .03, .25, .25, 100, 9, 280, 14, 7.6, .003, 59, 2.5],
+      ['SVHÄT', 'Svarthätta', 'Sylvia atricapilla', 480, .025, .23, .3, 128, 9, 262, 14, 18.2, .01, 74, 1.2],
+      ['TRSÅN', 'Trädgårdssångare', 'Sylvia borin', 380, -.02, .22, .35, 140, 8, 235, 12, 18.6, -.005, 79, -.6],
+      ['TATRA', 'Taltrast', 'Turdus philomelos', 340, .002, .25, .3, 100, 10, 270, 13, 70, .02, 117, .8],
+      ['KOTRA', 'Koltrast', 'Turdus merula', 300, .005, .25, .3, 85, 12, 295, 14, 95, .03, 130, 1],
+      ['RÖTRA', 'Rödvingetrast', 'Turdus iliacus', 290, -.008, .4, .25, 105, 9, 290, 12, 63, -.01, 116, 1.4],
+      ['BOFIN', 'Bofink', 'Fringilla coelebs', 260, -.006, .35, .35, 100, 9, 275, 13, 23, .004, 88, .5],
+      ['JÄSPA', 'Järnsparv', 'Prunella modularis', 240, -.004, .25, .3, 95, 9, 270, 12, 19.5, -.003, 69, 1.1],
+      ['BLMES', 'Blåmes', 'Cyanistes caeruleus', 200, .015, .5, .2, 95, 10, 285, 15, 11.2, .002, 65, 1.8],
+      ['SKPIP', 'Skärpiplärka', 'Anthus petrosus', 160, .006, .3, .35, 88, 10, 292, 14, 23.5, -.005, 89, .4],
+      ['LASVA', 'Ladusvala', 'Hirundo rustica', 150, -.022, .3, .3, 140, 10, 240, 12, 18.5, -.008, 121, -1]
+    ];
+    this._sp = rows.map((a, i) => ({ id: a[0], sv: a[1], sci: a[2], base: a[3], trend: a[4], cv: a[5], share: a[6], p1: a[7], s1: a[8], p2: a[9], s2: a[10], w: a[11], wt: a[12], wing: a[13], drift: a[14], seed: 17 + i * 13 }));
+    this._sp.push({ id: 'ALLA', sv: 'Alla arter', sci: 'Summa av samtliga arter', share: .32, p1: 112, s1: 18, p2: 262, s2: 30, w: null, seed: 5 });
+    return this._sp;
+  }
+  rng(seed) {
+    let s = seed >>> 0;
+    return function () {
+      s = (s + 0x6D2B79F5) >>> 0;
+      let t = s;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  gauss(r) { let u = 0; while (u === 0) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); }
+  rate(sp, d) {
+    if (!((d >= 74 && d <= 166) || (d >= 196 && d <= 319))) return 0;
+    const g = (x, m, s) => Math.exp(-0.5 * ((x - m) / s) * ((x - m) / s)) / s;
+    return sp.share * g(d, sp.p1, sp.s1) + (1 - sp.share) * g(d, sp.p2, sp.s2);
+  }
+  shareOf(sp, se) { return se === 'var' ? sp.share : se === 'host' ? 1 - sp.share : 1; }
+  series(sp, se) {
+    const key = sp.id + se;
+    if (this._c[key]) return this._c[key];
+    let out = [];
+    if (sp.id === 'ALLA') {
+      const parts = this.SP().filter(s => s.id !== 'ALLA').map(s => this.series(s, se));
+      for (let i = 0; i < 46; i++) out.push({ y: 1980 + i, c: Math.round(1.1 * parts.reduce((a, p) => a + p[i].c, 0)), w: null, shift: 0 });
+    } else {
+      const rs = this.rng(sp.seed * 31 + (se === 'var' ? 1 : se === 'host' ? 2 : 3));
+      for (let y = 1980; y <= 2025; y++) {
+        const t = y - 1980;
+        const c = Math.max(3, Math.round(sp.base * this.shareOf(sp, se) * Math.exp(sp.trend * t) * Math.max(0.15, 1 + sp.cv * this.gauss(rs))));
+        const w = sp.w + sp.wt * t + sp.w * 0.014 * this.gauss(rs) + (se === 'host' ? sp.w * 0.01 : 0);
+        out.push({ y: y, c: c, w: w, shift: sp.drift * t / 10 + 3 * this.gauss(rs) });
+      }
+    }
+    this._c[key] = out;
+    return out;
+  }
+  medians(sp, se) {
+    const key = 'M' + sp.id + se;
+    if (this._c[key]) return this._c[key];
+    const win = se === 'var' ? [74, 166] : [196, 319];
+    const out = this.series(sp, se).map(s => {
+      let tot = 0;
+      for (let d = win[0]; d <= win[1]; d++) tot += this.rate(sp, d - s.shift);
+      let acc = 0;
+      for (let d = win[0]; d <= win[1]; d++) { acc += this.rate(sp, d - s.shift); if (acc >= tot / 2) return d; }
+      return win[1];
+    });
+    this._c[key] = out;
+    return out;
+  }
+  num(n) { return Math.round(n).toLocaleString('sv-SE'); }
+  dec(n, d) { return (n < 0 ? '−' : '') + Math.abs(n).toFixed(d).replace('.', ','); }
+  sgn(n, d) { return (n >= 0 ? '+' : '−') + Math.abs(n).toFixed(d).replace('.', ','); }
+  nice(x) { const e = Math.pow(10, Math.floor(Math.log10(x))); const f = x / e; return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * e; }
+  ticks(lo, hi, n) {
+    if (hi <= lo) hi = lo + 1;
+    const st = this.nice((hi - lo) / n);
+    const a = Math.floor(lo / st) * st, b = Math.ceil(hi / st) * st;
+    const list = [];
+    for (let v = a; v <= b + st * 1e-6; v += st) list.push(v);
+    return { lo: a, hi: b, list: list, dec: st < 1 ? Math.min(3, Math.ceil(-Math.log10(st) - 1e-9)) : 0 };
+  }
+  fit(xs, ys) {
+    const n = xs.length;
+    const mx = xs.reduce((s, x) => s + x, 0) / n, my = ys.reduce((s, y) => s + y, 0) / n;
+    let sxx = 0, sxy = 0;
+    for (let i = 0; i < n; i++) { sxx += (xs[i] - mx) * (xs[i] - mx); sxy += (xs[i] - mx) * (ys[i] - my); }
+    const b = sxy / sxx, a = my - b * mx;
+    let ss = 0;
+    for (let i = 0; i < n; i++) { const e = ys[i] - a - b * xs[i]; ss += e * e; }
+    const df = n - 2, s = Math.sqrt(ss / df);
+    return { a: a, b: b, mx: mx, my: my, sxx: sxx, s: s, n: n, t: 1.96 + 2.5 / df, se: s / Math.sqrt(sxx) };
+  }
+  band(f, xs, tf) {
+    const n = xs.length, pts = [];
+    for (let k = 0; k <= 24; k++) {
+      const x = xs[0] + (xs[n - 1] - xs[0]) * k / 24;
+      const yh = f.a + f.b * x, h = f.t * f.s * Math.sqrt(1 / n + (x - f.mx) * (x - f.mx) / f.sxx);
+      pts.push([x, tf(yh - h), tf(yh + h), tf(yh)]);
+    }
+    return pts;
+  }
+  mini(xs, ys, zero, fmt, bars) {
+    const n = xs.length, f = this.fit(xs, ys), bd = this.band(f, xs, v => v);
+    let lo = Math.min.apply(null, ys.concat(bd.map(b => b[1]))), hi = Math.max.apply(null, ys.concat(bd.map(b => b[2])));
+    if (zero) lo = 0; else { const p = (hi - lo) * 0.08; lo -= p; hi += p; }
+    const tk = this.ticks(lo, hi, 2);
+    const X = x => ((x - xs[0] + 0.5) / n) * 100;
+    const Y = v => Math.max(0, Math.min(100, 100 - (v - tk.lo) / (tk.hi - tk.lo) * 100));
+    const P = (x, v) => X(x).toFixed(2) + ' ' + Y(v).toFixed(2);
+    const out = {
+      f: f,
+      line: 'M' + P(bd[0][0], bd[0][3]) + ' L' + P(bd[24][0], bd[24][3]),
+      band: 'M' + bd.map(b => P(b[0], b[2])).join(' L') + ' L' + bd.map(b => P(b[0], b[1])).reverse().join(' L') + ' Z',
+      ticks: tk.list.map(v => ({ top: Y(v).toFixed(2), label: fmt(v, tk.dec) }))
+    };
+    if (bars) {
+      const bw = 100 / n * 0.66;
+      out.bars = xs.map((x, i) => 'M' + (X(x) - bw / 2).toFixed(2) + ' ' + Y(ys[i]).toFixed(2) + 'h' + bw.toFixed(2) + 'V100h' + (-bw).toFixed(2) + 'Z').join('');
+    } else {
+      out.dots = xs.map((x, i) => ({ x: X(x).toFixed(2), y: Y(ys[i]).toFixed(2) }));
+    }
+    return out;
+  }
+  verdict(lo, hi, up, down) {
+    if (lo > 0) return { verdict: up, bg: '#DCEBE2', fg: '#234F3C' };
+    if (hi < 0) return { verdict: down, bg: '#F6E2DC', fg: '#8A3A28' };
+    return { verdict: 'Ingen säker trend', bg: '#E9EEE6', fg: '#3F4B44' };
+  }
+  bump(patch) { this.setState(Object.assign({ flip: !this.state.flip, hover: -1 }, patch)); }
+  toggleSp(id) {
+    const cur = this.state.sel;
+    const next = cur.indexOf(id) >= 0 ? cur.filter(x => x !== id) : (cur.length < 6 ? cur.concat([id]) : cur);
+    this.bump({ sel: next.length ? next : ['RÖHAK'] });
+  }
+  renderVals() {
+    const st = this.state;
+    const PAL = ['#36775B', '#C2624C', '#6595B6', '#1D2923', '#A58D54', '#7E6AA6'];
+    const all = this.SP();
+    const byId = {};
+    all.forEach(s => { byId[s.id] = s; });
+    const sel = st.sel.filter(id => byId[id]);
+    const yr = { all: [1980, 2025, 5], r20: [2006, 2025, 2], r10: [2016, 2025, 1] }[st.rg];
+    const inR = s => s.y >= yr[0] && s.y <= yr[1];
+    const xs = [];
+    for (let y = yr[0]; y <= yr[1]; y++) xs.push(y);
+    const n = xs.length;
+    const X = x => ((x - xs[0] + 0.5) / n) * 100;
+
+    const fmtN = v => this.sgn(v, Math.abs(v) < 10 ? 1 : 0);
+
+    // comparison chart: real counts on the original (linear) scale
+    const raw = sel.map((id, k) => {
+      const ser = this.series(byId[id], st.se).filter(inR);
+      const vals = ser.map(s => s.c);
+      const f = this.fit(xs, vals);
+      return { sp: byId[id], color: PAL[k], ser: ser, vals: vals, f: f, bd: this.band(f, xs, v => v) };
+    });
+    let topV = 1;
+    raw.forEach(r => { r.vals.concat(r.bd.map(b => b[2])).forEach(v => { topV = Math.max(topV, v); }); });
+    const tk = this.ticks(0, topV * 1.04, 4);
+    const Y = v => Math.max(0, Math.min(100, 100 - v / tk.hi * 100));
+    const P = (x, v) => X(x).toFixed(2) + ' ' + Y(v).toFixed(2);
+    const idx = {
+      ticks: tk.list.map(v => ({ top: Y(v).toFixed(2), label: this.num(v), line: v === 0 ? '1.5px solid #9AA89F' : '1px solid #E3E9DF' })),
+      series: raw.map(r => ({
+        color: r.color,
+        raw: 'M' + r.vals.map((v, i) => P(xs[i], v)).join(' L'),
+        fit: 'M' + P(r.bd[0][0], r.bd[0][3]) + ' L' + P(r.bd[24][0], r.bd[24][3]),
+        band: 'M' + r.bd.map(b => P(b[0], b[2])).join(' L') + ' L' + r.bd.map(b => P(b[0], b[1])).reverse().join(' L') + ' Z'
+      }))
+    };
+    const legend = raw.map(r => {
+      const lo = r.f.b - r.f.t * r.f.se, hi = r.f.b + r.f.t * r.f.se;
+      return Object.assign(this.verdict(lo, hi, 'Ökar', 'Minskar'), {
+        sv: r.sp.sv, color: r.color,
+        slope: fmtN(r.f.b) + ' fåglar per år',
+        ci: '95 % KI ' + fmtN(lo) + ' till ' + fmtN(hi) + ' fåglar/år'
+      });
+    });
+    const hv = st.hover >= 0 && st.hover < n ? st.hover : -1;
+    const idxRead = hv >= 0 ? xs[hv] + ' · ' + raw.map(r => r.sp.sv + ' ' + this.num(r.vals[hv])).join(' · ') : 'Håll muspekaren över diagrammet';
+    const xl = xs.filter(y => (y - yr[0]) % yr[2] === 0).map(y => ({ left: X(y).toFixed(2), label: String(y) }));
+
+    // small multiples
+    const cards = raw.map(r => {
+      const cnt = this.mini(xs, r.ser.map(s => s.c), true, v => this.num(v), true);
+      const cf = cnt.f, clo = cf.b - cf.t * cf.se, chi = cf.b + cf.t * cf.se;
+      return {
+        sv: r.sp.sv, sci: r.sp.sci, color: r.color, cnt: cnt,
+        cntSlope: fmtN(cf.b) + ' fåglar/år',
+        cv: this.verdict(clo, chi, 'ökar', 'minskar')
+      };
+    });
+
+    // forest plot over all species
+    const rowsData = all.filter(s => s.id !== 'ALLA').map(sp => {
+      const ser = this.series(sp, st.se).filter(inR);
+      const f1 = this.fit(xs, ser.map(s => s.c));
+      const c = [f1.b, f1.b - f1.t * f1.se, f1.b + f1.t * f1.se];
+      return { sp: sp, v: [c] };
+    }).sort((a, b) => b.v[0][0] - a.v[0][0]);
+    const units = [['Antal', ' fåglar/år', 1]];
+    const ext = [0].map(j => {
+      let m = 0;
+      rowsData.forEach(r => { m = Math.max(m, Math.abs(r.v[j][1]), Math.abs(r.v[j][2])); });
+      const e = this.nice(m / 2) * 2;
+      return e < m ? e * 1.5 : e;
+    });
+    const FX = (j, v) => Math.max(0, Math.min(100, (v + ext[j]) / (2 * ext[j]) * 100));
+    const forestCols = [
+      { title: 'Förändring i antal ringmärkta, fåglar per år', j: 0 }
+    ].map(c => ({
+      title: c.title,
+      ticks: [-1, -0.5, 0, 0.5, 1].map(k => ({ left: FX(c.j, k * ext[c.j]).toFixed(2), label: k === 0 ? '0' : this.sgn(k * ext[c.j], ext[c.j] < 4 ? 1 : 0) }))
+    }));
+    // selected species first (in the order they were picked), the rest sorted by size of change
+    const forestRows = rowsData.filter(r => sel.indexOf(r.sp.id) >= 0).sort((a, b) => sel.indexOf(a.sp.id) - sel.indexOf(b.sp.id)).concat(rowsData.filter(r => sel.indexOf(r.sp.id) < 0));
+    const forest = forestRows.map(r => {
+      const k = sel.indexOf(r.sp.id);
+      const color = k >= 0 ? PAL[k] : '#5D6A63';
+      return {
+        sv: r.sp.sv, on: k >= 0, fw: k >= 0 ? 700 : 500,
+        dot: k >= 0 ? PAL[k] : 'transparent', ring: k >= 0 ? PAL[k] : '#9AA89F',
+        pick: () => this.toggleSp(r.sp.id),
+        val: fmtN(r.v[0][0]) + ' fåglar/år',
+        cells: [0].map(j => {
+          const v = r.v[j], sig = v[1] > 0 || v[2] < 0;
+          return {
+            has: true, zero: FX(j, 0).toFixed(2),
+            lo: FX(j, v[1]).toFixed(2), w: (FX(j, v[2]) - FX(j, v[1])).toFixed(2), est: FX(j, v[0]).toFixed(2),
+            color: color, fill: sig ? color : '#FFFFFF',
+            tip: r.sp.sv + ': ' + fmtN(v[0]) + units[j][1] + ' (95 % KI ' + fmtN(v[1]) + ' till ' + fmtN(v[2]) + ')'
+          };
+        })
+      };
+    });
+
+    return {
+      sel: sel, toggleSp: id => this.toggleSp(id),
+      seasons: [['var', 'Vår'], ['host', 'Höst'], ['helar', 'Helår']].map(o => ({ label: o[1], on: st.se === o[0], pick: () => this.bump({ se: o[0] }) })),
+      ranges: [['all', '1980–2025'], ['r20', 'Senaste 20 år'], ['r10', 'Senaste 10 år']].map(o => ({ label: o[1], on: st.rg === o[0], pick: () => this.bump({ rg: o[0] }) })),
+      idx: idx, legend: legend, idxRead: idxRead, xl: xl,
+      hoverOn: hv >= 0, hx: hv >= 0 ? X(xs[hv]).toFixed(2) : 0,
+      onMove: e => {
+        const b = e.currentTarget.getBoundingClientRect();
+        const i = Math.max(0, Math.min(n - 1, Math.floor((e.clientX - b.left) / b.width * n)));
+        if (i !== this.state.hover) this.setState({ hover: i });
+      },
+      onLeave: () => this.setState({ hover: -1 }),
+      cards: cards,
+      forestCols: forestCols, forest: forest,
+      wipe: st.flip ? 'wipeA' : 'wipeB'
+    };
+  }
+}
+</script>
+</body>
+</html>

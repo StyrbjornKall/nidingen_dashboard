@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Morfometri — Nidingens Fågelstation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2F6B50}a:hover{color:#234F3C}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:999px;background:#D4D6CF}
+.seg button{all:unset;cursor:pointer;min-height:40px;padding:0 15px;border-radius:999px;font:500 14px/40px 'Hanken Grotesk',system-ui,sans-serif;color:#35423B;transition:background .2s,color .2s}
+.seg button:hover{background:#C8CCC4;color:#1D2923}
+.seg button[aria-pressed="true"]{background:#1D2923;color:#fff}
+.seg button:focus-visible,.bub:focus-visible{outline:2px solid #36775B;outline-offset:2px}
+.bub{all:unset;position:absolute;box-sizing:border-box;aspect-ratio:1/1;border-radius:50%;transform:translate(-50%,-50%);cursor:pointer;transition:left .7s cubic-bezier(.2,.8,.2,1),top .7s cubic-bezier(.2,.8,.2,1),width .5s,background .25s,box-shadow .2s;animation:bin .6s cubic-bezier(.2,.8,.2,1) backwards}
+.bub:hover{box-shadow:0 0 0 3px #1D2923;z-index:5}
+.bub.bg{cursor:default}
+@keyframes bin{from{opacity:0;transform:translate(-50%,-50%) scale(.2)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.stk{display:flex;height:30px;border-radius:8px;overflow:hidden}
+.stk span{display:flex;align-items:center;justify-content:center;font:500 11.5px 'IBM Plex Mono',monospace;transition:flex-grow .6s cubic-bezier(.2,.8,.2,1)}
+.wipeA{animation:wipeA 1s cubic-bezier(.3,.7,.2,1) both}
+.wipeB{animation:wipeB 1s cubic-bezier(.3,.7,.2,1) both}
+@keyframes wipeA{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes wipeB{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #E8E7E3; color: #1D2923; font-family: 'Hanken Grotesk', system-ui, sans-serif">
+  <dc-import name="Nav" active="Morfometri" hint-size="100%,96px"></dc-import>
+
+  <header style="max-width: 1280px; margin: 0 auto; padding: 40px 32px 28px">
+    <h1 style="margin: 0; font-size: clamp(36px, 4.6vw, 54px); line-height: 1.02; letter-spacing: -0.03em; font-weight: 800">Morfometri</h1>
+    <p style="margin: 12px 0 0; max-width: 700px; font-size: 18px; line-height: 1.55; color: #3F4B44">Hur ser fåglarna ut när de fångas här? Vikt, vinglängd, ålder och kön för de arter du valt, mot alla andra arter.</p>
+  </header>
+
+  <div style="position: sticky; top: 0; z-index: 20; background: #E8E7E3; border-top: 1px solid #D5DDD2; border-bottom: 1px solid #D5DDD2">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 12px 32px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center">
+      <span style="font-size: 17px; font-weight: 600">Jämför</span>
+      <dc-import name="Artvaljare" selected="{{sel}}" on-toggle="{{toggleSp}}" start-open="{{false}}" max="{{6}}" hint-size="420px,40px"></dc-import>
+      <span style="font-size: 17px; font-weight: 600">fångade</span>
+      <div class="seg" role="group" aria-label="Säsong">
+        <sc-for list="{{seasons}}" as="o" hint-placeholder-count="3"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for>
+      </div>
+      <sc-if value="{{note}}" hint-placeholder-val="{{false}}">
+        <span style="margin-left: auto; font-size: 13px; color: #7E3524; background: #F6E2DC; padding: 6px 12px; border-radius: 999px">{{noteText}}</span>
+      </sc-if>
+    </div>
+  </div>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 36px 32px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 20px; align-items: start">
+    <article style="grid-column: span 2; min-width: 0; background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 20px; padding: 24px 26px 20px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; flex-wrap: wrap; gap: 10px 20px; justify-content: space-between; align-items: flex-start">
+        <div>
+          <h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em">Vikt mot vinglängd, alla arter</h2>
+          <p style="margin: 6px 0 0; max-width: 560px; font-size: 14px; line-height: 1.5; color: #53605A">Varje bubbla är en arts medelvärde. Storleken visar hur många som fångats sedan 1980 (logaritmisk skala). Grått = övriga arter. Klicka på en bubbla för att lägga till arten.</p>
+        </div>
+        <div style="min-width: 220px; min-height: 64px; padding: 10px 14px; border-radius: 12px; background: #F4F7F2; display: flex; flex-direction: column; gap: 2px">
+          <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{hov.color}}"></span>{{hov.sv}}</span>
+          <span class="mono" style="font-size: 12.5px; color: #3F4B44">{{hov.line1}}</span>
+          <span class="mono" style="font-size: 12.5px; color: #3F4B44">{{hov.line2}}</span>
+        </div>
+      </div>
+      <div style="position: relative">
+        <svg viewBox="0 0 640 420" role="img" aria-label="Bubbeldiagram över medelvikt och medelvinglängd per art" style="display: block; width: 100%; height: auto">
+          <rect x="56" y="10" width="574" height="360" fill="#FAFBF8"></rect>
+          <path d="{{sc.grid}}" stroke="#E3E9DF" stroke-width="1" fill="none"></path>
+          <text x="343" y="414" text-anchor="middle" font-size="13" fill="#3F4B44" font-family="Hanken Grotesk, sans-serif">Vinglängd (mm, log-skala)</text>
+          <text x="14" y="190" text-anchor="middle" font-size="13" fill="#3F4B44" font-family="Hanken Grotesk, sans-serif" transform="rotate(-90 14 190)">Vikt (g, log-skala)</text>
+        </svg>
+        <sc-for list="{{sc.xt}}" as="t" hint-placeholder-count="7">
+          <span class="mono" style="position: absolute; top: 90.2%; left: {{t.left}}%; transform: translateX(-50%); font-size: 11px; color: #53605A">{{t.label}}</span>
+        </sc-for>
+        <sc-for list="{{sc.yt}}" as="t" hint-placeholder-count="5">
+          <span class="mono" style="position: absolute; left: 0; width: 8%; text-align: right; top: {{t.top}}%; transform: translateY(-50%); font-size: 11px; color: #53605A">{{t.label}}</span>
+        </sc-for>
+        <sc-for list="{{sc.bg}}" as="b" hint-placeholder-count="18">
+          <span class="bub bg" title="{{b.sv}}" onMouseEnter="{{b.enter}}" onMouseLeave="{{hoverOff}}" style="left: {{b.x}}%; top: {{b.y}}%; width: {{b.d}}%; background: rgba(93,106,99,0.16); border: 1px solid #9AA89F; animation-delay: {{b.delay}}ms"></span>
+        </sc-for>
+        <sc-for list="{{sc.main}}" as="b" hint-placeholder-count="15">
+          <button type="button" class="bub" aria-label="{{b.label}}" aria-pressed="{{b.on}}" onClick="{{b.pick}}" onMouseEnter="{{b.enter}}" onMouseLeave="{{hoverOff}}" style="left: {{b.x}}%; top: {{b.y}}%; width: {{b.d}}%; background: {{b.fill}}; border: {{b.border}}; animation-delay: {{b.delay}}ms"></button>
+        </sc-for>
+        <sc-for list="{{sc.labels}}" as="l" hint-placeholder-count="3">
+          <span style="position: absolute; left: {{l.x}}%; top: {{l.y}}%; transform: translate(-50%, -100%); font-size: 13px; font-weight: 700; color: {{l.color}}; background: rgba(255,255,255,0.88); padding: 0 5px; border-radius: 5px; pointer-events: none; white-space: nowrap; transition: left .7s cubic-bezier(.2,.8,.2,1), top .7s cubic-bezier(.2,.8,.2,1)">{{l.sv}}</span>
+        </sc-for>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; font-size: 13px; color: #3F4B44">
+        <span>Fångade sedan 1980:</span>
+        <sc-for list="{{sizeLegend}}" as="s" hint-placeholder-count="3">
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span style="width: {{s.px}}px; height: {{s.px}}px; border-radius: 50%; border: 1.5px solid #5D6A63"></span>{{s.label}}</span>
+        </sc-for>
+      </div>
+    </article>
+
+    <article style="background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 20px; padding: 24px 22px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 20px; font-weight: 700">Nyckeltal</h2>
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 14px; background: #F4F7F2">
+          <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700"><span style="width: 12px; height: 12px; border-radius: 50%; background: {{r.color}}"></span>{{r.sv}}</span>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+            <div><div style="font-size: 12px; color: #53605A">Vikt, median</div><div class="mono" style="font-size: 18px; font-weight: 500">{{r.wMed}}</div><div class="mono" style="font-size: 11px; color: #53605A">{{r.wIqr}}</div></div>
+            <div><div style="font-size: 12px; color: #53605A">Vinge, median</div><div class="mono" style="font-size: 18px; font-weight: 500">{{r.vMed}}</div><div class="mono" style="font-size: 11px; color: #53605A">{{r.vIqr}}</div></div>
+            <div><div style="font-size: 12px; color: #53605A">Fångade</div><div class="mono" style="font-size: 18px; font-weight: 500">{{r.n}}</div><div class="mono" style="font-size: 11px; color: #53605A">sedan 1980</div></div>
+          </div>
+        </div>
+      </sc-for>
+      <sc-if value="{{noData}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 16px; border-radius: 12px; background: #F4F7F2; font-size: 14px; line-height: 1.5; color: #3F4B44">Välj minst en art i artväljaren. Mått jämförs per art, så ”Alla arter” visas inte här.</p></sc-if>
+      <p style="margin: 0; font-size: 12.5px; color: #53605A">Små siffror under medianen: mittersta hälften av fåglarna (kvartilavstånd).</p>
+    </article>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 24px 32px 0">
+    <article style="background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 20px; padding: 24px 26px; display: flex; flex-direction: column; gap: 18px">
+      <div>
+        <h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em">Fördelningar</h2>
+        <p style="margin: 6px 0 0; font-size: 14px; color: #53605A">50 staplar per diagram, varje art på sin egen skala. Den mörka linjen är medianen.</p>
+      </div>
+      <sc-if value="{{noData}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 16px; border-radius: 12px; background: #F4F7F2; font-size: 14px; line-height: 1.5; color: #3F4B44">Välj minst en art i artväljaren. Mått jämförs per art, så ”Alla arter” visas inte här.</p></sc-if>
+      <div style="overflow-x: auto">
+        <div style="min-width: 640px; display: grid; grid-template-columns: 150px repeat(2, minmax(0, 1fr)); gap: 14px 28px; align-items: center">
+          <span></span><span style="font-size: 13px; font-weight: 700">Vikt (g)</span><span style="font-size: 13px; font-weight: 700">Vinglängd (mm)</span>
+          <sc-for list="{{hists}}" as="h" hint-placeholder-count="3">
+            <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600"><span style="width: 12px; height: 12px; border-radius: 50%; background: {{h.color}}"></span>{{h.sv}}</span>
+            <sc-for list="{{h.cols}}" as="c" hint-placeholder-count="2">
+              <div>
+                <div style="position: relative; height: 90px">
+                  <svg class="{{wipe}}" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%">
+                    <path d="{{c.bars}}" fill="{{h.color}}" fill-opacity="0.78"></path>
+                  </svg>
+                  <span style="position: absolute; top: 0; bottom: 0; left: {{c.med}}%; border-left: 2px solid #1D2923"></span>
+                  <span class="mono" style="position: absolute; top: -2px; left: {{c.med}}%; transform: translateX(6px); font-size: 11.5px; font-weight: 500; background: rgba(255,255,255,0.85); padding: 0 3px; border-radius: 3px">{{c.medLabel}}</span>
+                </div>
+                <div class="mono" style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: #53605A; border-top: 1px solid #D5DDD2; padding-top: 3px"><span>{{c.lo}}</span><span>{{c.hi}}</span></div>
+              </div>
+            </sc-for>
+          </sc-for>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 24px 32px 96px">
+    <article style="background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 20px; padding: 24px 26px; display: flex; flex-direction: column; gap: 18px">
+      <div>
+        <h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em">Ålder och kön</h2>
+        <p style="margin: 6px 0 0; font-size: 14px; color: #53605A">Andel av de fångade fåglarna. 1K = född i år, 2K = född i fjol, +1K och +2K = minst så gamla. Många arter går inte att könsbestämma i handen.</p>
+      </div>
+      <sc-if value="{{noData}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 16px; border-radius: 12px; background: #F4F7F2; font-size: 14px; line-height: 1.5; color: #3F4B44">Välj minst en art i artväljaren. Mått jämförs per art, så ”Alla arter” visas inte här.</p></sc-if>
+      <div style="overflow-x: auto">
+        <div style="min-width: 640px; display: grid; grid-template-columns: 150px repeat(2, minmax(0, 1fr)); gap: 12px 28px; align-items: center">
+          <span></span><span style="font-size: 13px; font-weight: 700">Ålder</span><span style="font-size: 13px; font-weight: 700">Kön</span>
+          <sc-for list="{{comp}}" as="c" hint-placeholder-count="3">
+            <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600"><span style="width: 12px; height: 12px; border-radius: 50%; background: {{c.color}}"></span>{{c.sv}}</span>
+            <div class="stk">
+              <sc-for list="{{c.age}}" as="s" hint-placeholder-count="4"><span title="{{s.tip}}" style="flex: {{s.f}} 1 0; background: {{s.bg}}; color: {{s.fg}}">{{s.label}}</span></sc-for>
+            </div>
+            <div class="stk">
+              <sc-for list="{{c.sex}}" as="s" hint-placeholder-count="3"><span title="{{s.tip}}" style="flex: {{s.f}} 1 0; background: {{s.bg}}; color: {{s.fg}}">{{s.label}}</span></sc-for>
+            </div>
+          </sc-for>
+          <span></span>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: #3F4B44">
+            <sc-for list="{{ageLegend}}" as="l" hint-placeholder-count="4"><span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: {{l.bg}}"></span>{{l.label}}</span></sc-for>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: #3F4B44">
+            <sc-for list="{{sexLegend}}" as="l" hint-placeholder-count="3"><span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: {{l.bg}}; border: 1px solid #C2CDBE"></span>{{l.label}}</span></sc-for>
+          </div>
+        </div>
+      </div>
+      
+    </article>
+  </section>
+
+  <dc-import name="Footer" hint-size="100%,80px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2500}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: ['RÖHAK', 'ÄNPIP', 'SKPIP'], se: 'host', flip: false, hov: null };
+  }
+  SP() {
+    return [
+      ['RÖHAK', 'Rödhake', 16.4, 71.5, 23, 1500, .02, .02], ['LÖSÅN', 'Lövsångare', 9.2, 66, 37, 1100, .05, .05],
+      ['KUFÅG', 'Kungsfågel', 5.6, 54.5, 41, 1000, .48, .48], ['ÄNPIP', 'Ängspiplärka', 18.9, 80, 53, 700, 0, 0],
+      ['GRSÅN', 'Gransångare', 7.6, 59, 61, 520, .03, .03], ['SVHÄT', 'Svarthätta', 18.2, 74, 71, 480, .46, .5],
+      ['TRSÅN', 'Trädgårdssångare', 18.6, 79, 83, 380, 0, 0], ['TATRA', 'Taltrast', 70, 117, 97, 340, 0, 0],
+      ['KOTRA', 'Koltrast', 95, 130, 101, 300, .45, .42], ['RÖTRA', 'Rödvingetrast', 63, 116, 113, 290, 0, 0],
+      ['BOFIN', 'Bofink', 23, 88, 127, 260, .48, .49], ['JÄSPA', 'Järnsparv', 19.5, 69, 131, 240, 0, 0],
+      ['BLMES', 'Blåmes', 11.2, 65, 139, 200, .35, .35], ['SKPIP', 'Skärpiplärka', 23.5, 89, 149, 160, 0, 0],
+      ['LASVA', 'Ladusvala', 18.5, 121, 157, 150, .4, .4]
+    ].map(a => ({ id: a[0], sv: a[1], w: a[2], wing: a[3], seed: a[4], n: a[5] * 46, male: a[6], female: a[7] }));
+  }
+  OTHERS() {
+    return [
+      ['Gärdsmyg', 9.5, 48, 4200], ['Talgoxe', 18, 75, 3100], ['Bergfink', 24, 92, 2600], ['Grönsiska', 12.5, 72, 2400],
+      ['Rörsångare', 12, 66, 1900], ['Sävsångare', 11.5, 66, 1500], ['Ärtsångare', 12, 64, 1800], ['Svartvit flugsnappare', 13, 79, 1300],
+      ['Rödstjärt', 15, 78, 2100], ['Stenskvätta', 24, 97, 900], ['Ringtrast', 105, 140, 300], ['Sädesärla', 21, 89, 800],
+      ['Steglits', 16, 79, 400], ['Domherre', 30, 92, 600], ['Grå flugsnappare', 16, 88, 700], ['Lappsparv', 25, 94, 150],
+      ['Snösparv', 36, 108, 250], ['Hämpling', 18, 80, 1100]
+    ].map(a => ({ sv: a[0], w: a[1], wing: a[2], n: a[3] }));
+  }
+  rng(seed) {
+    let s = seed >>> 0;
+    return function () {
+      s = (s + 0x6D2B79F5) >>> 0;
+      let t = s;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  gauss(r) { let u = 0; while (u === 0) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); }
+  seasonW(se) { return se === 'var' ? 0.985 : se === 'host' ? 1.015 : 1; }
+  birds(sp, se) {
+    this._b = this._b || {};
+    const key = sp.id + se;
+    if (this._b[key]) return this._b[key];
+    const r = this.rng(sp.seed * 977 + (se === 'var' ? 1 : se === 'host' ? 2 : 3));
+    const out = [];
+    for (let i = 0; i < 1200; i++) {
+      const spring = se === 'var' || (se === 'bada' && r() < 0.4);
+      const wing = sp.wing * (1 + 0.033 * this.gauss(r));
+      const w = sp.w * (spring ? 0.985 : 1.015) * (1 + 1.25 * (wing - sp.wing) / sp.wing + 0.06 * this.gauss(r));
+      const u = r();
+      const age = spring ? (u < 0.55 ? 1 : u < 0.85 ? 3 : 2) : (u < 0.74 ? 0 : 2);
+      const v = r();
+      const sex = v < sp.male ? 0 : v < sp.male + sp.female ? 1 : 2;
+      out.push({ w: w, wing: wing, age: age, sex: sex });
+    }
+    this._b[key] = out;
+    return out;
+  }
+  q(arr, p) { const s = arr.slice().sort((a, b) => a - b); const i = (s.length - 1) * p, lo = Math.floor(i); return s[lo] + (s[Math.min(s.length - 1, lo + 1)] - s[lo]) * (i - lo); }
+  dec(n, d) { return (n < 0 ? '−' : '') + Math.abs(n).toFixed(d).replace('.', ','); }
+  num(n) { return Math.round(n).toLocaleString('sv-SE'); }
+  bump(p) { this.setState(Object.assign({ flip: !this.state.flip }, p)); }
+  toggleSp(id) {
+    const cur = this.state.sel;
+    const next = cur.indexOf(id) >= 0 ? cur.filter(x => x !== id) : (cur.length < 6 ? cur.concat([id]) : cur);
+    this.bump({ sel: next.length ? next : ['RÖHAK'] });
+  }
+  renderVals() {
+    const st = this.state;
+    const PAL = ['#36775B', '#C2624C', '#6595B6', '#1D2923', '#A58D54', '#7E6AA6'];
+    const all = this.SP();
+    const byId = {};
+    all.forEach(s => { byId[s.id] = s; });
+    const selIds = st.sel.filter(id => byId[id]);
+    const shown = selIds.slice(0, 3).map(id => ({ sp: byId[id], color: PAL[st.sel.indexOf(id)] }));
+    const hasAlla = st.sel.indexOf('ALLA') >= 0;
+    const tooMany = selIds.length > 3;
+    const sf = this.seasonW(st.se);
+
+    // bubble chart: species means on log axes, plot area x 56..630, y 10..370
+    const XL = [Math.log(44), Math.log(150)], YL = [Math.log(4), Math.log(130)];
+    const SX = v => 56 + (Math.log(v) - XL[0]) / (XL[1] - XL[0]) * 574;
+    const SY = v => 370 - (Math.log(v) - YL[0]) / (YL[1] - YL[0]) * 360;
+    const xt = [50, 60, 70, 80, 100, 120, 140], yt = [5, 10, 20, 50, 100];
+    let grid = '';
+    xt.forEach(v => { grid += 'M' + SX(v).toFixed(1) + ' 10V370'; });
+    yt.forEach(v => { grid += 'M56 ' + SY(v).toFixed(1) + 'H630'; });
+    const rad = n => 4 + 6.5 * Math.max(0, Math.log10(n) - 2);
+    const pos = (wing, w, n, k) => ({ x: (SX(wing) / 640 * 100).toFixed(2), y: (SY(w) / 420 * 100).toFixed(2), d: (2 * rad(n) / 640 * 100).toFixed(2), delay: 80 + k * 25 });
+    const hovFor = (sv, color, w, wing, n) => ({ sv: sv, color: color, line1: this.dec(w, 1) + ' g · ' + this.dec(wing, 1) + ' mm', line2: this.num(n) + ' fångade sedan 1980' });
+    const meanOf = sp => {
+      const b = this.birds(sp, st.se);
+      return { w: b.reduce((a, x) => a + x.w, 0) / b.length, wing: b.reduce((a, x) => a + x.wing, 0) / b.length };
+    };
+    const bg = this.OTHERS().slice().sort((a, b) => b.n - a.n).map((o, k) => Object.assign(pos(o.wing, o.w * sf, o.n, k), {
+      sv: o.sv, enter: () => this.setState({ hov: hovFor(o.sv, '#9AA89F', o.w * sf, o.wing, o.n) })
+    }));
+    const mainSorted = all.slice().sort((a, b) => b.n - a.n);
+    const main = mainSorted.map((sp, k) => {
+      const m = meanOf(sp), idx = st.sel.indexOf(sp.id), on = idx >= 0;
+      return Object.assign(pos(m.wing, m.w, sp.n, k + bg.length), {
+        label: sp.sv + (on ? ', vald' : ', lägg till i jämförelsen'), on: on,
+        fill: on ? PAL[idx] : 'rgba(93,106,99,0.16)', border: on ? '2px solid #FFFFFF' : '1px solid #9AA89F',
+        pick: () => this.toggleSp(sp.id),
+        enter: () => this.setState({ hov: hovFor(sp.sv, on ? PAL[idx] : '#9AA89F', m.w, m.wing, sp.n) }),
+        sv: sp.sv, color: on ? PAL[idx] : null, r: rad(sp.n)
+      });
+    });
+    const labels = main.filter(b => b.on).map(b => ({ sv: b.sv, color: b.color, x: b.x, y: (parseFloat(b.y) - (b.r + 2) / 420 * 100).toFixed(2) }));
+    // keep selected bubbles drawn last so they sit on top
+    const mainOrdered = main.filter(b => !b.on).concat(main.filter(b => b.on));
+    const firstSel = shown.length ? shown[0] : null;
+    const defHov = firstSel ? (() => { const m = meanOf(firstSel.sp); return hovFor(firstSel.sp.sv, firstSel.color, m.w, m.wing, firstSel.sp.n); })() : { sv: 'Håll över en bubbla', color: '#9AA89F', line1: '', line2: '' };
+    const sc = {
+      grid: grid, bg: bg, main: mainOrdered, labels: labels,
+      xt: xt.map(v => ({ left: (SX(v) / 640 * 100).toFixed(2), label: String(v) })),
+      yt: yt.map(v => ({ top: (SY(v) / 420 * 100).toFixed(2), label: String(v) }))
+    };
+    const sizeLegend = [[1000, '1 000'], [10000, '10 000'], [70000, '70 000']].map(s => ({ px: Math.round(2 * rad(s[0]) * 1.6), label: s[1] }));
+
+    const data = shown.map(x => ({ sp: x.sp, color: x.color, b: this.birds(x.sp, st.se) }));
+    const rows = data.map(d => {
+      const ws = d.b.map(b => b.w), gs = d.b.map(b => b.wing);
+      return {
+        sv: d.sp.sv, color: d.color, n: this.num(d.sp.n),
+        wMed: this.dec(this.q(ws, .5), 1) + ' g', wIqr: this.dec(this.q(ws, .25), 1) + '–' + this.dec(this.q(ws, .75), 1),
+        vMed: this.dec(this.q(gs, .5), 1) + ' mm', vIqr: this.dec(this.q(gs, .25), 1) + '–' + this.dec(this.q(gs, .75), 1)
+      };
+    });
+    const hist = (vals, unit) => {
+      const lo = this.q(vals, 0.005), hi = this.q(vals, 0.995), nb = 50, bins = new Array(nb).fill(0);
+      vals.forEach(v => { const i = Math.floor((v - lo) / (hi - lo) * nb); if (i >= 0 && i < nb) bins[i]++; });
+      const m = Math.max.apply(null, bins), bw = 100 / nb, med = this.q(vals, 0.5);
+      return {
+        bars: bins.map((c, i) => 'M' + (i * bw + bw * 0.1).toFixed(2) + ' ' + (40 - c / m * 38).toFixed(2) + 'h' + (bw * 0.8).toFixed(2) + 'V40h' + (-bw * 0.8).toFixed(2) + 'Z').join(''),
+        med: ((med - lo) / (hi - lo) * 100).toFixed(2), medLabel: this.dec(med, 1) + ' ' + unit,
+        lo: this.dec(lo, 1), hi: this.dec(hi, 1)
+      };
+    };
+    const hists = data.map(d => ({ sv: d.sp.sv, color: d.color, cols: [hist(d.b.map(b => b.w), 'g'), hist(d.b.map(b => b.wing), 'mm')] }));
+
+    const ageCols = [['1K', '#234F3C', '#FFFFFF'], ['2K', '#36775B', '#FFFFFF'], ['+1K', '#8FC0A3', '#1D2923'], ['+2K', '#D3E7DA', '#1D2923']];
+    const sexCols = [['Hane', '#1D2923', '#FFFFFF'], ['Hona', '#E3A28F', '#1D2923'], ['Okänd', '#E9EEE6', '#1D2923']];
+    const comp = data.map(d => {
+      const n = d.b.length, ac = [0, 0, 0, 0], sc2 = [0, 0, 0];
+      d.b.forEach(b => { ac[b.age]++; sc2[b.sex]++; });
+      const seg = (cols, i, c, prefix) => ({ f: c, bg: cols[i][1], fg: cols[i][2], label: c / n >= 0.09 ? Math.round(c / n * 100) + '%' : '', tip: prefix + cols[i][0] + ': ' + Math.round(c / n * 100) + ' %' });
+      return {
+        sv: d.sp.sv, color: d.color,
+        age: ac.map((c, i) => seg(ageCols, i, c, '')),
+        sex: sc2.map((c, i) => seg(sexCols, i, c, ''))
+      };
+    });
+
+    return {
+      sel: st.sel.slice(), toggleSp: id => this.toggleSp(id),
+      seasons: [['var', 'Vår'], ['host', 'Höst'], ['bada', 'Båda']].map(o => ({ label: o[1], on: st.se === o[0], pick: () => this.bump({ se: o[0] }) })),
+      note: hasAlla || tooMany,
+      noteText: hasAlla ? 'Mått jämförs per art, så "Alla arter" visas inte här.' : 'Fördelningarna visar de tre första arterna i ditt urval.',
+      sc: sc, sizeLegend: sizeLegend,
+      hov: st.hov || defHov, hoverOff: () => this.setState({ hov: null }),
+      rows: rows, hists: hists, comp: comp, noData: data.length === 0,
+      ageLegend: ageCols.map(a => ({ label: a[0], bg: a[1] })),
+      sexLegend: sexCols.map(a => ({ label: a[0], bg: a[1] })),
+      wipe: st.flip ? 'wipeA' : 'wipeB'
+    };
+  }
+}
+</script>
+</body>
+</html>

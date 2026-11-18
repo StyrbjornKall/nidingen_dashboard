@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Återfynd — Nidingens Fågelstation</title>
+<script src="./support.js"></script>
+<script src="/_blob/424ea45a3969fb9203bbeeebc8397b74"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2F6B50}a:hover{color:#234F3C}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:999px;background:#D4D6CF}
+.seg button{all:unset;cursor:pointer;min-height:40px;padding:0 15px;border-radius:999px;font:500 14px/40px 'Hanken Grotesk',system-ui,sans-serif;color:#35423B;transition:background .2s,color .2s}
+.seg button:hover{background:#C8CCC4;color:#1D2923}
+.seg button[aria-pressed="true"]{background:#1D2923;color:#fff}
+.seg button:focus-visible,.sel:focus-visible,.sw:focus-visible,.gb:focus-visible,.lr:focus-visible{outline:2px solid #36775B;outline-offset:2px}
+.sel{min-height:44px;padding:0 36px 0 14px;border-radius:999px;border:1px solid #C2CDBE;background:#FFFFFF;font:500 15px 'Hanken Grotesk',system-ui,sans-serif;color:#1D2923}
+.sw{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:10px;min-height:44px;font:500 14px 'Hanken Grotesk',system-ui,sans-serif}
+.sw .tr{width:42px;height:24px;border-radius:999px;background:#C2CDBE;position:relative;transition:background .2s}
+.sw .kn{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw[aria-pressed="true"] .tr{background:#1D2923}
+.sw[aria-pressed="true"] .kn{transform:translateX(18px)}
+.gb{all:unset;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;padding:0 12px;box-sizing:border-box;border-radius:12px;background:rgba(255,255,255,.92);border:1px solid #D5DDD2;font:600 14px 'Hanken Grotesk',system-ui,sans-serif;color:#1D2923;box-shadow:0 4px 14px rgba(29,41,35,.08);transition:background .2s}
+.gb:hover{background:#FFFFFF}
+.stage{touch-action:none;cursor:grab;user-select:none}
+.stage.drag{cursor:grabbing}
+.pt{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;border:1.5px solid #FFFFFF;box-sizing:border-box;transition:transform .15s}
+.pt:hover{transform:scale(1.9);z-index:3}
+.ptA{animation:ptA .5s cubic-bezier(.2,.8,.2,1) backwards}
+.ptB{animation:ptB .5s cubic-bezier(.2,.8,.2,1) backwards}
+@keyframes ptA{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+@keyframes ptB{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+.lr{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:2px 12px;width:100%;padding:9px 8px;border-top:1px solid #E3E9DF;border-radius:8px;transition:background .18s}
+.lr:hover{background:#F0F4EE}
+.cbar{height:12px;border-radius:0 4px 4px 0;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.pulse{animation:pulse 2s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.6);opacity:.7}100%{transform:scale(2.4);opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #E8E7E3; color: #1D2923; font-family: 'Hanken Grotesk', system-ui, sans-serif">
+  <dc-import name="Nav" active="Återfynd" hint-size="100%,96px"></dc-import>
+
+  <header style="max-width: 1280px; margin: 0 auto; padding: 40px 32px 24px">
+    <h1 style="margin: 0; font-size: clamp(36px, 4.6vw, 54px); line-height: 1.02; letter-spacing: -0.03em; font-weight: 800">Återfynd</h1>
+    <p style="margin: 12px 0 0; max-width: 720px; font-size: 18px; line-height: 1.55; color: #3F4B44">Fåglar märkta på Nidingen som hittats någon annanstans, och fåglar märkta utomlands som fångats här. Dra i jordklotet för att snurra det.</p>
+  </header>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 0 32px">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; padding: 14px 18px; border-radius: 18px; background: #FFFFFF; border: 1px solid #D5DDD2">
+      
+      <label for="af-art" style="font-size: 14px; font-weight: 600">Art</label>
+      <select id="af-art" class="sel" value="{{art}}" onChange="{{onArt}}">
+        <sc-for list="{{artOpts}}" as="o" hint-placeholder-count="16"><option value="{{o.v}}">{{o.label}}</option></sc-for>
+      </select>
+      <div class="seg" role="group" aria-label="Period">
+        <sc-for list="{{ranges}}" as="o" hint-placeholder-count="3"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for>
+      </div>
+      <div class="seg" role="group" aria-label="Riktning">
+        <sc-for list="{{dirs}}" as="o" hint-placeholder-count="3"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for>
+      </div>
+      <button type="button" class="sw" aria-pressed="{{lines}}" onClick="{{toggleLines}}"><span class="tr"><span class="kn"></span></span>Visa linjer</button>
+    </div>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 20px 32px 96px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+    <article style="flex: 999 1 560px; min-width: 0; background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: baseline">
+        <h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em">Återfynd på jordklotet</h2>
+        <div style="display: flex; gap: 16px; font-size: 13.5px">
+          <span style="display: inline-flex; align-items: center; gap: 7px"><span style="width: 11px; height: 11px; border-radius: 50%; background: #36775B"></span>Märkt här, hittad där</span>
+          <span style="display: inline-flex; align-items: center; gap: 7px"><span style="width: 11px; height: 11px; border-radius: 50%; background: #C2624C"></span>Märkt där, fångad här</span>
+        </div>
+      </div>
+      <div class="{{stageCls}}" onPointerDown="{{onDown}}" onPointerMove="{{onDrag}}" onPointerUp="{{onUp}}" onPointerLeave="{{onUp}}" style="position: relative; width: 100%; max-width: 720px; margin: 0 auto; aspect-ratio: 1 / 1; border-radius: 50%">
+        <sc-if value="{{ready}}" hint-placeholder-val="{{true}}">
+          <svg viewBox="0 0 600 600" role="img" aria-label="Jordklot med återfynd av fåglar ringmärkta på eller fångade vid Nidingen" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible">
+            <path d="{{g.sphere}}" fill="#D7E6EC" stroke="#B3C7CF" stroke-width="1.5"></path>
+            <path d="{{g.grat}}" fill="none" stroke="#C3D6DD" stroke-width="0.8"></path>
+            <path d="{{g.land}}" fill="#F6F3EA" stroke="#A8B7AC" stroke-width="0.8" stroke-linejoin="round"></path>
+            <path d="{{g.out}}" fill="none" stroke="#36775B" stroke-opacity="{{g.lineOp}}" stroke-width="1.3"></path>
+            <path d="{{g.inn}}" fill="none" stroke="#C2624C" stroke-opacity="{{g.lineOp}}" stroke-width="1.3"></path>
+          </svg>
+          <sc-for list="{{g.pts}}" as="p" hint-placeholder-count="80">
+            <span class="pt {{ptCls}}" title="{{p.tip}}" onMouseEnter="{{p.enter}}" style="left: {{p.x}}%; top: {{p.y}}%; background: {{p.color}}; animation-delay: {{p.delay}}ms"></span>
+          </sc-for>
+          <sc-if value="{{g.nidOn}}" hint-placeholder-val="{{true}}">
+            <span class="pulse" style="position: absolute; left: {{g.nx}}%; top: {{g.ny}}%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: #BFDC8E; pointer-events: none"></span>
+            <span style="position: absolute; left: {{g.nx}}%; top: {{g.ny}}%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #BFDC8E; border: 3px solid #1D2923; box-sizing: border-box; pointer-events: none"></span>
+            <span style="position: absolute; left: {{g.nx}}%; top: {{g.ny}}%; transform: translate(12px, -130%); font-size: 13px; font-weight: 700; background: rgba(255,255,255,0.92); padding: 1px 6px; border-radius: 6px; pointer-events: none">Nidingen</span>
+          </sc-if>
+        </sc-if>
+        <sc-if value="{{notReady}}" hint-placeholder-val="{{false}}">
+          <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #D7E6EC; color: #3F4B44; font-size: 15px">Laddar jordklotet …</div>
+        </sc-if>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center">
+        <button type="button" class="gb" aria-label="Zooma in" onClick="{{zoomIn}}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"></path></svg></button>
+        <button type="button" class="gb" aria-label="Zooma ut" onClick="{{zoomOut}}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 8h10"></path></svg></button>
+        <button type="button" class="gb" onClick="{{home}}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="5.5"></circle><circle cx="8" cy="8" r="1.5"></circle><path d="M8 0.5v2.5M8 13v2.5M0.5 8h2.5M13 8h2.5"></path></svg>Centrera på Nidingen</button>
+        <span style="font-size: 13px; color: #53605A; margin-left: 6px">Dra för att snurra. Klicka på ett återfynd i listan för att flyga dit.</span>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: #53605A">Linjerna följer storcirkeln, den kortaste vägen över jordytan. Illustrativ data och förenklade kustlinjer.</p>
+    </article>
+
+    <aside style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 16px">
+      <div style="background: #1D2923; color: #FFFFFF; border-radius: 20px; padding: 20px 22px; display: flex; flex-direction: column; gap: 6px; min-height: 120px">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #C2CDBE">{{focus.kicker}}</span>
+        <span style="font-size: 20px; font-weight: 700">{{focus.title}}</span>
+        <span style="font-size: 14px; line-height: 1.5; color: #DDE7DA">{{focus.text}}</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: #D5DDD2; border: 1px solid #D5DDD2; border-radius: 18px; overflow: hidden;">
+        <div style="background: #FFFFFF; padding: 16px 18px"><div class="mono" style="font-size: 28px; font-weight: 500; color: #36775B">{{sum.out}}</div><div style="font-size: 13px; color: #53605A">utgående</div></div>
+        <div style="background: #FFFFFF; padding: 16px 18px"><div class="mono" style="font-size: 28px; font-weight: 500; color: #A04A36">{{sum.inn}}</div><div style="font-size: 13px; color: #53605A">inkommande</div></div>
+        <div style="background: #FFFFFF; padding: 16px 18px"><div class="mono" style="font-size: 28px; font-weight: 500">{{sum.max}}</div><div style="font-size: 13px; color: #53605A">längsta avstånd</div></div>
+        <div style="background: #FFFFFF; padding: 16px 18px"><div class="mono" style="font-size: 28px; font-weight: 500">{{sum.med}}</div><div style="font-size: 13px; color: #53605A">medianavstånd</div></div>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 18px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 700">Länder</h3>
+        <sc-for list="{{countries}}" as="c" hint-placeholder-count="6">
+          <div style="display: grid; grid-template-columns: 110px 1fr 34px; gap: 10px; align-items: center; font-size: 14px">
+            <span>{{c.name}}</span>
+            <span style="display: block; background: #F0F4EE; border-radius: 0 4px 4px 0"><span class="cbar" style="display: block; width: {{c.w}}%; background: #7FB496"></span></span>
+            <span class="mono" style="text-align: right">{{c.n}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 18px; padding: 18px 12px 12px; display: flex; flex-direction: column; gap: 2px">
+        <h3 style="margin: 0 8px 6px; font-size: 16px; font-weight: 700">Längsta återfynd</h3>
+        <sc-for list="{{longest}}" as="l" hint-placeholder-count="5">
+          <button type="button" class="lr" onClick="{{l.fly}}">
+            <span style="font-size: 14.5px; font-weight: 600">{{l.sv}}</span><span class="mono" style="font-size: 14px; text-align: right">{{l.km}}</span>
+            <span style="font-size: 13px; color: #53605A">{{l.where}}</span><span class="mono" style="font-size: 12px; color: #53605A; text-align: right">{{l.when}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </aside>
+  </section>
+
+  <dc-import name="Footer" hint-size="100%,80px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1750}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { art: 'ALLA', rg: 'all', dir: 'both', lines: true, flip: false, focus: -1, rx: -8, ry: -30, zoom: 1, drag: null };
+  }
+  componentDidMount() { this.setState({ rx: -128 }, () => this.flyTo(8, 30, 1600)); }
+  componentWillUnmount() { if (this._raf) cancelAnimationFrame(this._raf); }
+  LAND() { return [[[-5.6,36],[-6.3,36.8],[-7.4,37.2],[-8.9,37],[-8.8,38.7],[-9.5,39.4],[-8.7,41],[-8.9,42.6],[-9.3,43],[-8,43.7],[-5.8,43.6],[-3.8,43.45],[-1.8,43.4],[-1.2,44.6],[-1.2,46.2],[-2.2,47.1],[-4.5,47.8],[-4.7,48.4],[-3,48.8],[-1.6,48.7],[-1.9,49.7],[-0.2,49.3],[0.2,49.7],[1.6,50.9],[2.5,51.1],[3.6,51.4],[4.2,52.2],[4.7,53],[6,53.5],[7.2,53.6],[8.6,53.9],[8.6,55.4],[8.1,56.6],[8.6,57.1],[10.6,57.75],[10.4,56.9],[10.9,56.4],[10.2,55.6],[9.9,54.8],[10.9,54.3],[12.1,54.2],[13.8,54.1],[14.5,53.9],[16.5,54.5],[18.6,54.7],[19.9,54.4],[21.1,55.3],[21,56.5],[21.6,57.4],[22.6,57.7],[24.1,57],[24.4,58.4],[23.5,59],[24.7,59.5],[28,59.5],[30.2,59.9],[29,60.2],[26.9,60.4],[24.9,60.15],[22.9,59.9],[21.4,60.6],[21.5,61.6],[21.3,62.6],[22.2,63.4],[24.4,64.6],[25.4,65],[24.2,65.8],[22.3,65.6],[21.2,64.7],[20.2,63.8],[18.5,63],[17.4,62.3],[17.3,61.3],[17.1,60.7],[18.5,60.1],[19,59.8],[18.4,59.4],[17.6,58.9],[16.7,58.2],[16.4,57],[16,56.2],[14.6,56.1],[14.2,55.4],[13.2,55.35],[12.9,55.6],[12.6,56.1],[12.8,56.6],[12,57.3],[11.9,57.7],[11.2,58.4],[11.1,59],[10.6,59.4],[10.7,59.9],[10.2,59.1],[9.6,59],[8,58.1],[6.6,58.1],[5.6,58.9],[5.3,60.4],[4.9,61.2],[5.2,62],[6.3,62.5],[7.5,63],[8.6,63.5],[10.4,63.45],[11,64.5],[12.5,65.5],[13.6,66.7],[14.4,67.3],[16,68.4],[18,69.4],[19,69.7],[21,70],[23.7,70.7],[25.8,71.1],[28,70.9],[31,70.3],[33,69.3],[36,69.1],[41,67.8],[44.2,68.4],[53,68.5],[60,69],[66,70.5],[73,72.5],[80,73.5],[90,75.5],[100,77],[105,77.7],[113,73.5],[130,71.8],[140,72.5],[150,71.5],[160,69.8],[170,70],[179.9,68.9],[179.9,65],[177,62.5],[170,60],[163,58],[156.7,51],[155.5,55.5],[155,59],[150,59.5],[143,59.2],[137,54],[141,52.5],[140.5,48.5],[135,43],[131,42.5],[129.5,41],[129.4,35.5],[126.5,34.5],[126.6,37.5],[125,39.5],[121.5,39],[121.6,40.9],[118,39],[117.5,38.5],[119,37.2],[122.5,37.4],[120.3,36],[119.2,34.8],[121.9,31],[122,29.9],[120.5,27],[119.5,25.5],[116.5,23],[113.5,22.2],[110,21],[110.3,20.2],[108,21.5],[106.6,20.2],[105.8,19],[108.8,15.4],[109.3,12],[106.8,10.4],[104.8,8.6],[102.9,11.6],[100.9,12.7],[100.1,13.4],[99.2,10.3],[100.4,7.3],[102.1,6.2],[103.4,4.3],[103.6,1.4],[101.3,2.8],[100.3,5.4],[98.3,8],[98.6,10],[97.6,16.5],[94.4,16],[94.2,18.8],[92.4,20.7],[91.8,22.3],[90,21.8],[88.5,21.7],[86.9,20.8],[85,19.4],[82.2,16.6],[80.2,13],[79.9,10.3],[77.5,8.1],[76.3,9.8],[74.8,12.9],[73.3,16.5],[72.8,19],[72.6,21.4],[70.2,22.5],[68.9,22.8],[67.2,24.7],[66.6,25.4],[61.6,25.2],[57.3,25.8],[56.4,27.1],[54.7,26.5],[51.4,27.9],[50.3,29.3],[48.8,30],[48.5,28.5],[50.2,26.6],[51.6,25.3],[51.4,24.4],[54,24.1],[56,24.9],[56.4,26.3],[57.4,23.8],[59.8,22.4],[58.5,20.4],[57.8,19.1],[56.3,17.9],[55.1,17],[52.2,15.7],[49,14.1],[45,12.8],[43.4,12.7],[42.8,14.8],[42.6,16.5],[41,19.5],[39.1,21.5],[38.4,23.6],[37,25.8],[35.5,28],[34.95,29.5],[34.2,31.3],[35,32.8],[35.9,34.5],[36,35.9],[36.2,36.6],[34.6,36.8],[32.5,36.1],[30.6,36.7],[29,36.6],[27.4,37.2],[26.3,38.3],[26.7,39.5],[26.2,40],[27.5,40.9],[29,41.1],[31.5,41.2],[35,42],[38,41],[41.6,41.6],[41.6,42.6],[38.5,44.5],[37,45.2],[36.6,45.4],[35.5,45.3],[33.6,44.5],[32.5,45.4],[33.6,46],[31.5,46.6],[30.7,46.5],[29.7,45.3],[28.7,44],[28,43.2],[27.9,42],[28.9,41.3],[26,40.8],[24,40.7],[22.9,40.6],[23.3,39.2],[24,38.2],[23.1,36.5],[21.7,36.8],[21.1,38.3],[20.2,39.6],[19.4,40.3],[19.5,41.8],[18.5,42.5],[17,43.3],[15.9,43.6],[15.2,44.3],[13.7,45.1],[13.6,45.7],[12.3,45.4],[12.4,44.2],[13.6,43.5],[14.7,42.1],[16.1,41.9],[18.5,40.2],[17.2,40.4],[16.5,39.6],[17.1,39],[16.1,38],[15.8,39.5],[14.9,40.3],[14.3,40.8],[12.5,41.4],[11.2,42.4],[10.5,43],[10.2,43.9],[8.8,44.4],[7.5,43.8],[6,43.1],[4.6,43.4],[3.1,43.1],[3.2,42],[2.2,41.4],[0.9,41],[0,39.8],[-0.3,39.4],[0.2,38.8],[-0.5,38.3],[-0.8,37.6],[-2.1,36.7],[-4.4,36.7],[-5.3,36.1]],[[-5.8,35.8],[-2,35.1],[1,36.5],[3,36.8],[6.5,37.1],[9.8,37.3],[11.1,36.9],[10.4,36],[11.1,35.2],[10,33.6],[11.5,33.1],[12.5,32.8],[15.2,32.3],[15.7,31.4],[17,31],[19,30.3],[20.1,31],[20,32.2],[21.6,32.9],[23.1,32.6],[25,31.7],[29,30.9],[31,31.6],[32.3,31.3],[33.9,31.1],[34.9,29.5],[34.3,28],[33.9,26.6],[35.5,24],[36.9,22],[37.4,18.8],[38.6,18],[39.7,15.1],[41.2,14],[43.3,12.4],[43.1,11.5],[44.5,10.4],[51.2,11.8],[51,10.4],[49.5,6.5],[48,4.5],[46,2],[43,-1],[41.5,-1.8],[40.1,-3.3],[39.2,-6.5],[39.5,-8],[40.4,-10.5],[40.6,-15],[37.5,-17.6],[35.3,-22],[35.5,-24],[32.8,-25.9],[32.6,-28.5],[30.9,-30.5],[28,-32.9],[25.6,-34],[22,-34.2],[20,-34.8],[18.4,-34.2],[18.2,-32],[17,-29.5],[15.3,-27],[14.5,-23],[13.4,-20],[11.8,-17.2],[12.4,-13.5],[13.6,-11],[13.2,-8.8],[12.2,-6],[12,-4.5],[9.6,-1],[9.4,1],[9.7,3.6],[8.6,4.5],[6,4.3],[4.5,6.3],[2,6.3],[-1,5.2],[-3,5],[-7.5,4.4],[-9.3,5.5],[-11.4,6.9],[-13.3,8.6],[-15,10.8],[-16.7,12.4],[-17.5,14.7],[-16.5,16.5],[-16.2,19.6],[-17,21],[-14.8,24.3],[-13.2,27],[-11.5,28],[-9.8,29.5],[-9.6,30.4],[-9.8,31.5],[-8.5,33.3],[-6.8,34.1]],[[-5.7,50.05],[-4.5,51.1],[-3,51.5],[-5.3,51.7],[-4,52],[-4.6,53.3],[-2.9,53.3],[-3.4,54],[-3,54.9],[-5,55],[-6.2,56.3],[-5.7,57],[-5,58.6],[-3.1,58.6],[-3.9,57.7],[-1.8,57.6],[-2.1,57.1],[-1.6,55.6],[-0.5,54.5],[0.3,53.4],[1.7,52.6],[1.4,51.1],[-1,50.7],[-3.5,50.4]],[[-6,52.2],[-6.4,52.2],[-8,51.8],[-9.6,51.5],[-10.3,52.1],[-9.9,53.4],[-10.1,54.2],[-8.5,54.6],[-7.3,55.3],[-5.9,54.6],[-6.1,53.4]],[[-22,64],[-24,65.5],[-22,66.4],[-18,66.2],[-14.5,66.3],[-13.5,65],[-15,64.3],[-18,63.4],[-21,63.8]],[[-73,78],[-60,82],[-30,83.5],[-18,81],[-20,75],[-22,70],[-32,68],[-40,65],[-43,60],[-48,61],[-53,66],[-55,70],[-58,75],[-68,76.5]],[[12.4,38],[15.6,38.2],[15.1,36.7],[12.6,37.6]],[[8.4,41],[9.8,41],[9.6,39.1],[8.4,39]],[[8.6,42.9],[9.4,43],[9.5,41.5],[8.8,41.5]],[[11,55.4],[12.3,56.1],[12.6,55.6],[12.1,55],[11.2,55.2]],[[9.9,55.5],[10.6,55.6],[10.7,55.1],[10,55.1]],[[18.1,57.9],[19.2,57.9],[18.5,56.9],[18.1,57.3]],[[23.5,35.6],[26.3,35.3],[26,35],[23.6,35.2]],[[32.3,35.1],[34.6,35.7],[33.9,34.6],[32.6,34.7]],[[49.3,-12],[50.4,-15.5],[49.6,-17],[47.1,-24.9],[45.1,-25.5],[43.7,-23.5],[44.4,-20],[44,-17],[46.4,-15.8],[48,-13.5]],[[79.9,9.6],[81.9,7.5],[81.2,6.1],[80.1,6]],[[130.2,33.6],[130.9,34.3],[133,35.5],[136,35.8],[137,37],[139.7,38.2],[140,40.6],[141.4,41.4],[141.9,39.5],[140.9,36.9],[139.8,35],[136.9,34.6],[135,34.6],[132,34.3]],[[140,41.5],[140,42.8],[141.4,43.4],[141.9,45.5],[145.3,44.3],[145.7,43.3],[143.3,42],[141.5,42.6]],[[120.1,23],[121,25.2],[121.9,24.8],[120.8,22]],[[120,16],[120.6,18.5],[122.2,18.5],[122,16.5],[124,13],[121.5,13.9]],[[95.3,5.6],[98.3,4.2],[103.8,-1],[106,-3.2],[105.5,-5.8],[101.5,-3.5],[98.6,0]],[[109,1.5],[111,1.9],[115,4.9],[117.6,6.4],[119,5.2],[118,1],[116.5,-2.5],[114,-3.6],[110.2,-2.9],[109,0]],[[105.2,-6.8],[108.5,-6.4],[112.6,-6.9],[114.5,-7.8],[110,-8.1],[106.5,-7.4]],[[119.4,-5.5],[120,0.5],[124.8,1.4],[121,-1],[123.3,-4.5],[120.5,-5.6]],[[131,-1.2],[134,-0.8],[138,-1.6],[141,-2.6],[145,-4.8],[147.5,-6.2],[150,-10.5],[146,-8.5],[143,-9.2],[141,-9.1],[138,-8.4],[135,-4.4],[132.5,-4]],[[113.5,-22],[116.7,-20.6],[120,-19.8],[122.2,-17.5],[126,-14.2],[130,-13.1],[132.5,-11.6],[136,-12.2],[136.7,-15.9],[139.5,-17.4],[141.6,-17],[141.5,-13],[142.5,-10.7],[145.4,-14.9],[150.5,-22.5],[153,-25],[153.6,-28.2],[151.2,-33.9],[150,-37.5],[146.3,-39.1],[143.5,-38.8],[140,-37.8],[138,-34.8],[134,-32.5],[129,-31.7],[123.5,-33.9],[117.9,-35.1],[115,-33.5],[115,-30],[114,-26.5]],[[144.6,-40.7],[148.3,-40.9],[147.9,-43.2],[145.9,-43.6],[145.2,-42.2]],[[172.7,-34.4],[174.3,-35.8],[176,-37.6],[178.5,-37.7],[177,-39.5],[175.3,-41.6],[174.6,-41.2],[174,-39.1],[173,-35.5]],[[172.6,-40.5],[174.2,-41.7],[172.7,-43.6],[171.2,-44.4],[170.6,-45.9],[168.4,-46.6],[166.5,-45.7],[168.4,-44],[170.8,-42.7]],[[-168,65.6],[-162,70.3],[-156.5,71.3],[-141,69.6],[-130,70],[-117,69],[-108,68.5],[-95,68],[-90,69],[-82,69.5],[-86,66.5],[-94,61],[-92.5,57],[-87,55.3],[-82.3,52.9],[-79,51.5],[-78.5,55.5],[-77,60],[-73,62],[-70,60.8],[-65,60.3],[-61.5,56.5],[-57,52],[-59.5,47.6],[-64.5,48.9],[-61,45.5],[-66,44.4],[-70,43.7],[-70.5,41.8],[-74,40.6],[-75.5,38.5],[-76,36.9],[-75.5,35.2],[-78,33.8],[-81,31.5],[-80,26.5],[-80.4,25.2],[-81.8,26.4],[-82.8,28],[-84,30],[-88,30.4],[-89.5,29.2],[-91,29.5],[-94,29.6],[-97.2,27.6],[-97.6,24],[-97.2,21],[-95.5,18.8],[-94.5,18.2],[-92,18.7],[-90.4,21],[-87,21.5],[-87.8,18.5],[-88.3,16],[-84,15.8],[-83.2,15],[-83.7,11],[-82,8.9],[-79.5,9.6],[-77.5,8.6],[-75.6,10.6],[-72,12.3],[-70.2,11.6],[-68.2,10.5],[-64,10.7],[-61.8,10.6],[-60,8.5],[-57,6],[-52,4.8],[-50,1.8],[-49,-0.5],[-44,-2.5],[-39,-3.5],[-35.3,-5.3],[-34.9,-7.5],[-35.2,-9.5],[-37.2,-11.2],[-39,-13.5],[-39.2,-17.7],[-40.9,-21.8],[-43.2,-23],[-46.3,-24],[-48.6,-26.5],[-48.8,-28.7],[-51.3,-31.5],[-53.4,-33.7],[-55,-34.9],[-58.4,-34.6],[-57.5,-36.3],[-57.6,-38.2],[-62.3,-38.8],[-65,-41],[-63.6,-42.6],[-65.5,-45],[-67.6,-46.5],[-65.8,-47.8],[-68.3,-50.2],[-69,-52],[-68.4,-53],[-67,-55],[-70.5,-55],[-74.5,-51],[-75.4,-46.7],[-73.6,-42],[-73.4,-37],[-71.6,-33],[-71.4,-28],[-70.4,-23.5],[-70.3,-18.4],[-71.5,-17.2],[-76.2,-13.6],[-77.2,-11.9],[-79.5,-7.2],[-81.3,-4.9],[-80.3,-3.4],[-80.9,-1],[-80,0.9],[-78.9,1.6],[-77.4,4],[-77.4,7],[-79.1,9],[-80.4,7.4],[-82.9,8.1],[-85.7,9.9],[-85.9,11.3],[-87.7,13.2],[-91.5,14],[-94,16],[-96.5,15.7],[-101,17.3],[-105.5,20.4],[-105.3,23],[-108.9,25.3],[-112.2,29.5],[-114.7,31.7],[-114,30],[-110,24],[-109.4,23.2],[-111.8,24.5],[-114.2,27.6],[-115.6,29.8],[-117.1,32.5],[-118.5,34],[-120.6,34.6],[-122.4,37.8],[-123.8,39.5],[-124.3,42],[-124,46.2],[-124.7,48.4],[-123,49],[-125.5,50.5],[-127.5,52],[-130.3,54.5],[-133,57],[-136.6,58.2],[-140,59.7],[-146,60.8],[-150,59.5],[-152,61],[-154,58],[-158,56.8],[-163.5,55],[-158,58.6],[-162,59.8],[-164.7,62.5],[-165,64.5]],[[-80,73.5],[-68,70.5],[-62,66.5],[-64.5,63],[-71,62.8],[-78,64.5],[-75,67.5],[-82,69.5],[-88,70.5]],[[-120,76.5],[-95,77.5],[-85,80],[-75,83],[-60,82.8],[-72,78.5],[-80,76.5],[-90,74.5],[-105,73.5],[-118,72]],[[-59.4,47.6],[-55.5,51.6],[-53,49.5],[-52.7,47.5],[-55.9,46.9]],[[-85,21.9],[-80.5,23.2],[-76,21.1],[-74.2,20.2],[-77.7,19.9],[-81.5,22.2]],[[-74.4,19.8],[-70,19.8],[-68.4,18.6],[-71,18],[-74.4,18.3]],[[11,78.8],[17,80],[27,80.2],[22,77.5],[16,76.6]],[[52,71.4],[57,75.5],[68,76.9],[58,70.6]],[[-180,-84],[-150,-77],[-120,-74],[-90,-72],[-60,-64],[-57,-63.5],[-62,-68],[-75,-73],[-40,-78],[-20,-73],[0,-70],[30,-69.5],[60,-67],[90,-66],[120,-66.5],[150,-68],[165,-71.5],[170,-77],[180,-84],[180,-89.9],[-180,-89.9]]]; }
+  PLACES() {
+    return {
+      OSL: ['Oslofjorden', 'Norge', 59.4, 10.6], BGO: ['Bergen', 'Norge', 60.4, 5.3], CPH: ['Köpenhamn', 'Danmark', 55.7, 12.6],
+      SKA: ['Skagen', 'Danmark', 57.7, 10.6], HEL: ['Helsingfors', 'Finland', 60.2, 24.9], LED: ['S:t Petersburg', 'Ryssland', 59.9, 30.3],
+      GDN: ['Gdańsk', 'Polen', 54.4, 18.6], HGL: ['Helgoland', 'Tyskland', 54.2, 7.9], AMS: ['Nordholland', 'Nederländerna', 52.6, 4.8],
+      LON: ['London', 'Storbritannien', 51.5, -0.1], EDI: ['Edinburgh', 'Storbritannien', 55.95, -3.2], BOD: ['Bordeaux', 'Frankrike', 44.8, -0.6],
+      MAD: ['Madrid', 'Spanien', 40.4, -3.7], LIS: ['Lissabon', 'Portugal', 38.7, -9.1], ROM: ['Rom', 'Italien', 41.9, 12.5],
+      RAK: ['Marrakech', 'Marocko', 31.6, -8.0], DKR: ['Dakar', 'Senegal', 14.7, -17.4], LOS: ['Lagos', 'Nigeria', 6.5, 3.4],
+      CPT: ['Kapstaden', 'Sydafrika', -33.9, 18.4]
+    };
+  }
+  SP() {
+    return [
+      ['RÖHAK', 'Rödhake', 1500, 'BOD3 MAD4 LIS2 LON1 RAK1 ROM1', 'OSL3 BGO2 HEL1'],
+      ['LÖSÅN', 'Lövsångare', 1100, 'LOS1 DKR1 MAD1 LIS1', 'OSL2 HEL1'],
+      ['KUFÅG', 'Kungsfågel', 1000, 'HGL3 AMS2 LON2 CPH1', 'OSL3 HEL2 LED1 BGO1'],
+      ['ÄNPIP', 'Ängspiplärka', 700, 'BOD2 MAD2 LIS2 RAK1', 'OSL2 BGO2'],
+      ['GRSÅN', 'Gransångare', 520, 'MAD2 RAK2 LIS1', 'OSL1 HEL1'],
+      ['SVHÄT', 'Svarthätta', 480, 'MAD2 LIS1 ROM1 RAK1', 'OSL2'],
+      ['TRSÅN', 'Trädgårdssångare', 380, 'LOS2 ROM1 DKR1', 'OSL1'],
+      ['TATRA', 'Taltrast', 340, 'BOD2 LON2 LIS1 MAD1', 'OSL2 HEL1 BGO1'],
+      ['KOTRA', 'Koltrast', 300, 'LON3 AMS2 BOD1', 'OSL2 BGO1'],
+      ['RÖTRA', 'Rödvingetrast', 290, 'BOD2 LON2 LIS1 MAD1', 'HEL2 LED1 OSL1'],
+      ['BOFIN', 'Bofink', 260, 'AMS2 BOD1 HGL1', 'OSL2 HEL1'],
+      ['JÄSPA', 'Järnsparv', 240, 'MAD1 BOD1 ROM1', 'OSL1'],
+      ['BLMES', 'Blåmes', 200, 'CPH2 GDN1 HGL1', 'HEL2 LED1 OSL1'],
+      ['SKPIP', 'Skärpiplärka', 160, 'SKA2 EDI1 AMS1 LON1', 'BGO3 OSL1'],
+      ['LASVA', 'Ladusvala', 150, 'CPT3 LOS1', 'OSL1']
+    ];
+  }
+  rng(seed) {
+    let s = seed >>> 0;
+    return function () {
+      s = (s + 0x6D2B79F5) >>> 0;
+      let t = s;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  km(lat1, lon1, lat2, lon2) {
+    const R = Math.PI / 180, a = Math.sin((lat2 - lat1) * R / 2) ** 2 + Math.cos(lat1 * R) * Math.cos(lat2 * R) * Math.sin((lon2 - lon1) * R / 2) ** 2;
+    return 2 * 6371 * Math.asin(Math.sqrt(a));
+  }
+  records() {
+    if (this._recs) return this._recs;
+    const P = this.PLACES(), out = [];
+    const pick = (r, spec) => {
+      const items = spec.split(' ').map(t => [t.slice(0, 3), parseInt(t.slice(3), 10)]);
+      let u = r() * items.reduce((a, b) => a + b[1], 0);
+      for (let i = 0; i < items.length; i++) { u -= items[i][1]; if (u <= 0) return items[i][0]; }
+      return items[0][0];
+    };
+    this.SP().forEach((s, si) => {
+      const r = this.rng(311 + si * 47);
+      const nOut = Math.round(Math.sqrt(s[2]) * 0.9), nIn = Math.round(nOut * 0.35);
+      for (let i = 0; i < nOut + nIn; i++) {
+        const dir = i < nOut ? 'out' : 'in';
+        const p = P[pick(r, dir === 'out' ? s[3] : s[4])];
+        const spread = Math.abs(p[2] - 57.3) + Math.abs(p[3] - 11.9) > 15 ? 2.2 : 0.9;
+        const lat = p[2] + (r() - 0.5) * spread * 2, lon = p[3] + (r() - 0.5) * spread * 2.6;
+        const year = 1981 + Math.floor(Math.pow(r(), 0.8) * 45);
+        const days = Math.round(4 + Math.pow(r(), 1.6) * 1400);
+        out.push({ id: s[0], sv: s[1], dir: dir, place: p[0], country: p[1], lat: lat, lon: lon, km: Math.round(this.km(57.3, 11.9, lat, lon)), year: year, days: days });
+      }
+    });
+    this._recs = out;
+    return out;
+  }
+  flyTo(lon, lat, ms) {
+    if (this._raf) cancelAnimationFrame(this._raf);
+    const r0 = [this.state.rx, this.state.ry], r1 = [-lon, -Math.max(-60, Math.min(60, lat))];
+    let d = r1[0] - r0[0];
+    d = ((d + 540) % 360) - 180;
+    const t0 = performance.now(), dur = ms || 900;
+    const step = now => {
+      const t = Math.min(1, (now - t0) / dur), e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      this.setState({ rx: r0[0] + d * e, ry: r0[1] + (r1[1] - r0[1]) * e });
+      if (t < 1) this._raf = requestAnimationFrame(step);
+    };
+    this._raf = requestAnimationFrame(step);
+  }
+  num(n) { return Math.round(n).toLocaleString('sv-SE'); }
+  bump(p) { this.setState(Object.assign({ flip: !this.state.flip, focus: -1 }, p)); }
+  renderVals() {
+    const st = this.state;
+    const d3 = typeof window !== 'undefined' ? window.d3 : null;
+    const yr = { all: [1980, 2025], r25: [2000, 2025], r10: [2016, 2025] }[st.rg];
+    const recs = this.records().filter(r => (st.art === 'ALLA' || r.id === st.art) && r.year >= yr[0] && r.year <= yr[1]);
+    const shown = recs.filter(r => st.dir === 'both' || r.dir === st.dir);
+    const NID = [11.9, 57.3];
+
+    let g = { sphere: 'M0 0', grat: 'M0 0', land: 'M0 0', out: 'M0 0', inn: 'M0 0', pts: [], nidOn: false, nx: 50, ny: 50, lineOp: 0 };
+    if (d3) {
+      const proj = d3.geoOrthographic().scale(286 * st.zoom).translate([300, 300]).rotate([st.rx, st.ry]).clipAngle(90).precision(0.6);
+      const path = d3.geoPath(proj);
+      const center = [-st.rx, -st.ry];
+      const vis = c => d3.geoDistance(c, center) < Math.PI / 2 - 0.01;
+      const pc = v => (v / 600 * 100).toFixed(2);
+      if (!this._land) this._land = { type: 'MultiPolygon', coordinates: this.LAND().map(r => [r.concat([r[0]])]) };
+      if (!this._grat) this._grat = d3.geoGraticule10();
+      const lines = dir => shown.filter(r => r.dir === dir).map(r => [NID, [r.lon, r.lat]]);
+      const np = proj(NID);
+      g = {
+        sphere: path({ type: 'Sphere' }) || 'M0 0',
+        grat: path(this._grat) || 'M0 0',
+        land: path(this._land) || 'M0 0',
+        out: st.lines ? (path({ type: 'MultiLineString', coordinates: lines('out') }) || 'M0 0') : 'M0 0',
+        inn: st.lines ? (path({ type: 'MultiLineString', coordinates: lines('in') }) || 'M0 0') : 'M0 0',
+        lineOp: 0.42,
+        nidOn: vis(NID), nx: pc(np[0]), ny: pc(np[1]),
+        pts: shown.map((r, i) => ({ r: r, i: i })).filter(o => vis([o.r.lon, o.r.lat])).map(o => {
+          const p = proj([o.r.lon, o.r.lat]);
+          return {
+            x: pc(p[0]), y: pc(p[1]), color: o.r.dir === 'out' ? '#36775B' : '#C2624C',
+            delay: Math.min(900, Math.round(o.r.km / 9)),
+            tip: o.r.sv + ' · ' + o.r.place + ', ' + o.r.country + ' · ' + this.num(o.r.km) + ' km · ' + o.r.year,
+            enter: () => this.setState({ focus: o.i })
+          };
+        })
+      };
+    }
+
+    const outs = recs.filter(r => r.dir === 'out'), ins = recs.filter(r => r.dir === 'in');
+    const kms = shown.map(r => r.km).sort((a, b) => a - b);
+    const far = shown.slice().sort((a, b) => b.km - a.km);
+    const fr = st.focus >= 0 && st.focus < shown.length ? shown[st.focus] : null;
+    const focus = fr ? {
+      kicker: fr.dir === 'out' ? 'Märkt på Nidingen' : 'Märkt utomlands',
+      title: fr.sv + ' — ' + this.num(fr.km) + ' km',
+      text: (fr.dir === 'out' ? 'Hittad vid ' : 'Märkt vid ') + fr.place + ', ' + fr.country + ' år ' + fr.year + (fr.dir === 'out' ? ', ' + this.num(fr.days) + ' dagar efter märkningen.' : ', fångad på Nidingen.')
+    } : far.length ? {
+      kicker: 'Längst bort i urvalet',
+      title: far[0].sv + ' — ' + this.num(far[0].km) + ' km',
+      text: far[0].place + ', ' + far[0].country + ' (' + far[0].year + '). Håll muspekaren över en prick för detaljer.'
+    } : { kicker: 'Inga återfynd', title: 'Inget att visa', text: 'Prova en längre period eller en annan art.' };
+
+    const cc = {};
+    shown.forEach(r => { cc[r.country] = (cc[r.country] || 0) + 1; });
+    const cl = Object.keys(cc).map(k => [k, cc[k]]).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const cmax = cl.length ? cl[0][1] : 1;
+
+    return {
+      art: st.art,
+      artOpts: [{ v: 'ALLA', label: 'Alla arter' }].concat(this.SP().map(s => ({ v: s[0], label: s[1] }))),
+      onArt: e => this.bump({ art: e.target.value }),
+      ranges: [['all', '1980–2025'], ['r25', '2000–2025'], ['r10', '2016–2025']].map(o => ({ label: o[1], on: st.rg === o[0], pick: () => this.bump({ rg: o[0] }) })),
+      dirs: [['both', 'Båda'], ['out', 'Utgående'], ['in', 'Inkommande']].map(o => ({ label: o[1], on: st.dir === o[0], pick: () => this.bump({ dir: o[0] }) })),
+      lines: st.lines, toggleLines: () => this.setState({ lines: !st.lines }),
+      ready: !!d3, notReady: !d3,
+      g: g, ptCls: st.flip ? 'ptA' : 'ptB',
+      stageCls: st.drag ? 'stage drag' : 'stage',
+      onDown: e => {
+        if (this._raf) cancelAnimationFrame(this._raf);
+        if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId);
+        const b = e.currentTarget.getBoundingClientRect();
+        this.setState({ drag: { x: e.clientX, y: e.clientY, rx: this.state.rx, ry: this.state.ry, k: 600 / b.width } });
+      },
+      onDrag: e => {
+        const dg = this.state.drag;
+        if (!dg) return;
+        const f = 0.32 * dg.k / this.state.zoom;
+        this.setState({ rx: dg.rx + (e.clientX - dg.x) * f, ry: Math.max(-75, Math.min(75, dg.ry - (e.clientY - dg.y) * f)) });
+      },
+      onUp: () => { if (this.state.drag) this.setState({ drag: null }); },
+      zoomIn: () => this.setState({ zoom: Math.min(4, this.state.zoom * 1.4) }),
+      zoomOut: () => this.setState({ zoom: Math.max(0.8, this.state.zoom / 1.4) }),
+      home: () => { this.setState({ zoom: 1.6 }); this.flyTo(11.9, 50, 900); },
+      focus: focus,
+      sum: {
+        out: this.num(outs.length), inn: this.num(ins.length),
+        max: far.length ? this.num(far[0].km) + ' km' : '–',
+        med: kms.length ? this.num(kms[Math.floor(kms.length / 2)]) + ' km' : '–'
+      },
+      countries: cl.map(c => ({ name: c[0], n: c[1], w: (c[1] / cmax * 100).toFixed(1) })),
+      longest: far.slice(0, 5).map(r => ({
+        sv: r.sv, km: this.num(r.km) + ' km', where: r.place + ', ' + r.country, when: String(r.year),
+        fly: () => { this.setState({ focus: shown.indexOf(r) }); this.flyTo((r.lon + 11.9) / 2, (r.lat + 57.3) / 2, 1100); }
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

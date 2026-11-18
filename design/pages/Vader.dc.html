@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Väder — Nidingens Fågelstation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2F6B50}a:hover{color:#234F3C}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:999px;background:#D4D6CF}
+.seg button{all:unset;cursor:pointer;min-height:40px;padding:0 15px;border-radius:999px;font:500 14px/40px 'Hanken Grotesk',system-ui,sans-serif;color:#35423B;transition:background .2s,color .2s}
+.seg button:hover{background:#C8CCC4;color:#1D2923}
+.seg button[aria-pressed="true"]{background:#1D2923;color:#fff}
+.chip{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border-radius:999px;border:1.5px solid #C2CDBE;background:#FFFFFF;font:500 14px 'Hanken Grotesk',system-ui,sans-serif;color:#35423B;transition:background .2s,border-color .2s}
+.chip[aria-pressed="true"]{border-color:#1D2923;background:#1D2923;color:#fff}
+.seg button:focus-visible,.chip:focus-visible,.sel:focus-visible{outline:2px solid #36775B;outline-offset:2px}
+.sel{min-height:42px;padding:0 36px 0 14px;border-radius:999px;border:1px solid #C2CDBE;background:#FFFFFF;font:500 14px 'Hanken Grotesk',system-ui,sans-serif;color:#1D2923}
+.track{animation:tin .5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes tin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.wipeA{animation:wipeA 1s cubic-bezier(.3,.7,.2,1) both}
+.wipeB{animation:wipeB 1s cubic-bezier(.3,.7,.2,1) both}
+@keyframes wipeA{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes wipeB{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #E8E7E3; color: #1D2923; font-family: 'Hanken Grotesk', system-ui, sans-serif">
+  <dc-import name="Nav" active="Väder" hint-size="100%,96px"></dc-import>
+
+  <header style="max-width: 1280px; margin: 0 auto; padding: 40px 32px 24px">
+    <h1 style="margin: 0; font-size: clamp(36px, 4.6vw, 54px); line-height: 1.02; letter-spacing: -0.03em; font-weight: 800">Väder</h1>
+    <p style="margin: 12px 0 0; max-width: 720px; font-size: 18px; line-height: 1.55; color: #3F4B44">Väder från SMHI:s station Nidingen A, dag för dag bredvid fångsten. Ser du toppar i fångsten efter ostliga vindar eller en passerande front?</p>
+  </header>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 0 32px">
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px 18px; border-radius: 18px; background: #FFFFFF; border: 1px solid #D5DDD2">
+      <div style="display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center">
+        
+        <span style="font-size: 14px; font-weight: 600">Säsong</span>
+        <div class="seg" role="group" aria-label="Säsong">
+          <sc-for list="{{seasons}}" as="o" hint-placeholder-count="3"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for>
+        </div>
+        <label for="w-year" style="font-size: 14px; font-weight: 600; margin-left: 8px">År</label>
+        <select id="w-year" class="sel" value="{{year}}" onChange="{{onYear}}">
+          <sc-for list="{{yearOpts}}" as="o" hint-placeholder-count="16"><option value="{{o.v}}">{{o.v}}</option></sc-for>
+        </select>
+        <label for="w-art" style="font-size: 14px; font-weight: 600; margin-left: 8px">Fångst av</label>
+        <select id="w-art" class="sel" value="{{art}}" onChange="{{onArt}}">
+          <sc-for list="{{artOpts}}" as="o" hint-placeholder-count="16"><option value="{{o.v}}">{{o.label}}</option></sc-for>
+        </select>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+        <span style="font-size: 14px; font-weight: 600; margin-right: 6px">Visa</span>
+        <sc-for list="{{varChips}}" as="v" hint-placeholder-count="6">
+          <button type="button" class="chip" aria-pressed="{{v.on}}" onClick="{{v.pick}}"><span style="width: 10px; height: 10px; border-radius: 3px; background: {{v.color}}"></span>{{v.label}}</button>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 20px 32px 0; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+    <article style="flex: 999 1 640px; min-width: 0; background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 20px; padding: 18px 20px 14px; display: flex; flex-direction: column; gap: 6px">
+      <sc-for list="{{tracks}}" as="t" hint-placeholder-count="5">
+        <div class="track" style="display: grid; grid-template-columns: 128px 1fr; gap: 14px; align-items: stretch; padding: 8px 0; border-bottom: 1px solid #EEF2EC; animation-delay: {{t.delay}}ms">
+          <div style="display: flex; flex-direction: column; justify-content: center; gap: 2px">
+            <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 700"><span style="width: 10px; height: 10px; border-radius: 3px; background: {{t.color}}"></span>{{t.label}}</span>
+            <span class="mono" style="font-size: 17px; font-weight: 500">{{t.value}}</span>
+            <span class="mono" style="font-size: 11px; color: #53605A">{{t.range}}</span>
+          </div>
+          <div style="position: relative; height: {{t.h}}px">
+            <sc-if value="{{t.isArrows}}" hint-placeholder-val="{{false}}">
+              <div style="position: absolute; inset: 0; display: flex; align-items: center">
+                <sc-for list="{{t.arrows}}" as="a" hint-placeholder-count="60">
+                  <span style="flex: 1 1 0; display: flex; justify-content: center"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" style="transform: rotate({{a.rot}}deg); opacity: {{a.op}}"><path d="M7 1.5v11M3.5 9L7 12.5 10.5 9" fill="none" stroke="#1D2923" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{t.isChart}}" hint-placeholder-val="{{true}}">
+              <svg class="{{wipe}}" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible">
+                <path d="{{t.area}}" fill="{{t.color}}" fill-opacity="{{t.areaOp}}" stroke="none"></path>
+                <path d="{{t.line}}" fill="none" stroke="{{t.color}}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+              </svg>
+            </sc-if>
+            <div style="position: absolute; top: -8px; bottom: -8px; left: {{hx}}%; border-left: 1.5px solid #1D2923; pointer-events: none; transition: left .08s linear"></div>
+            <div onMouseMove="{{onMove}}" onMouseLeave="{{onLeave}}" style="position: absolute; inset: -8px 0; cursor: crosshair"></div>
+          </div>
+        </div>
+      </sc-for>
+      <div style="display: grid; grid-template-columns: 128px 1fr; gap: 14px">
+        <span></span>
+        <div style="position: relative; height: 18px">
+          <sc-for list="{{xl}}" as="x" hint-placeholder-count="6"><span class="mono" style="position: absolute; left: {{x.left}}%; font-size: 11px; color: #53605A; border-left: 1px solid #D5DDD2; padding-left: 4px">{{x.label}}</span></sc-for>
+        </div>
+      </div>
+    </article>
+
+    <aside style="flex: 1 1 280px; position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px">
+      <div style="background: #1D2923; color: #FFFFFF; border-radius: 20px; padding: 20px 22px; display: flex; flex-direction: column; gap: 14px">
+        <div>
+          <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #C2CDBE">{{read.kicker}}</div>
+          <div style="font-size: 26px; font-weight: 700; letter-spacing: -0.01em; margin-top: 2px">{{read.date}}</div>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px"><span class="mono" style="font-size: 40px; font-weight: 500; line-height: 1">{{read.catch}}</span><span style="font-size: 14px; color: #DDE7DA">{{read.catchLabel}}</span></div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; padding-top: 12px; border-top: 1px solid #3A4A40">
+          <sc-for list="{{read.rows}}" as="r" hint-placeholder-count="6">
+            <div><div style="font-size: 12px; color: #C2CDBE">{{r.label}}</div><div class="mono" style="font-size: 16px">{{r.v}}</div></div>
+          </sc-for>
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #53605A">Rör muspekaren över diagrammen. Utan markering visas säsongens fångstrikaste dag.</p>
+    </aside>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 20px 32px 96px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 20px">
+    <article style="background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 20px; padding: 22px 24px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 20px; font-weight: 700">Fångst per vindriktning</h2>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #53605A">Genomsnittlig fångst per dag, grupperat efter varifrån det blåste. {{rose.insight}}</p>
+      <div style="position: relative; width: 100%; max-width: 380px; margin: 4px auto 0; aspect-ratio: 1 / 1">
+        <svg viewBox="0 0 400 400" role="img" aria-label="Vindros med genomsnittlig fångst per vindriktning" style="position: absolute; inset: 0; width: 100%; height: 100%">
+          <path d="{{rose.grid}}" fill="none" stroke="#DDE7DA" stroke-width="1"></path>
+          <path class="{{wipe}}" d="{{rose.wedges}}" fill="#7FB496" stroke="#FFFFFF" stroke-width="2"></path>
+          <path d="{{rose.top}}" fill="#C2624C" stroke="#FFFFFF" stroke-width="2"></path>
+        </svg>
+        <sc-for list="{{rose.labels}}" as="l" hint-placeholder-count="8"><span style="position: absolute; left: {{l.x}}%; top: {{l.y}}%; transform: translate(-50%, -50%); font-size: 13px; font-weight: 700">{{l.label}}</span></sc-for>
+      </div>
+    </article>
+    <article style="background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 20px; padding: 22px 24px; display: flex; flex-direction: column; gap: 10px">
+      <h2 style="margin: 0; font-size: 20px; font-weight: 700">Säsongens bästa fångstdagar</h2>
+      <div style="overflow-x: auto">
+        <div style="min-width: 440px">
+          <div style="display: grid; grid-template-columns: 1.2fr repeat(4, minmax(0, 1fr)); gap: 10px; padding: 6px 0; font-size: 11.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #53605A"><span>Datum</span><span style="text-align: right">Fångst</span><span style="text-align: right">Vind</span><span style="text-align: right">Temp</span><span style="text-align: right">Tryck</span></div>
+          <sc-for list="{{best}}" as="b" hint-placeholder-count="6">
+            <div style="display: grid; grid-template-columns: 1.2fr repeat(4, minmax(0, 1fr)); gap: 10px; padding: 10px 0; border-top: 1px solid #E3E9DF; font-size: 14.5px; align-items: center">
+              <span style="font-weight: 600">{{b.date}}</span><span class="mono" style="text-align: right; font-weight: 500">{{b.c}}</span><span class="mono" style="text-align: right">{{b.wind}}</span><span class="mono" style="text-align: right">{{b.t}}</span><span class="mono" style="text-align: right">{{b.p}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: #53605A">Illustrativ data. Väder i produktion: SMHI Nidingen A, luckor fyllda från Vinga A.</p>
+    </article>
+  </section>
+
+  <dc-import name="Footer" hint-size="100%,80px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2150}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { se: 'host', year: '2025', art: 'ALLA', vars: { temp: true, vind: true, rikt: true, tryck: true, regn: false, sikt: false }, hover: -1, flip: false };
+  }
+  SP() {
+    return [
+      ['ALLA', 'Alla arter', 8600, .32, 112, 18, 262, 30], ['RÖHAK', 'Rödhake', 1500, .32, 105, 10, 278, 13],
+      ['LÖSÅN', 'Lövsångare', 1100, .42, 133, 9, 228, 12], ['KUFÅG', 'Kungsfågel', 1000, .15, 98, 10, 287, 12],
+      ['ÄNPIP', 'Ängspiplärka', 700, .3, 100, 9, 262, 12], ['GRSÅN', 'Gransångare', 520, .25, 100, 9, 280, 14],
+      ['SVHÄT', 'Svarthätta', 480, .3, 128, 9, 262, 14], ['TRSÅN', 'Trädgårdssångare', 380, .35, 140, 8, 235, 12],
+      ['TATRA', 'Taltrast', 340, .3, 100, 10, 270, 13], ['KOTRA', 'Koltrast', 300, .3, 85, 12, 295, 14],
+      ['RÖTRA', 'Rödvingetrast', 290, .25, 105, 9, 290, 12], ['BOFIN', 'Bofink', 260, .35, 100, 9, 275, 13],
+      ['JÄSPA', 'Järnsparv', 240, .3, 95, 9, 270, 12], ['BLMES', 'Blåmes', 200, .2, 95, 10, 285, 15],
+      ['SKPIP', 'Skärpiplärka', 160, .35, 88, 10, 292, 14], ['LASVA', 'Ladusvala', 150, .3, 140, 10, 240, 12]
+    ].map((a, i) => ({ id: a[0], sv: a[1], base: a[2], share: a[3], p1: a[4], s1: a[5], p2: a[6], s2: a[7], seed: 7 + i * 19 }));
+  }
+  rng(seed) {
+    let s = seed >>> 0;
+    return function () {
+      s = (s + 0x6D2B79F5) >>> 0;
+      let t = s;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  gauss(r) { let u = 0; while (u === 0) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); }
+  weather() {
+    const yr = parseInt(this.state.year, 10);
+    this._wc = this._wc || {};
+    if (this._wc[yr]) return this._wc[yr];
+    const r = this.rng(yr * 7 + 3), out = [];
+    let p = 1012, ta = 0, dd = 225;
+    for (let d = 1; d <= 365; d++) {
+      p = 1012 + 0.82 * (p - 1012) + 4.2 * this.gauss(r);
+      ta = 0.7 * ta + 1.4 * this.gauss(r);
+      const t = 8.5 - 8.8 * Math.cos(2 * Math.PI * (d - 25) / 365) + ta;
+      dd = (0.6 * dd + 0.4 * (225 - (p - 1012) * 7) + 28 * this.gauss(r) + 360) % 360;
+      const v = Math.max(1, Math.min(22, 6.5 + (1013 - p) * 0.28 + Math.abs(this.gauss(r)) * 2.4));
+      const rain = p < 1006 && r() < 0.65 ? Math.round(Math.pow(r(), 1.8) * 18 * 10) / 10 : (r() < 0.12 ? Math.round(r() * 3 * 10) / 10 : 0);
+      const sikt = Math.max(1, Math.min(50, 38 - rain * 2.2 - (v < 3 ? 14 * r() : 0) + 6 * this.gauss(r)));
+      out.push({ d: d, t: t, p: p, v: v, dir: dd, rain: rain, sikt: sikt });
+    }
+    this._wc[yr] = out;
+    return out;
+  }
+  catchFor(sp) {
+    const key = sp.id + this.state.year;
+    this._cc = this._cc || {};
+    if (this._cc[key]) return this._cc[key];
+    const W = this.weather(), r = this.rng(sp.seed * 53 + parseInt(this.state.year, 10));
+    const g = (x, m, s) => Math.exp(-0.5 * ((x - m) / s) * ((x - m) / s)) / s;
+    const out = W.map(w => {
+      const d = w.d;
+      if (!((d >= 74 && d <= 166) || (d >= 196 && d <= 319))) return 0;
+      const base = sp.base * (sp.share * g(d, sp.p1, sp.s1) + (1 - sp.share) * g(d, sp.p2, sp.s2));
+      const east = Math.cos((w.dir - 90) * Math.PI / 180);
+      let f = Math.exp(0.7 * east) * (w.v > 12 ? 0.35 : w.v > 9 ? 0.7 : 1) * (w.rain > 3 ? 0.4 : 1);
+      return Math.max(0, Math.round(base * f * Math.exp(0.45 * this.gauss(r))));
+    });
+    this._cc[key] = out;
+    return out;
+  }
+  date(d) { const mn = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']; const dt = new Date(Date.UTC(parseInt(this.state.year, 10), 0, d)); return dt.getUTCDate() + ' ' + mn[dt.getUTCMonth()]; }
+  dirName(deg) { return ['N', 'NO', 'Ö', 'SO', 'S', 'SV', 'V', 'NV'][Math.round(((deg % 360) + 360) % 360 / 45) % 8]; }
+  f1(n) { return (n < 0 ? '−' : '') + Math.abs(n).toFixed(1).replace('.', ','); }
+  num(n) { return Math.round(n).toLocaleString('sv-SE'); }
+  renderVals() {
+    const st = this.state;
+    const per = { var: [74, 151, 'Våren'], sommar: [152, 243, 'Sommaren'], host: [244, 319, 'Hösten'] }[st.se];
+    const W = this.weather().slice(per[0] - 1, per[1]);
+    const sps = this.SP();
+    const sp = sps.find(s => s.id === st.art) || sps[0];
+    const C = this.catchFor(sp).slice(per[0] - 1, per[1]);
+    const N = W.length;
+    this._n = N;
+    let best = 0;
+    C.forEach((c, i) => { if (c > C[best]) best = i; });
+    const hv = st.hover >= 0 && st.hover < N ? st.hover : best;
+    const X = i => (i + 0.5) / N * 1000;
+
+    const lineTrack = (vals, color, lo, hi, areaOp) => {
+      const Y = v => (100 - (v - lo) / (hi - lo) * 92 - 4).toFixed(1);
+      const pts = vals.map((v, i) => X(i).toFixed(1) + ' ' + Y(v));
+      return { line: 'M' + pts.join('L'), area: areaOp ? 'M' + X(0).toFixed(1) + ' 100L' + pts.join('L') + 'L' + X(N - 1).toFixed(1) + ' 100Z' : 'M0 0', color: color, areaOp: areaOp || 0 };
+    };
+    const barTrack = (vals, color, hi) => {
+      const bw = 1000 / N, w = bw * (N > 60 ? 0.8 : 0.66);
+      let d = '';
+      vals.forEach((v, i) => { if (v > 0) d += 'M' + (X(i) - w / 2).toFixed(1) + ' ' + (100 - v / hi * 96).toFixed(1) + 'h' + w.toFixed(2) + 'V100h' + (-w).toFixed(2) + 'Z'; });
+      return { line: 'M0 0', area: d || 'M0 0', color: color, areaOp: 0.85 };
+    };
+    const mm = a => [Math.min.apply(null, a), Math.max.apply(null, a)];
+    const defs = [
+      { key: 'fangst', label: 'Fångst', color: '#36775B', h: 110, always: true, build: () => barTrack(C, '#36775B', Math.max(1, Math.max.apply(null, C))), value: i => this.num(C[i]) + ' st', range: 'max ' + this.num(Math.max.apply(null, C)) },
+      { key: 'temp', label: 'Temperatur', color: '#C2624C', h: 80, build: () => { const m = mm(W.map(w => w.t)); return lineTrack(W.map(w => w.t), '#C2624C', m[0] - 1, m[1] + 1, 0); }, value: i => this.f1(W[i].t) + ' °C', range: (() => { const m = mm(W.map(w => w.t)); return this.f1(m[0]) + ' till ' + this.f1(m[1]); })() },
+      { key: 'vind', label: 'Vindstyrka', color: '#6595B6', h: 80, build: () => lineTrack(W.map(w => w.v), '#6595B6', 0, 24, 0.18), value: i => this.f1(W[i].v) + ' m/s', range: '0–24 m/s' },
+      { key: 'rikt', label: 'Vindriktning', color: '#1D2923', h: 34, arrows: true, value: i => this.dirName(W[i].dir) + ' (' + Math.round(W[i].dir) + '°)', range: 'pil = vart det blåser' },
+      { key: 'tryck', label: 'Lufttryck', color: '#7E6AA6', h: 80, build: () => { const m = mm(W.map(w => w.p)); return lineTrack(W.map(w => w.p), '#7E6AA6', m[0] - 2, m[1] + 2, 0); }, value: i => this.num(W[i].p) + ' hPa', range: (() => { const m = mm(W.map(w => w.p)); return this.num(m[0]) + '–' + this.num(m[1]); })() },
+      { key: 'regn', label: 'Nederbörd', color: '#6595B6', h: 70, build: () => barTrack(W.map(w => w.rain), '#7FB496', 20), value: i => this.f1(W[i].rain) + ' mm', range: 'per dygn' },
+      { key: 'sikt', label: 'Sikt', color: '#6C7A72', h: 70, build: () => lineTrack(W.map(w => w.sikt), '#6C7A72', 0, 50, 0.1), value: i => this.num(W[i].sikt) + ' km', range: '0–50 km' }
+    ];
+    const tracks = defs.filter(d => d.always || st.vars[d.key]).map((d, k) => {
+      const base = { label: d.label, color: d.color, h: d.h, delay: k * 60, value: d.value(hv), range: d.range, isArrows: !!d.arrows, isChart: !d.arrows, arrows: [], line: 'M0 0', area: 'M0 0', areaOp: 0 };
+      if (d.arrows) {
+        const step = N > 70 ? 2 : 1;
+        base.arrows = W.filter((w, i) => i % step === 0).map(w => ({ rot: Math.round(w.dir + 180) % 360, op: (0.35 + Math.min(1, w.v / 14) * 0.65).toFixed(2) }));
+      } else Object.assign(base, d.build());
+      return base;
+    });
+    const mstarts = [[60, 'mar'], [91, 'apr'], [121, 'maj'], [152, 'jun'], [182, 'jul'], [213, 'aug'], [244, 'sep'], [274, 'okt'], [305, 'nov']];
+    const xl = mstarts.filter(m => m[0] >= per[0] && m[0] <= per[1]).map(m => ({ left: ((m[0] - per[0] + 0.5) / N * 100).toFixed(2), label: m[1] }));
+
+    const w = W[hv];
+    const read = {
+      kicker: st.hover >= 0 ? 'Vald dag' : 'Fångstrikaste dagen',
+      date: this.date(w.d) + ' ' + st.year,
+      catch: this.num(C[hv]), catchLabel: sp.id === 'ALLA' ? 'fåglar ringmärkta' : sp.sv.toLowerCase() + ' ringmärkta',
+      rows: [
+        { label: 'Temperatur', v: this.f1(w.t) + ' °C' }, { label: 'Vind', v: this.f1(w.v) + ' m/s ' + this.dirName(w.dir) },
+        { label: 'Lufttryck', v: this.num(w.p) + ' hPa' }, { label: 'Nederbörd', v: this.f1(w.rain) + ' mm' },
+        { label: 'Sikt', v: this.num(w.sikt) + ' km' }, { label: 'Dag i perioden', v: (hv + 1) + ' av ' + N }
+      ]
+    };
+
+    // wind rose
+    const sums = new Array(8).fill(0), cnt = new Array(8).fill(0);
+    W.forEach((x, i) => { if (C[i] > 0 || x.d >= 74) { const s = Math.round(x.dir / 45) % 8; sums[s] += C[i]; cnt[s]++; } });
+    const means = sums.map((s, i) => cnt[i] ? s / cnt[i] : 0);
+    const mmax = Math.max.apply(null, means) || 1;
+    let topI = 0;
+    means.forEach((m, i) => { if (m > means[topI]) topI = i; });
+    const wedge = (i, rr) => {
+      const a0 = (i * 45 - 20) * Math.PI / 180, a1 = (i * 45 + 20) * Math.PI / 180;
+      const p = a => [200 + rr * Math.sin(a), 200 - rr * Math.cos(a)];
+      const s = p(a0), e = p(a1);
+      return 'M200 200L' + s[0].toFixed(1) + ' ' + s[1].toFixed(1) + 'A' + rr.toFixed(1) + ' ' + rr.toFixed(1) + ' 0 0 1 ' + e[0].toFixed(1) + ' ' + e[1].toFixed(1) + 'Z';
+    };
+    let wedges = '', grid = '';
+    means.forEach((m, i) => { if (i !== topI && m > 0) wedges += wedge(i, 18 + Math.sqrt(m / mmax) * 142); });
+    [55, 110, 160].forEach(rr => { grid += 'M' + (200 - rr) + ' 200a' + rr + ' ' + rr + ' 0 1 0 ' + 2 * rr + ' 0a' + rr + ' ' + rr + ' 0 1 0 ' + (-2 * rr) + ' 0'; });
+    const names = ['N', 'NO', 'Ö', 'SO', 'S', 'SV', 'V', 'NV'];
+    const rose = {
+      grid: grid, wedges: wedges || 'M0 0', top: wedge(topI, 18 + 142),
+      labels: names.map((nm, i) => { const a = i * 45 * Math.PI / 180; return { label: nm, x: ((200 + 182 * Math.sin(a)) / 4).toFixed(2), y: ((200 - 182 * Math.cos(a)) / 4).toFixed(2) }; }),
+      insight: 'Flest fåglar per dag vid vind från ' + names[topI] + ' (' + this.num(means[topI]) + ' i snitt).'
+    };
+
+    const bestDays = C.map((c, i) => ({ c: c, i: i })).sort((a, b) => b.c - a.c).slice(0, 6).map(o => {
+      const x = W[o.i];
+      return { date: this.date(x.d), c: this.num(o.c), wind: this.dirName(x.dir) + ' ' + Math.round(x.v), t: this.f1(x.t) + '°', p: this.num(x.p) };
+    });
+
+    const varDefs = [['temp', 'Temperatur', '#C2624C'], ['vind', 'Vindstyrka', '#6595B6'], ['rikt', 'Vindriktning', '#1D2923'], ['tryck', 'Lufttryck', '#7E6AA6'], ['regn', 'Nederbörd', '#7FB496'], ['sikt', 'Sikt', '#6C7A72']];
+    return {
+      seasons: [['var', 'Vår'], ['sommar', 'Sommar'], ['host', 'Höst']].map(o => ({ label: o[1], on: st.se === o[0], pick: () => this.setState({ se: o[0], hover: -1, flip: !st.flip }) })),
+      year: st.year,
+      yearOpts: Array.from({ length: 16 }, (x, i) => ({ v: String(2025 - i) })),
+      onYear: e => this.setState({ year: e.target.value, hover: -1, flip: !st.flip }),
+      art: st.art, artOpts: sps.map(s => ({ v: s.id, label: s.sv })), onArt: e => this.setState({ art: e.target.value, hover: -1, flip: !st.flip }),
+      varChips: varDefs.map(v => ({ label: v[1], color: v[2], on: !!st.vars[v[0]], pick: () => { const nv = Object.assign({}, st.vars); nv[v[0]] = !nv[v[0]]; this.setState({ vars: nv }); } })),
+      tracks: tracks, xl: xl, read: read, rose: rose, best: bestDays,
+      hx: ((hv + 0.5) / N * 100).toFixed(2),
+      onMove: e => {
+        const b = e.currentTarget.getBoundingClientRect();
+        const i = Math.max(0, Math.min(this._n - 1, Math.floor((e.clientX - b.left) / b.width * this._n)));
+        if (i !== this.state.hover) this.setState({ hover: i });
+      },
+      onLeave: () => this.setState({ hover: -1 }),
+      wipe: st.flip ? 'wipeA' : 'wipeB'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Hem — Nidingens Fågelstation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2F6B50}a:hover{color:#234F3C}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.card{transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,border-color .25s}
+.card:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(29,41,35,.10);border-color:#A3B5A6}
+.card:focus-visible,.btn:focus-visible{outline:2px solid #36775B;outline-offset:3px}
+.hero-img{animation:heroIn 1.4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes heroIn{from{transform:scale(1.06);opacity:.4}to{transform:scale(1);opacity:1}}
+.rise{animation:rise .8s .25s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #E8E7E3; color: #1D2923; font-family: 'Hanken Grotesk', system-ui, sans-serif">
+  <dc-import name="Nav" active="Hem" hint-size="100%,96px"></dc-import>
+
+  <section style="position: relative; height: 680px; overflow: hidden; background: #9FB8C2">
+    <img class="hero-img" src="/_blob/1edd62a10926311f281cf855ad125cc9" alt="Flygfoto över Nidingen med fyrtornen, stationshusen och havet runt ön" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%">
+    <div style="position: relative; height: 100%; max-width: 1280px; margin: 0 auto; padding: 0 32px 40px; box-sizing: border-box; display: flex; align-items: flex-end">
+      <div class="rise" style="position: relative; max-width: 640px; border-radius: 28px; padding: 34px 36px; overflow: hidden; background: linear-gradient(135deg, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0.2) 100%); backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%); border: 1px solid rgba(255,255,255,0.6); box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(255,255,255,0.2), 0 18px 48px rgba(14,30,36,0.18)">
+        <span aria-hidden="true" style="position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(110% 70% at 0% 0%, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0) 58%), radial-gradient(60% 50% at 100% 100%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)"></span>
+        <div style="position: relative">
+        <p style="margin: 0 0 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #163226">Halland · Kattegatt</p>
+        <h1 style="margin: 0; font-size: clamp(40px, 5.6vw, 68px); line-height: 0.98; letter-spacing: -0.035em; font-weight: 800">Nidingens Fågelstation</h1>
+        <p style="margin: 14px 0 0; font-size: 21px; line-height: 1.4; color: #2A352F">Historisk ringmärkningsdata från 1980</p>
+        <div style="margin-top: 26px; display: flex; flex-wrap: wrap; gap: 10px">
+          <a class="btn" href="Sammanfattning.dc.html" style="display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 22px; border-radius: 999px; background: #1D2923; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 16px">Utforska datan
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg>
+          </a>
+          <a class="btn" href="Om.dc.html" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 999px; background: transparent; border: 1.5px solid #1D2923; color: #1D2923; text-decoration: none; font-weight: 600; font-size: 16px">Om webbplatsen</a>
+        </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 64px 32px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 40px; align-items: start">
+    <div>
+      <h2 style="margin: 0; font-size: 36px; line-height: 1.1; letter-spacing: -0.025em; font-weight: 700">46 år av ringmärkning på en ö i Kattegatt</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px; font-size: 18px; line-height: 1.6; color: #3F4B44">
+      <p style="margin: 0">Varje fågel som fångas på Nidingen vägs, mäts och ringmärks. Här kan du utforska hela materialet från 1980 och framåt: hur många fåglar som passerar, när de flyttar och var de hittas igen.</p>
+      <p style="margin: 0">Välj en eller flera arter för att jämföra dem sida vid sida.</p>
+    </div>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 24px 32px 40px">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: #D5DDD2; border: 1px solid #D5DDD2; border-radius: 18px; overflow: hidden;">
+      <div style="background: #FFFFFF; padding: 24px 26px"><div class="mono" style="font-size: 36px; font-weight: 500; letter-spacing: -0.02em">~396 000</div><div style="margin-top: 4px; font-size: 15px; color: #53605A">ringmärkta fåglar</div></div>
+      <div style="background: #FFFFFF; padding: 24px 26px"><div class="mono" style="font-size: 36px; font-weight: 500; letter-spacing: -0.02em">~54 000</div><div style="margin-top: 4px; font-size: 15px; color: #53605A">kontroller på ön</div></div>
+      <div style="background: #FFFFFF; padding: 24px 26px"><div class="mono" style="font-size: 36px; font-weight: 500; letter-spacing: -0.02em">~6 000</div><div style="margin-top: 4px; font-size: 15px; color: #53605A">återfynd världen över</div></div>
+      <div style="background: #FFFFFF; padding: 24px 26px"><div class="mono" style="font-size: 36px; font-weight: 500; letter-spacing: -0.02em">133</div><div style="margin-top: 4px; font-size: 15px; color: #53605A">arter i databasen</div></div>
+    </div>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 40px 32px 96px">
+    <h2 style="margin: 0 0 24px; font-size: 28px; letter-spacing: -0.02em; font-weight: 700">Vad vill du utforska?</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 16px">
+      <sc-for list="{{sections}}" as="s" hint-placeholder-count="7">
+        <a class="card" href="{{s.href}}" style="display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 20px; background: #FFFFFF; border: 1px solid #D5DDD2; text-decoration: none; color: #1D2923; min-height: 200px; box-sizing: border-box">
+          <span style="width: 52px; height: 52px; border-radius: 14px; background: #FFFFFF; border: 1.5px solid #1D2923; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#1D2923" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg>
+          </span>
+          <span style="font-size: 21px; font-weight: 700; letter-spacing: -0.01em">{{s.title}}</span>
+          <span style="font-size: 15.5px; line-height: 1.5; color: #3F4B44">{{s.text}}</span>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <dc-import name="Footer" hint-size="100%,80px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const blue = ['#DFECE4', '#36775B'], robin = ['#F6E2DC', '#A04A36'], yellow = ['#E4EFD0', '#4F6A28'], green = ['#E1ECF3', '#3E6D8F'];
+    return {
+      sections: [
+        { title: 'Sammanfattning', href: 'Sammanfattning.dc.html', tint: blue[0], ink: blue[1], icon: 'M4 23V13M10 23V7M16 23v-8M22 23V4', text: 'Nyckeltal, fångst över tid och vilka arter som ringmärks mest.' },
+        { title: 'Trender', href: 'Trender.dc.html', tint: robin[0], ink: robin[1], icon: 'M3 21l7-7 5 4 10-11M19 7h6v6', text: 'Ökar eller minskar arterna? Antalet ringmärkta fåglar år för år, med osäkerhet.' },
+        { title: 'Morfometri', href: 'Morfometri.dc.html', tint: green[0], ink: green[1], icon: 'M5 22h18M14 6v16M7 10h14M7 10l-3 7h6zM21 10l-3 7h6z', text: 'Vikt, vinglängd, ålder och kön. Hur ser fåglarna ut när de fångas här?' },
+        { title: 'Fenologi', href: 'Fenologi.dc.html', tint: yellow[0], ink: yellow[1], icon: 'M4 7h20v17H4zM4 12h20M9 4v5M19 4v5', text: 'När på året passerar arterna, och hur går årets säsong jämfört med tidigare?' },
+        { title: 'Återfynd', href: 'Aterfynd.dc.html', tint: blue[0], ink: blue[1], icon: 'M14 25s8-7.5 8-13a8 8 0 0 0-16 0c0 5.5 8 13 8 13zM14 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', text: 'Var hittas Nidingens fåglar, och varifrån kommer de som fångas här?' },
+        { title: 'Väder', href: 'Vader.dc.html', tint: robin[0], ink: robin[1], icon: 'M3 11h14a3 3 0 1 0-3-3M3 16h19a3 3 0 1 1-3 3M3 21h8', text: 'Vind, temperatur och tryck från SMHI Nidingen A, bredvid fångsten.' },
+        { title: 'Om webbplatsen', href: 'Om.dc.html', tint: green[0], ink: green[1], icon: 'M14 25a11 11 0 1 0 0-22 11 11 0 0 0 0 22zM14 13v7M14 9v.5', text: 'Vem sidan är till för, ordlista och vanliga frågor.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
