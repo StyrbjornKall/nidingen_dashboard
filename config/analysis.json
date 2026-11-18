@@ -29,6 +29,13 @@
   },
   "season_rule": "season = 'var' if month(date) <= 6 else 'host'. Defined by calendar month, so leap years need no special handling.",
   "season_scope": "The two seasons apply to every page, including Väder (decided 2026-11-18; the design's Vår / Sommar / Höst on Väder is dropped).",
+  "weather_window": {
+    "from_hour": 3,
+    "to_hour": 12,
+    "timezone": "Europe/Stockholm",
+    "rule": "Daily weather metrics use only the hourly observations from from_hour to to_hour inclusive, Swedish local time, when most birds are caught (72 % of new ringings with a recorded hour). Precipitation is a 1-hour sum ending at the timestamp, so it sums the hours ending after from_hour up to to_hour (04:00–12:00). Decided 2026-11-18.",
+    "note_sv": "Väderuppgifterna för en dag gäller bara kl. 03–12 svensk tid, då de flesta fåglarna fångas, inte hela dygnet. Temperatur, vind, lufttryck, sikt och molnighet är medelvärden (eller högsta och lägsta värde) av SMHI:s timvärden under de timmarna, och nederbörden är summan för samma tid. Dagens vindriktning är ett medelvärde där timmar med starkare vind väger tyngre."
+  },
   "trend_excluded_years": {
     "from": 1990,
     "to": 2004,

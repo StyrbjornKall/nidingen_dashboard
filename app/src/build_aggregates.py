@@ -28,6 +28,8 @@ Tables written (see HANDOFF.md §4.2 and .github/copilot-instructions.md):
 - ``agg_morph_hist``         species × season × variable × bin (50 bins)
 - ``agg_age_sex``            species × season × kind × raw category
 - ``agg_recoveries``         one row per recovery (outbound) or foreign bird (inbound)
+- ``agg_weather_daily``      one row per local date: SMHI weather, vector-mean
+                             wind direction, flags for values filled from Vinga A
 - ``euring_countries``       EURING country code → Swedish name
 - ``agg_build_info``         one row: build time and source coverage
 
@@ -76,6 +78,12 @@ HIST_HIGH_Q = 0.995
 # Nidingen bounding box: recoveries inside it are local, not movements.
 NIDINGEN_BBOX = {"lat": (57.25, 57.35), "lon": (11.85, 11.95)}
 
+# Parameters that fetch_smhi_weather.py fills from Vinga A where Nidingen has none.
+VINGA_FILLED = ("precipitation", "pressure", "visibility")
+# The quality-checked SMHI archive reports visibility up to 75 km; SMHI's
+# recent, unchecked feed also uses 99 999 m. Cap at the archive maximum.
+MAX_VISIBILITY_M = 75000
+
 AGG_TABLES = [
     "agg_species",
     "agg_counts_day",
@@ -88,6 +96,7 @@ AGG_TABLES = [
     "agg_morph_hist",
     "agg_age_sex",
     "agg_recoveries",
+    "agg_weather_daily",
     "euring_countries",
     "agg_build_info",
 ]
@@ -115,6 +124,9 @@ def validate_config(config: dict[str, Any]) -> None:
     gap = config["trend_excluded_years"]
     if gap["from"] > gap["to"]:
         raise ValueError("trend_excluded_years.from must be <= to")
+    window = config.get("weather_window") or {}
+    if not 0 <= window.get("from_hour", -1) < window.get("to_hour", -1) <= 23 or not window.get("timezone"):
+        raise ValueError("weather_window needs from_hour < to_hour (0–23) and a timezone")
     for key in ("median_min_birds", "single_season_threshold", "period_options"):
         if key not in config:
             raise ValueError(f"config is missing '{key}'")
@@ -630,7 +642,13 @@ def _build_recoveries(con, countries: list[tuple[str, str]]) -> None:
     # met at Nidingen, at its first encounter (the point is the ringing site).
     con.execute(f"""
         CREATE OR REPLACE TABLE agg_recoveries AS
-        WITH outbound AS (
+        WITH ringing AS (
+            -- A handful of rings appear twice in ringon; use the first ringing.
+            SELECT ring_number, centre,
+                   min(date) AS date, arg_min(species_code, date) AS species_code
+            FROM ringon GROUP BY ring_number, centre
+        ),
+        outbound AS (
             SELECT
                 'out'              AS direction,
                 r.species_code     AS species,
@@ -647,7 +665,7 @@ def _build_recoveries(con, countries: list[tuple[str, str]]) -> None:
                 f.bearing_deg,
                 NULLIF(trim(f.find_type), '') AS find_type
             FROM fynd f
-            JOIN ringon r ON r.ring_number = f.ring_number AND r.centre = f.centre
+            JOIN ringing r ON r.ring_number = f.ring_number AND r.centre = f.centre
             WHERE f.latitude IS NOT NULL AND f.longitude IS NOT NULL
               AND {outside('f.latitude', 'f.longitude')}
         ),
@@ -697,6 +715,118 @@ def _build_recoveries(con, countries: list[tuple[str, str]]) -> None:
     """)
 
 
+def _table_exists(con, name: str) -> bool:
+    return bool(con.execute(
+        "SELECT count(*) FROM information_schema.tables WHERE table_name = ?", [name]
+    ).fetchone()[0])
+
+
+def _build_weather_daily(con, config) -> None:
+    """Daily weather from the hourly Nidingen A table (already gap-filled).
+
+    Only the hours when birds are caught count: ``weather_window`` in
+    config (03:00–12:00 Swedish time). Instantaneous values and means use the
+    observations from ``from_hour`` to ``to_hour`` inclusive. Precipitation is
+    a one-hour sum ending at the timestamp, so it uses the hours ending after
+    ``from_hour`` up to ``to_hour`` (04:00–12:00 covers 03–12). Every date
+    still gets a row; metrics are NULL when no hour falls in the window.
+
+    ``weather_daily`` cannot be used for this: it covers whole days, groups
+    hours by the build machine's time zone, averages wind direction
+    arithmetically, and its ``vinga_gap_fill_used`` flag is always FALSE.
+    Here a value counts as "from Vinga" when most of that day's window values
+    equal Vinga A's and most of that year's do too (single matches on capped
+    visibility in years before the fill would otherwise count).
+    """
+    columns = """
+        date DATE, year INTEGER, doy INTEGER, season VARCHAR,
+        temp_mean DOUBLE, temp_min DOUBLE, temp_max DOUBLE,
+        wind_speed DOUBLE, wind_dir DOUBLE, gust_max DOUBLE,
+        humidity DOUBLE, precipitation DOUBLE, pressure DOUBLE,
+        visibility_km DOUBLE, cloud_cover DOUBLE, n_obs INTEGER,
+        precipitation_from_vinga BOOLEAN, pressure_from_vinga BOOLEAN,
+        visibility_from_vinga BOOLEAN, is_gap_year BOOLEAN
+    """
+    if not (_table_exists(con, "weather_data") and _table_exists(con, "weather_data_vinga")):
+        con.execute(f"CREATE OR REPLACE TABLE agg_weather_daily ({columns})")
+        print("  note: weather_data / weather_data_vinga missing; agg_weather_daily is empty")
+        return
+
+    window = config["weather_window"]
+    tz = window["timezone"]
+    t_from = f"TIME '{int(window['from_hour']):02d}:00'"
+    t_to = f"TIME '{int(window['to_hour']):02d}:00'"
+    # Which hours count for each metric (see the docstring).
+    in_window = {p: "in_window" for p in VINGA_FILLED}
+    in_window["precipitation"] = "in_precip_window"
+    same = ",\n".join(
+        f"count({p}) FILTER (WHERE {in_window[p]}) AS n_{p}, "
+        f"count(*) FILTER (WHERE {in_window[p]} AND {p} = v_{p}) AS same_{p}"
+        for p in VINGA_FILLED
+    )
+    flags = ",\n".join(
+        f"(n_{p} > 0 AND same_{p} * 2 > n_{p} "
+        f"AND sum(same_{p}) OVER yr * 2 > sum(n_{p}) OVER yr) AS {p}_from_vinga"
+        for p in VINGA_FILLED
+    )
+    con.execute(f"""
+        CREATE OR REPLACE TABLE agg_weather_daily AS
+        WITH local AS (
+            SELECT timezone('{tz}', n.observation_time) AS t, n.*,
+                   v.precipitation AS v_precipitation, v.pressure AS v_pressure,
+                   v.visibility AS v_visibility
+            FROM weather_data n
+            LEFT JOIN weather_data_vinga v USING (observation_time)
+        ),
+        h AS (
+            SELECT CAST(t AS DATE) AS date,
+                   CAST(t AS TIME) BETWEEN {t_from} AND {t_to} AS in_window,
+                   CAST(t AS TIME) > {t_from} AND CAST(t AS TIME) <= {t_to} AS in_precip_window,
+                   temperature, wind_speed, wind_direction, gust_wind,
+                   humidity, precipitation, pressure, visibility, cloud_cover,
+                   v_precipitation, v_pressure, v_visibility
+            FROM local
+        ),
+        d AS (
+            SELECT
+                date,
+                avg(temperature) FILTER (WHERE in_window) AS temp_mean,
+                min(temperature) FILTER (WHERE in_window) AS temp_min,
+                max(temperature) FILTER (WHERE in_window) AS temp_max,
+                avg(wind_speed)  FILTER (WHERE in_window) AS wind_speed,
+                -- Speed-weighted vector mean, so 350° and 10° average to 0°, not 180°.
+                avg(wind_speed * sin(radians(wind_direction))) FILTER (WHERE in_window) AS u,
+                avg(wind_speed * cos(radians(wind_direction))) FILTER (WHERE in_window) AS w,
+                max(gust_wind)   FILTER (WHERE in_window) AS gust_max,
+                avg(humidity)    FILTER (WHERE in_window) AS humidity,
+                sum(precipitation) FILTER (WHERE in_precip_window) AS precipitation,
+                avg(pressure)    FILTER (WHERE in_window) AS pressure,
+                avg(least(visibility, {MAX_VISIBILITY_M})) FILTER (WHERE in_window) / 1000 AS visibility_km,
+                -- Values above 100 are SMHI codes for an obscured sky.
+                avg(least(cloud_cover, 100)) FILTER (WHERE in_window) AS cloud_cover,
+                count(temperature) FILTER (WHERE in_window) AS n_obs,
+                {same}
+            FROM h
+            GROUP BY date
+        )
+        SELECT
+            date,
+            CAST(year(date) AS INTEGER) AS year,
+            CAST({_doy_sql('date')} AS INTEGER) AS doy,
+            {_season_sql(config, 'month(date)')} AS season,
+            temp_mean, temp_min, temp_max, wind_speed,
+            CASE WHEN u IS NULL OR (u = 0 AND w = 0) THEN NULL
+                 ELSE (degrees(atan2(u, w)) + 360) % 360 END AS wind_dir,
+            gust_max, humidity, precipitation, pressure, visibility_km, cloud_cover,
+            CAST(n_obs AS INTEGER) AS n_obs,
+            {flags},
+            {_gap_sql(config, 'year(date)')} AS is_gap_year
+        FROM d
+        WINDOW yr AS (PARTITION BY year(date))
+        ORDER BY date
+    """)
+
+
 def _build_info(con, config, countries) -> None:
     has_weather = bool(con.execute(
         "SELECT count(*) FROM information_schema.tables WHERE table_name = 'weather_daily'"
@@ -732,6 +862,7 @@ def build_all(
         _build_trend(con, config)
         _build_morphometrics(con, config)
         _build_recoveries(con, countries)
+        _build_weather_daily(con, config)
         _build_info(con, config, countries)
         con.execute("COMMIT")
     except Exception:

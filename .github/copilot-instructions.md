@@ -47,6 +47,7 @@ ringing/
 │   ├── start-script.sh               # `exec gunicorn app:server` (Serve entrypoint)
 │   ├── requirements.txt              # Runtime deps for Docker
 │   ├── assets/                       # Auto-served by Dash: custom.css, hero image, logos
+│   ├── api/                          # FastAPI backend for the new React site (see §6, "app/api")
 │   ├── src/
 │   │   ├── convert_mdb_to_duckdb.py  # ★ PRIMARY DB BUILD: RingDb0016.mdb → bird_ringing_0016.duckdb
 │   │   ├── db_manager.py             # BirdRingingDB class (connection, schema helpers)
@@ -130,9 +131,9 @@ constraints; joins are by convention (see §5.4).
 | `rediscoveries_species_options` | 109 | precomputed | Species dropdown for the Återfynd tab |
 | `date_range_cache` | 1 | precomputed | `(min_date, max_date)` of ringing data |
 | `year_list` | 47 | precomputed | Distinct years 1980–2026 |
-| `weather_data` | 302,554 | external (SMHI) | Hourly weather, Nidingen A (71190), **gap-filled from Vinga** |
-| `weather_data_vinga` | 218,230 | external (SMHI) | Hourly weather, Vinga A (71380), raw |
-| `weather_daily` | 15,957 | precomputed | One row per day, 1982-01-01 → present |
+| `weather_data` | 307,071 | external (SMHI) | Hourly weather, Nidingen A (71190), **gap-filled from Vinga** |
+| `weather_data_vinga` | 222,746 | external (SMHI) | Hourly weather, Vinga A (71380), raw |
+| `weather_daily` | 16,145 | precomputed | One row per day, 1982-01-01 → present |
 
 ### 5.1 General data conventions (read before writing SQL)
 
@@ -415,8 +416,9 @@ Conventions shared by all `agg_*` tables:
 | `agg_morph_species` | 561 | species × season (`var`/`host`/`helar`), from `ringon`, all years: `n`, `weight_n/mean/q25/med/q75` (weight rounded to 0.1 g), `wing_n/mean/q25/med/q75`, `n_total_since_1980` |
 | `agg_morph_hist` | 28 k | species × season × `variable` (`weight`/`wing`) × `bin`: `bin_low`, `bin_high`, `n`. Range = 0.5–99.5 % quantiles (actual values); 50 equal bins, or one bin per measurement step (1 mm, 0.1 g) when the range has fewer than 50 steps. Zero bins included |
 | `agg_age_sex` | 3 k | species × season × `kind` (`age`/`sex`) × `category`: **raw** `age_code` / `sex` values, NULL = missing (`''` or NULL). Shown ungrouped |
-| `agg_recoveries` | 5 948 | `direction` `'out'`: one row per report of a Nidingen bird found outside the Nidingen box (join `fynd`→`ringon` on ring **and** centre); point = find site. `'in'`: one row per foreign-ringed bird, at its first encounter in `fynd`; point = its ringing site (`frring`). Columns: `species, ring_number, case_number, ring_date, find_date, find_year, days, lat, lon, place, province_code, country_code, country, distance_km, bearing_deg, find_type` |
+| `agg_recoveries` | 5 947 | `direction` `'out'`: one row per report of a Nidingen bird found outside the Nidingen box (join `fynd`→`ringon` on ring **and** centre, first ringing if a ring appears twice); point = find site. `'in'`: one row per foreign-ringed bird, at its first encounter in `fynd`; point = its ringing site (`frring`). Columns: `species, ring_number, case_number, ring_date, find_date, find_year, days, lat, lon, place, province_code, country_code, country, distance_km, bearing_deg, find_type` |
 | `euring_countries` | 48 | `code` (2-char EURING prefix of `province_code`) → `name_sv`, from `config/euring_countries.csv`. Historical codes (`SU`, `DD`, `CS`) and at-sea codes (`-B`, `-D`, `-H`) included; `+A` = Svalbard |
+| `agg_weather_daily` | 16 k | One row per **Swedish local** date from hourly `weather_data`, using **only the catch window 03:00–12:00** (`weather_window` in config; precipitation sums the hours ending 04:00–12:00; metrics NULL if no hour falls inside; `n_obs` = temperature readings in the window, 10 from 1996, about 3 before): `temp_mean/min/max`, `wind_speed`, `wind_dir` (speed-weighted **vector** mean, degrees the wind blows from), `gust_max`, `humidity`, `precipitation` (sum), `pressure`, `visibility_km` (hours capped at 75 km), `cloud_cover` (values > 100 capped), `n_obs`, `precipitation/pressure/visibility_from_vinga` (most of that day's window values and that year's equal Vinga A's; TRUE from 2007), `season`, `doy`, `is_gap_year`. Use this instead of `weather_daily` |
 | `agg_build_info` | 1 | `built_at_utc`, `ringing_min_date`, `ringing_max_date`, `recoveries_max_date`, `weather_max_date`, `config_digest` (for ETags and "Senast uppdaterad") |
 
 ### 5.4 Join cheat-sheet
@@ -467,7 +469,7 @@ Both tables have the same schema. PK `observation_time`, with indexes on
 | `humidity` | DOUBLE | RH %, instantaneous (6) |
 | `precipitation` | DOUBLE | mm, 1-h sum (7) |
 | `pressure` | DOUBLE | hPa, reduced to sea level (9) |
-| `visibility` | DOUBLE | m, instantaneous (12), capped at 75,000 |
+| `visibility` | DOUBLE | m, instantaneous (12). The checked archive tops out at 75,000; SMHI's recent unchecked feed (latest months) also has 99,999, so 2026 has values above 75,000 |
 | `cloud_cover` | DOUBLE | Total cloud % (16); values > 100 (up to 113) are SMHI codes for an obscured sky |
 | `gust_wind` | DOUBLE | m/s, max in 1 h (21) |
 | `<param>_quality` ×9 | VARCHAR(2) | SMHI quality flag: `G` = checked/approved, `Y` = suspect/aggregated |
@@ -479,6 +481,10 @@ Coverage at Nidingen:
 - 1982–1994: 3-hourly synoptic observations (~8/day). 1995 is a transition
   year. From 1996: hourly, ~100 %.
 - `humidity`, `precipitation` and `gust_wind` are mostly NULL before ~1995.
+- `wind_direction` covers 99.3 % of hours. The exception is **2019, where
+  about 2 000 hours (23 %) have wind speed but no direction**; SMHI's own
+  archive has the same gap, and it is not filled from Vinga.
+- Pressure is missing at both stations for 1996–2006.
 - Nidingen stopped measuring **precipitation after 2007-03-22**,
   **pressure after 1995-06-30** and **visibility after 2007**.
   `fetch_smhi_weather.patch_nidingen_from_vinga()` **overwrites those NULLs
@@ -487,7 +493,7 @@ Coverage at Nidingen:
   you can't tell which rows were filled except by comparing with
   `weather_data_vinga`.
 
-#### `weather_daily` (15,957 rows, PK `date`)
+#### `weather_daily` (16,145 rows, PK `date`)
 `date`, `year`, `month`, `day_of_year`, `mean/min/max_temperature`,
 `mean_wind_speed`, `max_gust`, `mean_wind_direction` (arithmetic mean of
 degrees, so it's misleading around north), `mean_humidity`,
@@ -569,6 +575,30 @@ bound. They're only fed from dropdown values today; never pass free user text.
 | `get_rediscoveries_map_data(species_codes, start_date, end_date, direction)` | Outbound + inbound map points; returns `ring_number, species_code, swedish_name, english_name, event_date, ring_date, latitude, longitude, city, locality, find_type, distance_km, days_since_ring, direction` |
 | `get_rediscoveries_species_options()` | Fallback for the precomputed table |
 | `get_species_with_taxonomy(species_codes)` | Species + taxonomy + record counts |
+
+### `app/api`: the FastAPI backend (new site)
+
+Reads only the `agg_*` tables (plus `count(*)` from `fynd`). Endpoints are
+listed in `HANDOFF.md` §6 and documented live at `/api/docs`.
+
+- `store.py`: `DataStore` opens the DuckDB file **once per process,
+  read-only**, loads `config/analysis.json`, `agg_build_info` and
+  `agg_species`, and hands out one cursor per request. Restart the API after
+  the database is rebuilt or replaced. `DUCKDB_PATH` and
+  `NIDINGEN_CONFIG_DIR` (default `config/`) set the paths.
+- `params.py`: species parsing (`species=RÖHAK,LÖSÅN`, max 6, `ALLA`
+  allowed unless stated), period presets (`period=<id>`, or `year=` where a
+  single year is allowed), 7-day week dates, `verdict`, rounding.
+- `schemas.py`: pydantic response models, the contract for the frontend.
+- `routers/`: one module per page (`meta`, `summary`, `trends`,
+  `morphometrics`, `phenology`, `recoveries`, `weather`).
+- `main.py`: `create_app()`; every `/api` GET is cached in memory per
+  process (LRU, keyed by path + sorted query), sent with a weak **ETag**
+  (from the build time, config digest and `API_VERSION`) and
+  `Cache-Control: public, max-age=600`, and gzipped above 1 KB. Bump
+  `API_VERSION` in `store.py` when a response shape changes.
+- All SQL uses bound parameters. Errors are 422 with an English `detail`;
+  the frontend shows its own Swedish messages.
 
 ### `data_processor.BirdDataProcessor`
 Static Polars helpers (`clean_ring_records`, `add_time_features`,
@@ -657,15 +687,22 @@ docker run -p 8000:8000 -v "$PWD/data:/home/appuser/data" nidingen-dashboard
 `app/tests/` is mostly **exploratory scripts** that print results or write
 HTML figures to `figures/`, not assertions. Several still point at the
 legacy `data/bird_ringing.db` (`test_setup.py`, `test_correlations.py`).
-The real pytest suites are `test_fetch_observations.py` (temporary DBs and
-mocks) and `test_aggregates.py` (fixture DB with known answers, plus
-reconciliation against the real DB, skipped if the `agg_*` tables are
-missing). `pyproject.toml` limits collection to these files, so a bare
-`uv run pytest` works:
+The real pytest suites (`pyproject.toml` limits collection to them, so a bare
+`uv run pytest` works):
+
+- `test_aggregates.py`: the aggregate rules on a hand-made fixture
+  (`fixture_db.py`, shared) with known answers, plus reconciliation against
+  the real DB (skipped if the `agg_*` tables are missing).
+- `test_api.py`: every endpoint on the fixture DB, with hand-computed
+  expectations, plus validation, ETag, cache and gzip.
+- `test_api_parity.py`: the API against the Dash queries on the real DB,
+  pinning the intended differences (new ringings vs `ring_records`,
+  centre-aware recovery join, one inbound row per bird).
+- `test_fetch_observations.py`: temporary DBs and mocks.
 
 ```bash
-uv run pytest                                   # both suites
-uv run pytest app/tests/test_aggregates.py -v   # aggregates only; DUCKDB_PATH overrides the DB
+uv run pytest                                   # all suites
+uv run pytest app/tests/test_api.py -v          # one suite; DUCKDB_PATH overrides the real DB
 ```
 
 To check a query, run it directly against the real DB:
@@ -699,4 +736,4 @@ with BirdRingingDB("data/bird_ringing_0016.duckdb", read_only=True) as db:
 
 ---
 **Last updated:** 2026-11-10 — schema verified against `bird_ringing_0016.duckdb`
-(ringing data to 2026-05-09, weather to 2026-05-14).
+(ringing data to 2026-05-09, weather to 2026-11-18).

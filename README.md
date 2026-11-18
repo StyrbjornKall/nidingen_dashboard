@@ -106,16 +106,20 @@ in [`.github/copilot-instructions.md`](.github/copilot-instructions.md).**
 ```text
 app/
   app.py                 Dash app (layout + callbacks)
+  api/                   FastAPI backend for the new React site (being built)
   Dockerfile, start-script.sh, requirements.txt
   assets/                CSS, images, logos
   src/
     convert_mdb_to_duckdb.py   Build the database from the Access file
+    build_aggregates.py        agg_* tables read by the new API
     db_manager.py              BirdRingingDB connection helper
     query_utils.py             SQL query builders used by the app
     data_processor.py          Polars helpers
     fetch_observation_data.py  Artportalen sightings → bird_observations.db
     preprocess_data/           Weather fetcher, lookup-table rebuild, legacy scripts
-  tests/                 Exploratory scripts + pytest suite for the observation fetcher
+  tests/                 pytest suites (aggregates, API, parity, fetcher) + exploratory scripts
+config/                  Analysis rules (seasons, gap years, periods) and EURING country names
+design/                  Approved design for the new site (reference only)
 data/                    Databases and raw/processed data (not in git)
 notebooks/               Jupyter exploration
 figures/                 Exported exploration plots and outreach screenshots
@@ -143,8 +147,12 @@ docker run -p 8000:8000 -v "$PWD/data:/home/appuser/data" nidingen-dashboard
   `.github/copilot-instructions.md`.
 - Open the database read-only while the app is running, because DuckDB
   allows only one writer.
-- Tests: `uv run pytest app/tests/test_fetch_observations.py`. The other
-  files in `app/tests/` are exploratory scripts.
+- Tests: `uv run pytest` runs the real suites (aggregates, API, parity with
+  the Dash queries, observation fetcher). The other files in `app/tests/`
+  are exploratory scripts.
+- The new backend runs with `uv run uvicorn app.api.main:app --reload --port 8000`;
+  its endpoints are documented at http://localhost:8000/api/docs. It reads
+  the `agg_*` tables, so run `build_aggregates.py` first.
 
 ## Technology
 

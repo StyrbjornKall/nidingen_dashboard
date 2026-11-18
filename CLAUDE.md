@@ -40,13 +40,13 @@ uv run python app/src/preprocess_data/fetch_smhi_weather.py      # refresh SMHI 
 uv run python app/src/preprocess_data/rebuild_precomputed_tables.py  # refresh start-up lookup tables only
 uv run python app/src/build_aggregates.py                        # agg_* tables, after every DB rebuild and weather fetch
 uv run pytest                                                    # real suites only (see pyproject.toml)
+uv run uvicorn app.api.main:app --reload --port 8000             # new API; docs at /api/docs (restart after a DB rebuild)
 ```
 
-Targets for the new stack (set up in phases 3–4; keep this list accurate as
-they become real):
+Targets for the new stack (set up in phases 4 and 6; keep this list accurate
+as they become real):
 
 ```bash
-uv run uvicorn app.api.main:app --reload --port 8000        # API in dev
 npm --prefix web install && npm --prefix web run dev        # frontend in dev (proxy /api to :8000)
 npm --prefix web run build                                  # static build served by FastAPI
 docker build -f app/Dockerfile -t nidingen-dashboard .      # single container
@@ -80,6 +80,8 @@ design/                 Design reference (read-only)
   species × year × season.
 - **Single-season species:** more than 90 % of new ringings in one season →
   one median, for that season only; otherwise a median for both seasons.
+- **Daily weather = 03:00–12:00 Swedish time only** (`weather_window` in
+  config), for every metric; the site says so on Väder and Om.
 - **Weeks** are 7-day periods from 1 January (`agg_*.week`), never ISO week
   numbers. Om explains this to visitors.
 - **Age:** show raw `age_code` values (`10`, `2+`, `20` …), never grouped.

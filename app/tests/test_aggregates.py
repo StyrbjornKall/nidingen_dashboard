@@ -16,141 +16,28 @@ Run from the repo root:
 
 import json
 import os
-import sys
-from datetime import date, timedelta
 from pathlib import Path
 
 import duckdb
 import pytest
 from scipy import stats
 
-SRC = Path(__file__).resolve().parent.parent / "src"
-sys.path.insert(0, str(SRC))
-
-import build_aggregates as ba  # noqa: E402
+from app.src import build_aggregates as ba
+from app.tests.fixture_db import COUNTRIES, FIXTURE_CONFIG, d, populate
 
 REPO = Path(__file__).resolve().parents[2]
 REAL_DB = Path(os.environ.get("DUCKDB_PATH", REPO / "data" / "bird_ringing_0016.duckdb"))
 
 
 # ---------------------------------------------------------------------------
-# Fixture database
+# Fixture database (see fixture_db.py)
 # ---------------------------------------------------------------------------
-
-FIXTURE_CONFIG = {
-    "seasons": {
-        "var": {"months": [1, 2, 3, 4, 5, 6]},
-        "host": {"months": [7, 8, 9, 10, 11, 12]},
-    },
-    "trend_excluded_years": {"from": 1990, "to": 1991},
-    "median_min_birds": 10,
-    "single_season_threshold": 0.9,
-    "period_options": [
-        {"id": "all", "from": 1985, "to": 1995},
-        {"id": "late", "from": 1992, "to": 1995},
-    ],
-}
-
-COUNTRIES = [("SV", "Sverige"), ("ES", "Spanien"), ("NO", "Norge")]
-
-SCHEMA = """
-CREATE TABLE ringon (species_code VARCHAR, date DATE, ring_number VARCHAR, centre VARCHAR,
-                     weight DOUBLE, wing_length BIGINT, age_code VARCHAR, sex VARCHAR);
-CREATE TABLE kontr (species_code VARCHAR, date DATE, ring_number VARCHAR);
-CREATE TABLE fynd (ring_number VARCHAR, centre VARCHAR, species_code VARCHAR, date DATE,
-                   latitude DOUBLE, longitude DOUBLE, city VARCHAR, locality VARCHAR,
-                   province_code VARCHAR, distance_km BIGINT, bearing_deg BIGINT,
-                   days_since_ring BIGINT, find_type VARCHAR, case_number VARCHAR);
-CREATE TABLE frring (ring_number VARCHAR, species_code VARCHAR, date DATE,
-                     latitude DOUBLE, longitude DOUBLE, city VARCHAR, locality VARCHAR,
-                     province_code VARCHAR);
-CREATE TABLE artkod_lookup (artkod VARCHAR, swedish_name VARCHAR);
-CREATE TABLE species_metadata (swedish_name VARCHAR, scientific_name VARCHAR, english_name VARCHAR,
-                               order_scientific_name VARCHAR, family_scientific_name VARCHAR,
-                               taxon_order DOUBLE);
-"""
-
-
-class Birds:
-    """Adds ringon rows with unique ring numbers."""
-
-    def __init__(self, con):
-        self.con = con
-        self.next_ring = 1
-
-    def ring(self, species, day, n=1, weight=None, wing=None, age="", sex=""):
-        rows = []
-        for _ in range(n):
-            rows.append((species, day, f"R{self.next_ring:06d}", "SVS", weight, wing, age, sex))
-            self.next_ring += 1
-        self.con.executemany("INSERT INTO ringon VALUES (?, ?, ?, ?, ?, ?, ?, ?)", rows)
-        return [r[2] for r in rows]
-
-
-def d(text: str) -> date:
-    return date.fromisoformat(text)
-
 
 @pytest.fixture(scope="module")
 def fx():
-    """Build aggregates on a hand-made database. Returns the connection."""
+    """Build aggregates on the hand-made database. Returns the connection."""
     con = duckdb.connect(":memory:")
-    con.execute(SCHEMA)
-    con.executemany("INSERT INTO artkod_lookup VALUES (?, ?)",
-                    [("AAA", "aart"), ("BBB", "bart"), ("CCC", "cart"), ("DDD", "dart")])
-    con.execute("INSERT INTO species_metadata VALUES ('aart', 'Avis a', 'A bird', 'Passeriformes', 'Aidae', 1)")
-    b = Birds(con)
-
-    # AAA, spring only.
-    # 1985: 2 + 3 + 5 birds on doy 100, 110, 120 -> q25 110, median 110, q75 120.
-    b.ring("AAA", d("1985-04-10"), 2)
-    b.ring("AAA", d("1985-04-20"), 3)
-    b.ring("AAA", d("1985-04-30"), 5)
-    # 1986: 9 birds -> below the minimum sample of 10.
-    b.ring("AAA", d("1986-05-20"), 9)
-    # 1987: 10 birds on doy 130.
-    b.ring("AAA", d("1987-05-10"), 10)
-    # 1990 is a gap year: many birds and an extreme median must not leak in.
-    b.ring("AAA", d("1990-06-20"), 50)
-    # 1993: 12 birds on doy 120.
-    b.ring("AAA", d("1993-04-30"), 12)
-
-    # BBB: 17 autumn + 3 spring = 85 % autumn -> two seasons.
-    b.ring("BBB", d("1988-09-01"), 17)
-    b.ring("BBB", d("1988-03-01"), 2)    # 1988 is a leap year: 1 March is still doy 60
-    b.ring("BBB", d("1988-02-29"), 1)    # leap day, counted as 28 February
-
-    # CCC: 19 autumn + 1 spring = 95 % autumn -> single season (höst).
-    b.ring("CCC", d("1989-10-01"), 19)
-    b.ring("CCC", d("1989-05-01"), 1)
-
-    # DDD: morphometrics. Weights 10.0 .. 19.9 g, wings 60 .. 70 mm.
-    for i in range(100):
-        b.ring("DDD", d("1994-08-01"), 1, weight=10.0 + i / 10, wing=60 + i % 11,
-               age=["10", "2+", ""][i % 3], sex=["M", "F", None][i % 3])
-
-    # Recaptures.
-    con.executemany("INSERT INTO kontr VALUES (?, ?, ?)", [
-        ("AAA", d("1985-04-21"), "R000001"),
-        ("AAA", d("1993-05-01"), "R000001"),
-        ("ZZZ", d("1994-07-07"), "X1"),      # species seen only as a recapture
-    ])
-
-    # Recoveries.
-    out_ring = "R000003"
-    con.executemany("INSERT INTO fynd VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
-        # Outbound, found in Spain.
-        (out_ring, "SVS", "AAA", d("1986-01-15"), 40.0, -3.7, "MADRID", "", "ES65", 2400, 220, 270, "1", "1986:1"),
-        # Outbound, found back on Nidingen: inside the box, excluded.
-        (out_ring, "SVS", "AAA", d("1987-04-01"), 57.30, 11.90, "Nidingen", "", "SVNHA", 0, 0, 720, "8", "1987:1"),
-        # Same ring number under another scheme: not a Nidingen bird, excluded.
-        ("R000004", "NOS", "AAA", d("1988-01-01"), 59.0, 10.0, "OSLO", "", "NO02", 300, 0, 100, "1", "1988:1"),
-        # Inbound: a Norwegian bird met twice at Nidingen -> one row, first encounter.
-        ("N1", "NOS", "BBB", d("1990-09-01"), 57.30, 11.90, "Nidingen", "", "SVNHA", 350, 180, 30, "8", "1990:2"),
-        ("N1", "NOS", "BBB", d("1989-09-01"), 57.30, 11.90, "Nidingen", "", "SVNHA", 350, 180, 10, "8", "1989:2"),
-    ])
-    con.execute("INSERT INTO frring VALUES ('N1', 'BBB', DATE '1989-08-22', 60.0, 10.5, '', 'Lista', 'NO42')")
-
+    populate(con)
     ba.build_all(con, FIXTURE_CONFIG, COUNTRIES)
     yield con
     con.close()
@@ -393,6 +280,46 @@ def test_recoveries(fx):
     ]
 
 
+def test_weather_daily_uses_the_catch_window(fx):
+    rows = {r[0]: r[1:] for r in fx.execute("""
+        SELECT date, wind_dir, temp_mean, cloud_cover, visibility_km, precipitation,
+               precipitation_from_vinga, pressure_from_vinga, n_obs, season, temp_max
+        FROM agg_weather_daily ORDER BY date""").fetchall()}
+    day1, day2, day3 = d("1994-08-01"), d("1994-08-02"), d("1994-08-03")
+    wind_dir, temp, cloud, vis, prec, prec_v, pres_v, n_obs, season, temp_max = rows[day1]
+    assert min(wind_dir, 360 - wind_dir) == pytest.approx(0, abs=1e-9)   # not 180, and 16:00 ignored
+    assert temp == pytest.approx(16.0) and temp_max == 17.0                 # the 30 °C hour is outside
+    assert cloud == pytest.approx(75.0)          # 110 is capped at 100
+    assert vis == pytest.approx(25.0)            # metres -> km
+    assert prec == pytest.approx(0.6)            # 04:00 + 05:00; not 03:00 (02–03) or 16:00
+    assert (prec_v, pres_v, n_obs, season) == (True, False, 3, "host")
+    assert rows[day2][7] == 1 and rows[day2][5] is True
+    # Day 3: the 02:30 hour (40 °C) is outside; 03:00 is inside for temperature
+    # but its precipitation fell 02–03, so only the 12:00 hour is summed.
+    assert rows[day3][1] == pytest.approx(12.5) and rows[day3][7] == 2
+    assert rows[day3][4] == pytest.approx(2.0) and rows[day3][5] is False
+    assert rows[day3][3] == pytest.approx((10000 + 75000) / 2 / 1000)   # 99 999 m capped at 75 km
+
+
+def test_weather_window_is_required():
+    bad = json.loads(json.dumps(FIXTURE_CONFIG))
+    bad["weather_window"]["to_hour"] = 2
+    with pytest.raises(ValueError):
+        ba.validate_config(bad)
+
+
+def test_recovery_of_a_ring_ringed_twice_is_counted_once():
+    # A few rings appear twice in ringon; their recoveries must not be duplicated.
+    con = duckdb.connect(":memory:")
+    populate(con)
+    con.execute("INSERT INTO ringon SELECT species_code, date + 5, ring_number, centre, weight, "
+                "wing_length, age_code, sex FROM ringon WHERE ring_number = 'R000003'")
+    ba.build_all(con, FIXTURE_CONFIG, COUNTRIES)
+    rows = con.execute("SELECT ring_date FROM agg_recoveries WHERE direction = 'out'").fetchall()
+    assert rows == [(d("1985-04-20"),)]      # one row, with the first ringing date
+    con.close()
+
+
 def test_build_info(fx):
     row = one(fx, "SELECT ringing_min_date, ringing_max_date, weather_max_date, config_digest FROM agg_build_info")
     assert row[0] == d("1985-04-10") and row[1] == d("1994-08-01")
@@ -491,8 +418,9 @@ def test_real_single_season_species_have_one_season(real):
 
 def test_real_recoveries(real):
     n_out = one(real, """
-        SELECT count(*) FROM fynd f JOIN ringon r ON r.ring_number = f.ring_number AND r.centre = f.centre
-        WHERE NOT (f.latitude BETWEEN 57.25 AND 57.35 AND f.longitude BETWEEN 11.85 AND 11.95)
+        SELECT count(*) FROM fynd f
+        WHERE EXISTS (SELECT 1 FROM ringon r WHERE r.ring_number = f.ring_number AND r.centre = f.centre)
+          AND NOT (f.latitude BETWEEN 57.25 AND 57.35 AND f.longitude BETWEEN 11.85 AND 11.95)
     """)[0]
     n_in = one(real, """
         SELECT count(*) FROM frring fr
@@ -501,4 +429,5 @@ def test_real_recoveries(real):
     """)[0]
     got = dict(real.execute("SELECT direction, count(*) FROM agg_recoveries GROUP BY 1").fetchall())
     assert got == {"out": n_out, "in": n_in}
+    assert one(real, "SELECT count(*) - count(DISTINCT case_number) FROM agg_recoveries")[0] == 0
     assert one(real, "SELECT count(*) FROM agg_recoveries WHERE country IS NULL")[0] == 0

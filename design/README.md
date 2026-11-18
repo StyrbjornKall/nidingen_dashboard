@@ -47,6 +47,10 @@ Apply these when building each page. HANDOFF.md §2 and §2b hold the reasoning.
 - **Morfometri bubble chart** axes are derived from the data, not fixed at 44–150 mm and 4–130 g. The "Ålder" bar shows the **raw age codes** (`10`, `2+`, `20`, `3+` …), not 1K / 2K / +1K / +2K; `age_colors` in `tokens.json` needs a ramp over the codes instead.
 - **Återfynd**: the period filters on find date; "medianavstånd" is the true median; tiles that ignore the direction filter say so; countries come from a EURING code lookup.
 - **Väder**: keeps the "Visa" variable chips and marks values gap-filled from Vinga A (precipitation, pressure, visibility).
+- **Daily weather covers 03:00–12:00 Swedish time only**, the hours when birds are caught, not the whole day. This applies to every weather value on the site (tracks, readout, wind rose, best days). Show the note from `/api/meta` (`weather_window.note`, from `config/analysis.json`) as a caption on Väder, and add it to Om:
+
+  > **Vilka timmar gäller väderuppgifterna?**
+  > Väderuppgifterna för en dag gäller bara kl. 03–12 svensk tid, då de flesta fåglarna fångas, inte hela dygnet. Temperatur, vind, lufttryck, sikt och molnighet är medelvärden (eller högsta och lägsta värde) av SMHI:s timvärden under de timmarna, och nederbörden är summan för samma tid. Dagens vindriktning är ett medelvärde där timmar med starkare vind väger tyngre.
 - **Species picker**: species codes without a Swedish name are selectable, shown by code.
 - **Om**: add an FAQ entry on the partly staffed years 1990–2004, and replace the `claudeusercontent.com` contact links with real ones.
 - **Weeks are 7-day periods from 1 January, never calendar (ISO) week numbers**, everywhere on the site (Sammanfattning "Vecka", Flyttningskalendern, ridgelines). Labels such as "v.12" stay, but hover readouts should also show the dates ("v.12 · 19–25 mar"). Om must explain this with the text below.

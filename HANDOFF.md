@@ -45,6 +45,7 @@ Answered by the owner in phase 1 (2026-11-18) unless marked **open**.
 - **Feature parity kept** beyond the design: the weather variable choice ("Visa" chips) with values gap-filled from Vinga A marked as such (precipitation, pressure, visibility); recaptures as data; species codes without a Swedish name (78 codes, for example `KASS`, `KETÄR`) stay selectable by code, with the code as fallback name.
 - **Dropped from the Dash app:** free date ranges, heatmap top-N 30 / 50 / 100 (the design's Topp 5 / 10 / 15 / Alla only), violin plots (replaced by 50-bin histograms), fat score, and later (phase 7) the `TOTAL` rows in `ring_records`.
 - **Återfynd** filters its period on the **find date**, as the Dash app does. Recoveries are not subject to the gap-year rule (no trend is computed).
+- **Daily weather covers only 03:00–12:00 Swedish time**, when most birds are caught (72 % of new ringings with a recorded hour), for every weather metric. Precipitation sums the hours ending 04:00–12:00. The window and its Swedish note are in `config/analysis.json` (`weather_window`); Väder and Om show the note. Decided 2026-11-18.
 - **Weeks** are 7-day periods counted from 1 January (week 1 = 1–7 January, week 52 = 24–31 December), never calendar (ISO) week numbers, on every page. The Om page explains this; the copy is in `design/README.md`. Decided 2026-11-18.
 - **Morfometri** aggregates use **all years** (descriptive statistics, no trend).
 - **Current year** = the latest year in `ringon`; **complete years** end at the upper bound of `period_options`. The "idag" marker uses the real date.
@@ -173,6 +174,16 @@ All endpoints return JSON shaped for the charts. Use `Cache-Control` and ETags; 
 | `GET /api/phenology/table` | `period` | per-species rows (2025 count, average, trend in birds per year, medians) |
 | `GET /api/recoveries` | `species`, `from`, `to`, `direction` | recovery points and summary |
 | `GET /api/weather` | `season`, `year`, `species` | daily weather, daily catch, and catch per wind sector |
+
+**As built in phase 3** (live docs at `/api/docs`; module notes in `.github/copilot-instructions.md` §6):
+- `from`/`to` are replaced by `period=<id>` (presets only). Sammanfattning also accepts `year=YYYY` instead, for the design's single-year option; `grain=day` needs it.
+- Lists that put selected species first take the selection as `species=` (`top-species`, `trends/overview`, `phenology/calendar`, `phenology/table`).
+- `trends/overview` takes `min_total` (default 0) to leave out species with few birds; the page decides the cut-off.
+- `phenology/calendar` ranks species by mean annual total over the first period's non-gap years, so the list doesn't change with the year; non-selected rows are ordered by spring median, then autumn-only species by autumn median. `year=` rejects gap years.
+- `phenology/season-to-date` takes one species. Reference years are the earlier complete years without gap years; the ±1 SD band is the per-day SD of cumulative counts. The "idag" marker is drawn by the frontend; `data_through_doy` says where the data ends.
+- `phenology/table`: "Snitt" is the mean of the 10 years before the period's last year, gap years removed (`avg_years` lists them).
+- `weather` reads `agg_weather_daily` (Swedish local dates, vector-mean wind, Vinga flags). The wind rose averages the catch over days when the station was active (any ringing or recapture that day).
+- `/api/health` for container health checks.
 
 ## 7. Frontend
 
