@@ -1,9 +1,8 @@
 /**
  * Pure helpers for "Ringmärkta över tid" on Sammanfattning: bucket labels,
- * x-axis ticks, the y scale and the gap-year runs. Kept free of React so
- * they can be unit tested.
+ * x-axis ticks and the default chart type. Kept free of React so they can
+ * be unit tested. Scales and gap runs are in components/charts/scale.ts.
  */
-import { scaleLinear } from "d3-scale";
 import type { Schemas } from "../../lib/api";
 import { formatWeek, monthName } from "../../lib/format";
 
@@ -62,40 +61,6 @@ export function axisLabels(buckets: readonly Bucket[], grain: Grain, maxLabels =
   if (out.length <= maxLabels) return out;
   const every = Math.ceil(out.length / Math.max(1, maxLabels));
   return out.filter((_, k) => k % every === 0);
-}
-
-/** A nice y scale from 0, about four intervals, never empty. */
-export function yAxis(maxValue: number, intervals = 4): { top: number; ticks: number[] } {
-  const scale = scaleLinear().domain([0, Math.max(1, maxValue)]).nice(intervals);
-  return { top: scale.domain()[1] ?? 1, ticks: scale.ticks(intervals) };
-}
-
-/** The largest value to draw: the stacked sum for bars, the largest single value for lines. */
-export function maxValue(series: readonly (readonly number[])[], stacked: boolean): number {
-  const len = series[0]?.length ?? 0;
-  let max = 0;
-  for (let i = 0; i < len; i++) {
-    let sum = 0;
-    for (const s of series) {
-      const v = s[i] ?? 0;
-      sum += v;
-      if (!stacked) max = Math.max(max, v);
-    }
-    if (stacked) max = Math.max(max, sum);
-  }
-  return max;
-}
-
-/** Runs of consecutive gap-year buckets as [first, last] index pairs. */
-export function gapRuns(buckets: readonly Bucket[]): [number, number][] {
-  const runs: [number, number][] = [];
-  buckets.forEach((b, i) => {
-    if (!b.is_gap_year) return;
-    const last = runs[runs.length - 1];
-    if (last && last[1] === i - 1) last[1] = i;
-    else runs.push([i, i]);
-  });
-  return runs;
 }
 
 /** Bar for day and week would be hairlines, so those default to a line chart (design). */

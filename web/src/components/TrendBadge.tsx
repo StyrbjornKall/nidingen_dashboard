@@ -12,8 +12,11 @@ const COLORS: Record<Verdict, { background: string; color: string }> = {
   none: { background: "var(--color-badge-neutral-bg)", color: "var(--color-text-secondary)" },
 };
 
-/** "Ökar" / "Minskar" when the 95 % CI excludes zero, otherwise "Ingen säker trend". */
-export function TrendBadge({ verdict }: { verdict: Verdict }) {
+/**
+ * "Ökar" / "Minskar" when the 95 % CI excludes zero, otherwise "Ingen säker
+ * trend". With a prefix: "Antal: minskar".
+ */
+export function TrendBadge({ verdict, prefix }: { verdict: Verdict; prefix?: string }) {
   return (
     <span
       style={{
@@ -27,7 +30,7 @@ export function TrendBadge({ verdict }: { verdict: Verdict }) {
         whiteSpace: "nowrap",
       }}
     >
-      {LABELS[verdict]}
+      {prefix ? `${prefix}${LABELS[verdict].toLowerCase()}` : LABELS[verdict]}
     </span>
   );
 }

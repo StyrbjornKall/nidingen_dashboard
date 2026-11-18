@@ -1,0 +1,387 @@
+/* --- Comparison chart ------------------------------------------------- */
+
+.readout {
+  font-size: 13px;
+  min-height: 20px;
+  max-width: 560px;
+  text-align: right;
+}
+
+.comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Top padding keeps the highest y label inside the card body, which
+   clips because it scrolls sideways. */
+.bigPlot {
+  --chart-gutter: 52px;
+  padding: 8px 14px 0 var(--chart-gutter);
+}
+
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--color-grid);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 10px;
+}
+
+.legendItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-surface-tint);
+}
+
+.legendName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.legendLine {
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.legendVerdict {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.ci {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* --- Art för art ------------------------------------------------------ */
+
+.heading {
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.headingLead {
+  margin-top: 8px;
+  font-size: 16px;
+  color: var(--color-text-secondary);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-top: 4px solid;
+  border-radius: 18px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  animation: cardIn 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.cardTitle {
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.sci {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.cardSub {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.cardSub > span:first-child {
+  font-weight: 600;
+}
+
+.miniPlot {
+  --chart-gutter: 38px;
+  padding: 6px 12px 0 var(--chart-gutter);
+}
+
+.cardFoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+}
+
+/* --- Alla arter (forest plot) ----------------------------------------- */
+
+.forestBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.forest {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.forestRow {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr) 130px;
+  gap: 20px;
+  align-items: center;
+}
+
+.forestHead {
+  padding: 6px 12px 10px;
+  border-bottom: 1px solid var(--color-grid);
+  align-items: end;
+}
+
+.forestTitle {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.forestTicks {
+  position: relative;
+  height: 16px;
+  margin-top: 6px;
+}
+
+.forestTicks > span {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 10.5px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.forestButton {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr) 130px;
+  gap: 20px;
+  align-items: center;
+  width: 100%;
+  min-height: var(--min-touch-target);
+  padding: 2px 12px;
+  border-radius: 10px;
+  transition: background 0.18s;
+}
+
+.forestButton:hover:not(:disabled) {
+  background: var(--color-surface-tint);
+}
+
+.forestButton[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-data) 12%, var(--color-surface));
+}
+
+.forestButton:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}
+
+.forestButton:disabled {
+  cursor: not-allowed;
+}
+
+.forestName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 14.5px;
+}
+
+.forestNameText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forestDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.forestCell {
+  position: relative;
+  display: block;
+  height: 34px;
+}
+
+.forestZero {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-left: 1px dashed #9aa89f;
+}
+
+.whisker {
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 2px;
+  transition: left 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.point {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  border: 2px solid;
+  box-sizing: border-box;
+  transition: left 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.2s;
+}
+
+.forestValue {
+  font-size: 13px;
+  text-align: right;
+}
+
+.unitHead {
+  display: none;
+}
+
+.forestFoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.forestFoot .ci {
+  font-size: 13px;
+  max-width: 640px;
+}
+
+.more {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--min-touch-target);
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-ink);
+  font: 600 14px var(--font-sans);
+  color: var(--color-ink);
+}
+
+.more:hover {
+  background: var(--color-surface-tint);
+}
+
+.more:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .readout {
+    text-align: left;
+  }
+
+  .bigPlot {
+    --chart-gutter: 44px;
+    padding-right: 10px;
+  }
+
+  .heading {
+    font-size: 24px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  /* Narrow: the unit moves to the column header, only the outer ticks stay. */
+  .unit,
+  .halfTick {
+    display: none;
+  }
+
+  .unitHead {
+    display: block;
+    font-weight: 500;
+    font-size: 11px;
+  }
+
+  .forestRow,
+  .forestButton {
+    grid-template-columns: minmax(84px, 120px) minmax(0, 1fr) 52px;
+    gap: 10px;
+  }
+
+  .forestHead {
+    padding: 6px 6px 10px;
+  }
+
+  .forestButton {
+    padding: 2px 6px;
+  }
+
+  .forestName {
+    font-size: 13.5px;
+  }
+
+  .forestValue {
+    font-size: 12px;
+  }
+}

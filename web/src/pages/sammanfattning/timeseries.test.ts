@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { axisLabels, bucketLabel, gapRuns, maxValue, yAxis, type Bucket } from "./timeseries";
+import { axisLabels, bucketLabel, type Bucket } from "./timeseries";
 
 const b = (year: number, index: number, start: string, end = start, gap = false): Bucket => ({
   year, index, start, end, is_gap_year: gap,
@@ -51,27 +51,5 @@ describe("axisLabels", () => {
 
   it("thins labels to fit a narrow chart", () => {
     expect(axisLabels(years(1980, 2025), "year", 4).map((l) => l.label)).toEqual(["1980", "1995", "2010", "2025"]);
-  });
-});
-
-describe("y axis and maxima", () => {
-  it("rounds the top up to a nice value", () => {
-    expect(yAxis(16418)).toEqual({ top: 20000, ticks: [0, 5000, 10000, 15000, 20000] });
-    expect(yAxis(0).top).toBe(1);
-  });
-
-  it("stacks bars and not lines", () => {
-    const series = [[1, 5, 2], [4, 1, 2]];
-    expect(maxValue(series, true)).toBe(6);
-    expect(maxValue(series, false)).toBe(5);
-    expect(maxValue([], true)).toBe(0);
-  });
-});
-
-describe("gapRuns", () => {
-  it("finds the partly staffed years as one run", () => {
-    const bs = years(1985, 2010, [1990, 2004]);
-    expect(gapRuns(bs)).toEqual([[5, 19]]);
-    expect(gapRuns(years(2016, 2025))).toEqual([]);
   });
 });

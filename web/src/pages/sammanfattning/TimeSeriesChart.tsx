@@ -1,8 +1,10 @@
 import { area, line } from "d3-shape";
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useMemo } from "react";
+import { chartStyles, Crosshair, GapBands, PlotSvg, Scrubber, useWidth, XLabels, YTicks } from "../../components/charts/Plot";
+import { gapRuns, maxValue, yAxis } from "../../components/charts/scale";
 import { formatInt } from "../../lib/format";
 import styles from "./Sammanfattning.module.css";
-import { axisLabels, gapRuns, maxValue, yAxis, type Bucket, type Grain } from "./timeseries";
+import { axisLabels, type Bucket, type Grain } from "./timeseries";
 
 export interface ChartSeries {
   code: string;
@@ -29,22 +31,6 @@ export interface TimeSeriesChartProps {
 
 const W = 1000;
 const H = 300;
-
-/** Width of an element, kept up to date (0 where ResizeObserver is missing). */
-function useWidth<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
-  const [width, setWidth] = useState(0);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    setWidth(el.clientWidth);
-    if (typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(([entry]) => entry && setWidth(entry.contentRect.width));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  return [ref, width] as const;
-}
 
 /** How far PageUp/PageDown jump: a year of buckets, or five years. */
 const PAGE_STEP: Record<Grain, number> = { day: 30, week: 52, month: 12, year: 5 };
@@ -101,51 +87,21 @@ export function TimeSeriesChart({ buckets, grain, type, series, hover, onHover, 
     return series.filter((s) => s.recap).map((s) => ({ code: s.code, color: s.color, d: ln(s.recap as number[]) ?? "" }));
   }, [series, bw, y.top]);
 
-  const labels = useMemo(() => axisLabels(buckets, grain, width ? Math.max(2, Math.floor(width / 56)) : Infinity), [buckets, grain, width]);
+  const labels = useMemo(
+    () =>
+      axisLabels(buckets, grain, width ? Math.max(2, Math.floor(width / 56)) : Infinity).map((l) => ({
+        key: l.i, label: l.label, left: ((l.i + 0.5) / n) * 100,
+      })),
+    [buckets, grain, width, n],
+  );
   const gaps = useMemo(() => gapRuns(buckets), [buckets]);
-
-  const pick = (e: PointerEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    const i = Math.max(0, Math.min(n - 1, Math.floor(((e.clientX - r.left) / r.width) * n)));
-    if (i !== hover) onHover(i);
-  };
-
-  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    const from = hover < 0 ? (e.key === "ArrowLeft" ? n : -1) : hover;
-    const moves: Record<string, number> = {
-      ArrowRight: from + 1, ArrowLeft: from - 1, ArrowUp: from + 1, ArrowDown: from - 1,
-      PageUp: from + PAGE_STEP[grain], PageDown: from - PAGE_STEP[grain], Home: 0, End: n - 1,
-    };
-    if (!(e.key in moves)) return;
-    e.preventDefault();
-    onHover(Math.max(0, Math.min(n - 1, moves[e.key] ?? from)));
-  };
 
   return (
     <div className={styles.chart}>
-      <div className={styles.plot} ref={plotRef}>
-        {gaps.map(([a, b]) => (
-          <div
-            key={a}
-            className={styles.gapBand}
-            style={{ left: `${(a / n) * 100}%`, width: `${((b - a + 1) / n) * 100}%` }}
-            aria-hidden="true"
-          >
-            {(b - a + 1) / n > 0.12 && <span className={styles.gapLabel}>delvis bemannad</span>}
-          </div>
-        ))}
-        {y.ticks.map((t) => (
-          <div key={t} className={styles.tick} style={{ top: `${100 - (t / y.top) * 100}%` }} aria-hidden="true">
-            <span className={`mono ${styles.tickLabel}`}>{formatInt(t)}</span>
-          </div>
-        ))}
-        <svg
-          key={animationKey}
-          className={styles.wipe}
-          viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
+      <div className={`${chartStyles.plot} ${styles.plot}`} ref={plotRef}>
+        <GapBands runs={gaps} n={n} />
+        <YTicks ticks={y.ticks} top={y.top} format={formatInt} />
+        <PlotSvg width={W} height={H} animationKey={animationKey}>
           {paths.map((p) =>
             stacked ? (
               <g key={p.code} fill={p.color}>
@@ -171,31 +127,11 @@ export function TimeSeriesChart({ buckets, grain, type, series, hover, onHover, 
               vectorEffect="non-scaling-stroke"
             />
           ))}
-        </svg>
-        {hover >= 0 && hover < n && <div className={styles.crosshair} style={{ left: `${(x(hover) / W) * 100}%` }} aria-hidden="true" />}
-        <div
-          className={styles.hit}
-          role="slider"
-          tabIndex={0}
-          aria-label="Läs av diagrammet"
-          aria-valuemin={0}
-          aria-valuemax={Math.max(0, n - 1)}
-          aria-valuenow={Math.max(0, hover)}
-          aria-valuetext={valueText}
-          onPointerMove={pick}
-          onPointerDown={pick}
-          onPointerLeave={(e) => e.pointerType === "mouse" && onHover(-1)}
-          onKeyDown={onKey}
-          onBlur={() => onHover(-1)}
-        />
+        </PlotSvg>
+        {hover >= 0 && hover < n && <Crosshair left={(x(hover) / W) * 100} />}
+        <Scrubber n={n} hover={hover} onHover={onHover} valueText={valueText} pageStep={PAGE_STEP[grain]} />
       </div>
-      <div className={styles.xAxis} aria-hidden="true">
-        {labels.map((l) => (
-          <span key={l.i} className={`mono ${styles.xLabel}`} style={{ left: `${(x(l.i) / W) * 100}%` }}>
-            {l.label}
-          </span>
-        ))}
-      </div>
+      <XLabels labels={labels} />
     </div>
   );
 }
