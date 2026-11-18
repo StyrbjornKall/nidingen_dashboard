@@ -6,7 +6,7 @@ import Hem from "./pages/Hem";
 import Morfometri from "./pages/Morfometri";
 import NotFound from "./pages/NotFound";
 import Om from "./pages/Om";
-import Sammanfattning from "./pages/Sammanfattning";
+import Sammanfattning from "./pages/sammanfattning/Sammanfattning";
 import Trender from "./pages/Trender";
 import Vader from "./pages/Vader";
 

@@ -203,6 +203,9 @@ All endpoints return JSON shaped for the charts. Use `Cache-Control` and ETags; 
 - On phones the menu scrolls sideways and the selection bar is not sticky (it wraps to about a quarter of the screen).
 - The species picker lists ALLA and every species with new ringings (codes seen only as recaptures are left out); codes without a Swedish name are listed by code.
 
+**As built in phase 5** (one PR per page):
+- *Sammanfattning*: periods are the config presets plus the last complete year (`?period=2025`, sent to the API as `year=`). Dag needs a single year (falls back to Vecka), and År is disabled for a single year (it would be one bar; falls back to Månad). Grain and chart type are page state, not URL state. Gap years are hatched in every grain, drawn lighter as bars, and named in the footnote. Recaptures are an optional dashed series ("Visa kontroller"), never added to ringings. The readout can be driven with the arrow keys (the chart is an ARIA slider). The top list shows 100 rows with "Visa alla"; once 6 species are selected the other rows are disabled. The species tile shows every ringed species code (210 today); the wording is still to settle with Hem. Unselected bars use the design's #B4C4B8 as a `color-mix` of tokens, because `design/` is read-only.
+
 ## 8. Feature parity checklist
 
 | Current Dash tab | New page | Notes |

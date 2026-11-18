@@ -680,8 +680,9 @@ the Dash app keeps running until phase 7.
   `Footer`, `SpeciesPicker`, `SegmentedControl`, `ChartCard` (loading,
   empty, error with retry, "Data från …"), `TrendBadge`, `Legend`,
   `PageFrame` (`PageHeader`, `StickyBar`, `Section`).
-- `src/pages/`: one file per page; `registry.ts` holds paths and labels;
+- `src/pages/`: one file per page, or one folder once the page is built (`sammanfattning/`: page, cards, chart and pure helpers with tests); `registry.ts` holds paths and labels;
   `shared/selection.tsx` holds the selection bar and per-page defaults.
+- Charts: React + SVG with `d3-scale`/`d3-shape` helpers (no Plotly). `useApi(..., {keepPrevious: true})` keeps the last chart visible while new parameters load, and `ChartCard` shows its spinner meanwhile. `KeyFigures` is the tile row for key figures.
 - Styling: CSS modules plus CSS variables generated from
   `design/tokens.json` (`scripts/gen-tokens.mjs`, runs before dev, build,
   test and typecheck; the output is git-ignored).

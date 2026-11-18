@@ -7,6 +7,8 @@ export interface CardQuery<T> {
   data: T | undefined;
   isPending: boolean;
   isError: boolean;
+  /** True while older data is shown and new data loads (`keepPrevious`). */
+  isPlaceholderData?: boolean;
   refetch: () => unknown;
 }
 
@@ -39,19 +41,20 @@ export function ChartCard<T>({
   emptyAction, cachedAt, skeleton = "bars", footnote, children,
 }: ChartCardProps<T>) {
   const loading = query.isPending;
+  const refreshing = !loading && (query.isPlaceholderData ?? false);
   const failed = !loading && query.isError;
   const data = query.data;
   const empty = !loading && !failed && data !== undefined && (isEmpty?.(data) ?? false);
 
   return (
-    <article className={styles.card} aria-busy={loading}>
+    <article className={styles.card} aria-busy={loading || refreshing}>
       <div className={styles.head}>
         <div>
           <h2 className={styles.title}>{title}</h2>
           {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
         </div>
         <div className={styles.headRight}>
-          {loading && (
+          {(loading || refreshing) && (
             <span className={styles.loading} role="status">
               <svg className={styles.spin} width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
                 <circle cx="9" cy="9" r="7" stroke="#DCE4D7" strokeWidth="2.5" />
@@ -60,7 +63,7 @@ export function ChartCard<T>({
               Hämtar data …
             </span>
           )}
-          {cachedAt && !loading && (
+          {cachedAt && !loading && !refreshing && (
             <span className={styles.cached}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
                 <circle cx="7" cy="7" r="5.5" />

@@ -18,6 +18,8 @@ export interface PageSelectionOptions {
   /** Season options on this page (none = the page has no season control). */
   seasons?: readonly SeasonId[];
   defaultSeason?: SeasonId;
+  /** Add the last complete year as a period of its own (Sammanfattning). */
+  singleYear?: boolean;
 }
 
 export interface PageSelection {
@@ -25,6 +27,8 @@ export interface PageSelection {
   species: SpeciesSelection;
   /** Species that can be picked: ALLA plus every species with new ringings. */
   pickable: SpeciesInfo[];
+  /** Period choices: the configured presets, plus a single year if asked for. */
+  periods: PeriodInfo[];
   period: PeriodInfo | undefined;
   setPeriod: (id: string) => void;
   season: SeasonId;
@@ -46,14 +50,21 @@ export function usePageSelection(opts: PageSelectionOptions): PageSelection {
     [meta],
   );
 
-  const periodIds = useMemo(() => meta?.periods.map((p) => p.id) ?? [], [meta]);
+  const singleYear = opts.singleYear ?? false;
+  const periods = useMemo(() => {
+    if (!meta) return [];
+    if (!singleYear) return meta.periods;
+    const y = meta.complete_through;
+    return [...meta.periods, { id: String(y), label: String(y), year_from: y, year_to: y }];
+  }, [meta, singleYear]);
+  const periodIds = useMemo(() => periods.map((p) => p.id), [periods]);
   const [periodId, setPeriod] = useChoiceParam("period", periodIds, periodIds[0] ?? "");
-  const period = meta?.periods.find((p) => p.id === periodId);
+  const period = periods.find((p) => p.id === periodId);
 
   const seasons = opts.seasons ?? NO_SEASONS;
   const [season, setSeason] = useChoiceParam<SeasonId>("sasong", seasons, opts.defaultSeason ?? seasons[0] ?? "helar");
 
-  return { meta, species, pickable, period, setPeriod, season, setSeason, seasons };
+  return { meta, species, pickable, periods, period, setPeriod, season, setSeason, seasons };
 }
 
 const SEASON_LABELS: Record<SeasonId, string> = { var: "Vår", host: "Höst", helar: "Helår" };
@@ -73,7 +84,7 @@ export function SelectionBar({
   /** Override labels, e.g. Morfometri calls the whole year "Båda". */
   seasonLabels?: Partial<Record<SeasonId, string>>;
 }) {
-  const { meta, species, pickable, period, setPeriod, season, setSeason, seasons } = selection;
+  const { meta, species, pickable, periods, period, setPeriod, season, setSeason, seasons } = selection;
   return (
     <StickyBar label="Urval">
       <BarWord>{before}</BarWord>
@@ -96,9 +107,19 @@ export function SelectionBar({
           label="Period"
           value={period.id}
           onChange={setPeriod}
-          options={meta.periods.map((p) => ({ value: p.id, label: p.label }))}
+          options={periods.map((p) => ({ value: p.id, label: p.label }))}
         />
       )}
     </StickyBar>
   );
+}
+
+/** API parameters for a period: `year=` for a single year, otherwise `period=`. */
+export function periodParams(period: PeriodInfo): { period?: string; year?: number } {
+  return period.year_from === period.year_to ? { year: period.year_from } : { period: period.id };
+}
+
+/** "1980–2025", or "2025" for a single year. */
+export function yearSpan(period: Pick<PeriodInfo, "year_from" | "year_to">): string {
+  return period.year_from === period.year_to ? String(period.year_from) : `${period.year_from}–${period.year_to}`;
 }

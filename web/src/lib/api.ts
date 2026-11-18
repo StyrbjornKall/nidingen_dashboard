@@ -2,7 +2,7 @@
  * Typed client for the FastAPI backend. Types are generated from the API's
  * OpenAPI schema (`npm run gen:api`), so they follow app/api/schemas.py.
  */
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, type UseQueryResult } from "@tanstack/react-query";
 import type { components } from "./api-types";
 
 export type Schemas = components["schemas"];
@@ -57,13 +57,20 @@ export async function getJson<T>(path: string, params?: QueryParams, signal?: Ab
 /**
  * Fetch an API endpoint with TanStack Query. The data only changes when the
  * database is rebuilt, so results never go stale within a visit.
+ * `keepPrevious` keeps showing the last result while new parameters load,
+ * so a chart doesn't flash its skeleton on every toggle.
  */
-export function useApi<T>(path: string, params?: QueryParams, options: { enabled?: boolean } = {}): UseQueryResult<T> {
+export function useApi<T>(
+  path: string,
+  params?: QueryParams,
+  options: { enabled?: boolean; keepPrevious?: boolean } = {},
+): UseQueryResult<T> {
   return useQuery({
     queryKey: [path, toQueryString(params)],
     queryFn: ({ signal }) => getJson<T>(path, params, signal),
     staleTime: Infinity,
     enabled: options.enabled ?? true,
+    placeholderData: options.keepPrevious ? keepPreviousData : undefined,
   });
 }
 
