@@ -34,7 +34,7 @@ log = logging.getLogger("nidingen.api")
 REPO = Path(__file__).resolve().parents[2]
 
 # Bump when response shapes change, so browsers drop cached responses.
-API_VERSION = "4"
+API_VERSION = "5"
 
 
 # Share of the mean annual catch a week needs to fall inside the station's
@@ -114,6 +114,13 @@ class DataStore:
         self.current_year = int(self.build["ringing_max_date"].year)
 
         self.active_weeks = self._active_weeks()
+        cur = self.con.cursor()
+        # Years with weather: the range the Väder year picker offers.
+        self.weather_years: tuple[int, int] | None = None
+        first, last = cur.execute("SELECT min(year), max(year) FROM agg_weather_daily").fetchone()
+        if first is not None:
+            self.weather_years = (int(first), int(last))
+        cur.close()
 
         stamp = f"{self.build['built_at_utc']}|{self.build['config_digest']}|{API_VERSION}"
         self.etag = 'W/"' + hashlib.sha256(stamp.encode()).hexdigest()[:20] + '"'

@@ -35,7 +35,7 @@ export function buildSearch(params: URLSearchParams): string {
   const parts: string[] = [];
   params.forEach((value, key) => {
     if (value === "") return;
-    const encoded = key === "arter"
+    const encoded = key === "arter" || key === "visa"
       ? value.split(",").map((v) => encodeURIComponent(v)).join(",")
       : encodeURIComponent(value);
     parts.push(`${encodeURIComponent(key)}=${encoded}`);
@@ -61,7 +61,10 @@ export function useSearchParam(key: string): [string | null, (value: string | nu
   const value = new URLSearchParams(location.search).get(key);
   const setValue = useCallback(
     (next: string | null) => {
-      const params = new URLSearchParams(location.search);
+      // Read the address bar, not the render's `location`: two changes in quick
+      // succession (several controls) must not overwrite each other.
+      const live = typeof window !== "undefined" && window.location.pathname === location.pathname ? window.location.search : location.search;
+      const params = new URLSearchParams(live);
       if (next === null || next === "") params.delete(key);
       else params.set(key, next);
       navigate({ pathname: location.pathname, search: buildSearch(params), hash: location.hash }, { replace: true });

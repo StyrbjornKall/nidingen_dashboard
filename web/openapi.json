@@ -1475,6 +1475,16 @@
           "active_weeks": {
             "$ref": "#/components/schemas/ActiveWeeks"
           },
+          "weather_years": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeatherYears"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "build": {
             "$ref": "#/components/schemas/BuildInfo"
           }
@@ -1494,6 +1504,7 @@
           "single_season_threshold",
           "weather_window",
           "active_weeks",
+          "weather_years",
           "build"
         ],
         "title": "Meta"
@@ -3190,6 +3201,24 @@
           "note"
         ],
         "title": "WeatherWindow"
+      },
+      "WeatherYears": {
+        "properties": {
+          "year_from": {
+            "type": "integer",
+            "title": "Year From"
+          },
+          "year_to": {
+            "type": "integer",
+            "title": "Year To"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year_from",
+          "year_to"
+        ],
+        "title": "WeatherYears"
       },
       "WeekInfo": {
         "properties": {

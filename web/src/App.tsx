@@ -8,7 +8,7 @@ import NotFound from "./pages/NotFound";
 import Om from "./pages/Om";
 import Sammanfattning from "./pages/sammanfattning/Sammanfattning";
 import Trender from "./pages/trender/Trender";
-import Vader from "./pages/Vader";
+import Vader from "./pages/vader/Vader";
 
 export function AppRoutes() {
   return (

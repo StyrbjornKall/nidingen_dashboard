@@ -1,0 +1,372 @@
+/* --- Controls --------------------------------------------------------- */
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+}
+
+.controlRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+}
+
+.controlLabel {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.select {
+  min-height: var(--min-touch-target);
+  max-width: 100%;
+  padding: 0 36px 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  font: 500 14px var(--font-sans);
+  color: var(--color-ink);
+}
+
+.chip {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--min-touch-target);
+  padding: 0 14px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-line);
+  background: var(--color-surface);
+  font: 500 14px var(--font-sans);
+  color: var(--color-text-secondary);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: #fff;
+}
+
+.chip[aria-pressed="true"] .swatch {
+  box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.75);
+}
+
+.select:focus-visible,
+.chip:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+
+/* --- Tracks ----------------------------------------------------------- */
+
+.tracksLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .tracksLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tracks {
+  --label-col: 128px;
+  display: grid;
+  grid-template-columns: var(--label-col) minmax(0, 1fr);
+  column-gap: 14px;
+}
+
+.trackLabel {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-grid);
+}
+
+.trackName {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.trackValue {
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.trackRange {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.vinga {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--color-surface-tint);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  cursor: help;
+}
+
+.trackPlot {
+  grid-column: 2;
+  position: relative;
+  margin: 8px 0;
+  box-sizing: content-box;
+}
+
+/* The border sits on the label cell; the plot cell has the same height plus margins. */
+.overlay {
+  grid-column: 2;
+  position: relative;
+  min-width: 0;
+  pointer-events: auto;
+}
+
+.idle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--color-surface-tint);
+  pointer-events: none;
+}
+
+.arrows {
+  position: absolute;
+  inset: 0;
+  color: var(--color-ink);
+}
+
+.arrows > span {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  transform: translate(-50%, -50%);
+}
+
+.xAxis {
+  grid-column: 2;
+  position: relative;
+  height: 18px;
+  margin-top: 4px;
+}
+
+.xAxis span {
+  position: absolute;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  border-left: 1px solid var(--color-line);
+  padding-left: 4px;
+}
+
+@media (max-width: 640px) {
+  .tracks {
+    --label-col: 96px;
+    column-gap: 10px;
+  }
+
+  .trackValue {
+    font-size: 15px;
+  }
+
+  .trackName {
+    font-size: 13px;
+  }
+}
+
+/* --- Readout ---------------------------------------------------------- */
+
+.readout {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--color-ink);
+  color: #fff;
+  border-radius: 20px;
+  padding: 20px 22px;
+}
+
+@media (max-width: 1000px) {
+  .readout {
+    position: static;
+  }
+}
+
+.kicker {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #fff 70%, var(--color-ink));
+}
+
+.readDate {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-top: 2px;
+}
+
+.readCatch {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  color: color-mix(in srgb, #fff 85%, var(--color-ink));
+}
+
+.readCatch .mono {
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1;
+  color: #fff;
+}
+
+.readIdle {
+  font-size: 13px;
+  color: color-mix(in srgb, #fff 75%, var(--color-ink));
+}
+
+.readGrid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, #fff 18%, var(--color-ink));
+}
+
+.readGrid dt {
+  font-size: 12px;
+  color: color-mix(in srgb, #fff 70%, var(--color-ink));
+}
+
+.readGrid dd {
+  margin: 0;
+  font-size: 15px;
+}
+
+.readSrc {
+  font-family: var(--font-sans) !important;
+  font-size: 11.5px !important;
+  color: color-mix(in srgb, #fff 65%, var(--color-ink));
+}
+
+.readHint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: color-mix(in srgb, #fff 65%, var(--color-ink));
+}
+
+/* --- Wind rose and best days ----------------------------------------- */
+
+.bottom {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.rose {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.roseLead {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.roseBox {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  margin: 4px auto 0;
+  aspect-ratio: 1 / 1;
+}
+
+.roseSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.roseLabel {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.scrollX {
+  overflow-x: auto;
+}
+
+.best {
+  width: 100%;
+  min-width: 440px;
+  border-collapse: collapse;
+  font-size: 14.5px;
+}
+
+.best th,
+.best td {
+  padding: 10px 0 10px 10px;
+  border-top: 1px solid var(--color-grid);
+  text-align: left;
+  font-weight: 400;
+}
+
+.best thead th {
+  border-top: 0;
+  padding-top: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.best tbody th {
+  font-weight: 600;
+  padding-left: 0;
+}
+
+.best .right {
+  text-align: right;
+}

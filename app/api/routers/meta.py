@@ -64,5 +64,7 @@ def meta(store: DataStore = Depends(get_store)) -> dict:
             "note": cfg["weather_window"].get("note_sv", ""),
         },
         "active_weeks": {"week_from": store.active_weeks[0], "week_to": store.active_weeks[1]},
+        "weather_years": ({"year_from": store.weather_years[0], "year_to": store.weather_years[1]}
+                          if store.weather_years else None),
         "build": store.build,
     }

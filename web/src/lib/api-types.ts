@@ -464,6 +464,7 @@ export interface components {
             single_season_threshold: number;
             weather_window: components["schemas"]["WeatherWindow"];
             active_weeks: components["schemas"]["ActiveWeeks"];
+            weather_years: components["schemas"]["WeatherYears"] | null;
             build: components["schemas"]["BuildInfo"];
         };
         /** MorphDetail */
@@ -954,6 +955,13 @@ export interface components {
             timezone: string;
             /** Note */
             note: string;
+        };
+        /** WeatherYears */
+        WeatherYears: {
+            /** Year From */
+            year_from: number;
+            /** Year To */
+            year_to: number;
         };
         /** WeekInfo */
         WeekInfo: {

@@ -74,6 +74,11 @@ class ActiveWeeks(BaseModel):
     week_to: int
 
 
+class WeatherYears(BaseModel):
+    year_from: int
+    year_to: int
+
+
 class Meta(BaseModel):
     species: list[SpeciesInfo]
     seasons: list[SeasonInfo]
@@ -88,6 +93,7 @@ class Meta(BaseModel):
     single_season_threshold: float
     weather_window: WeatherWindow
     active_weeks: ActiveWeeks     # display window for week charts
+    weather_years: Optional[WeatherYears]   # years with weather (Väder year picker)
     build: BuildInfo
 
 

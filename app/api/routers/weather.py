@@ -41,9 +41,9 @@ def weather(
 ) -> dict:
     (code,) = parse_species(store, species, max_n=1)
     year = store.complete_through if year is None else year
-    first, last = cur.execute("SELECT min(year), max(year) FROM agg_weather_daily").fetchone()
-    if first is None:
+    if store.weather_years is None:
         raise bad_request("no weather data in the database")
+    first, last = store.weather_years
     if not first <= year <= last:
         raise bad_request(f"year must be between {first} and {last}")
 

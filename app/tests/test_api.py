@@ -93,6 +93,7 @@ def test_meta(client):
     # Catches in the reference years run from 29 Feb/1 Mar 1988 (week 9) to
     # 1 Oct 1989 (week 40); the 1990 gap-year birds (week 25) don't count.
     assert m["active_weeks"] == {"week_from": 9, "week_to": 40}
+    assert m["weather_years"] == {"year_from": 1994, "year_to": 1994}    # the fixture has three days in 1994
 
 
 def test_kpis(client):
