@@ -27,9 +27,9 @@ Every chart is driven by a seeded random generator (`series()`, `rate()`, `birds
 `../HANDOFF.md` and `../config/analysis.json` win over these files. Known differences:
 
 - **Seasons.** The sketch uses week windows (vår weeks 11–24, höst weeks 28–46). The decision is calendar months: **vår = januari–juni, höst = juli–december**.
-- **Years left out of trends.** The sketch has no gap handling, and two captions hard-code "1980–1995 samt 2005–2025". The decision is that **1990–2004 are excluded from all trends and multi-year statistics**, because the station was only partly staffed. See HANDOFF.md, "Gap years".
+- **Years left out of trends.** The sketch has no gap handling, and two captions hard-code "1980–1995 samt 2005–2025". The decision is that **1991–2004 are excluded from all trends and multi-year statistics**, because the station was only partly staffed. See HANDOFF.md, "Gap years".
 - **Single-season species.** The sketch marks Kungsfågel, Rödvingetrast and Blåmes as "passes only in autumn" purely as examples. The real rule: a species with more than 90 % of its new ringings in one season gets that season only (`single_season_threshold` in `../config/analysis.json`).
-- **Flyttningskalendern year list.** It offers 1990, which is now a gap year; leave it out.
+- **Flyttningskalendern year list.** Offer exactly the years outside the configured gap range.
 - **Väder seasons.** The Väder page uses Vår / Sommar / Höst. Decided: it uses the two site-wide seasons, Vår (januari–juni) and Höst (juli–december).
 - **Today marker.** The "idag" date in Fenologi is fixed in the sketch (18 nov 2026). In the app it is the real current date.
 - **Globe.** Återfynd loads d3 from a canvas asset URL. In the app, install `d3-geo` from npm.
@@ -39,7 +39,7 @@ Every chart is driven by a seeded random generator (`series()`, `rate()`, `birds
 Apply these when building each page. HANDOFF.md §2 and §2b hold the reasoning.
 
 - **Seasons** come from `../config/analysis.json` (calendar months), never from the sketch's day or week windows. The migration calendar normalises per season on that boundary; a week belongs to the month of its Thursday.
-- **Gap years 1990–2004** are drawn hatched or lighter in raw series, with a "delvis bemannad" note. They are left out of fits, means, the SD band, top and worst year, ridgeline means, "Snitt" columns and the calendar's "Snitt alla år", and from year pickers that feed statistics. Trend charts must cope with the missing years on the x axis.
+- **Gap years 1991–2004** are drawn hatched or lighter in raw series, with a "delvis bemannad" note. They are left out of fits, means, the SD band, top and worst year, ridgeline means, "Snitt" columns and the calendar's "Snitt alla år", and from year pickers that feed statistics. Trend charts must cope with the missing years on the x axis.
 - **Captions are generated** from config and data, not hard-coded: "1980–1989 samt 2005–2025", "Snitt …", table column headers, "Säsongen {år}", "46 år", "sedan 1980", the Hem key figures, and FAQ years.
 - **Confidence intervals** use the exact t quantile (`df = n − 2`), computed in the API. The Fenologi table trend uses the selected period, not always 1980–2025.
 - **Season-to-date ±1 SD band** is the per-day standard deviation of the cumulative counts across years, not the sketch's scaled approximation.
@@ -52,7 +52,7 @@ Apply these when building each page. HANDOFF.md §2 and §2b hold the reasoning.
   > **Vilka timmar gäller väderuppgifterna?**
   > Väderuppgifterna för en dag gäller bara kl. 03–12 svensk tid, då de flesta fåglarna fångas, inte hela dygnet. Temperatur, vind, lufttryck, sikt och molnighet är medelvärden (eller högsta och lägsta värde) av SMHI:s timvärden under de timmarna, och nederbörden är summan för samma tid. Dagens vindriktning är ett medelvärde där timmar med starkare vind väger tyngre.
 - **Species picker**: species codes without a Swedish name are selectable, shown by code.
-- **Om**: add an FAQ entry on the partly staffed years 1990–2004, and replace the `claudeusercontent.com` contact links with real ones.
+- **Om**: add an FAQ entry on the partly staffed years 1991–2004, and replace the `claudeusercontent.com` contact links with real ones.
 - **Weeks are 7-day periods from 1 January, never calendar (ISO) week numbers**, everywhere on the site (Sammanfattning "Vecka", Flyttningskalendern, ridgelines). Labels such as "v.12" stay, but hover readouts should also show the dates ("v.12 · 19–25 mar"). Om must explain this with the text below.
 
   FAQ entry for Om:

@@ -19,7 +19,7 @@ test("the comparison chart shows each species' trend from the API", async ({ pag
   await expect(comparison(page).getByText("Minskar", { exact: true })).toBeVisible();
   await expect(comparison(page).getByText("delvis bemannad", { exact: true })).toBeVisible();
   await expect(comparison(page).getByText(
-    "Trenderna bygger på hela säsonger 1980–1989 samt 2005–2025. 1990–2004 ingår inte: stationen var bara delvis bemannad dessa år.",
+    "Trenderna bygger på hela säsonger 1980–1990 samt 2005–2025. 1991–2004 ingår inte: stationen var bara delvis bemannad dessa år.",
     { exact: false },
   )).toBeVisible();
 });
@@ -48,7 +48,9 @@ test("the comparison chart reads years with the keyboard", async ({ page }, info
   await expect(slider).toHaveAttribute("aria-valuetext", /^1980 · Rödhake \d/);
   await page.keyboard.press("PageUp");
   await page.keyboard.press("PageUp");
-  await expect(slider).toHaveAttribute("aria-valuetext", /^1990 \(delvis bemannad\) · Rödhake/);
+  await expect(slider).toHaveAttribute("aria-valuetext", /^1990 · Rödhake/); // 1990 is staffed again
+  await page.keyboard.press("ArrowRight");
+  await expect(slider).toHaveAttribute("aria-valuetext", /^1991 \(delvis bemannad\) · Rödhake/);
 });
 
 test("all species: selected first, then by change; click adds to the comparison", async ({ page, request }) => {

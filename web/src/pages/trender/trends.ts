@@ -1,5 +1,6 @@
 /** Pure helpers for Trender: captions, forest-plot axis and trend text. */
 import { formatNumber, formatTrend } from "../../lib/format";
+import { yearRuns } from "../../lib/years";
 
 /** "+8,2", "−8,5" (one decimal under 10, as everywhere on the site). */
 export const formatSlope = (v: number) => formatTrend(v, true);
@@ -7,19 +8,6 @@ export const formatSlope = (v: number) => formatTrend(v, true);
 /** "95 % KI −13,9 till −3,1 fåglar/år". */
 export function ciText(lo: number, hi: number): string {
   return `95 % KI ${formatSlope(lo)} till ${formatSlope(hi)} fåglar/år`;
-}
-
-/** [1980, 1981, 1982, 1990] -> "1980–1982 samt 1990"; three runs: "a, b samt c". */
-export function yearRuns(years: readonly number[]): string {
-  const runs: [number, number][] = [];
-  for (const y of [...years].sort((a, b) => a - b)) {
-    const last = runs[runs.length - 1];
-    if (last && last[1] === y - 1) last[1] = y;
-    else runs.push([y, y]);
-  }
-  const parts = runs.map(([a, b]) => (a === b ? String(a) : `${a}–${b}`));
-  if (parts.length <= 1) return parts[0] ?? "";
-  return `${parts.slice(0, -1).join(", ")} samt ${parts[parts.length - 1]}`;
 }
 
 /**

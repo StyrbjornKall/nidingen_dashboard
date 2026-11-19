@@ -583,6 +583,7 @@
     "/api/phenology/ridges": {
       "get": {
         "summary": "Ridges",
+        "description": "Mean daily catch per season (day resolution), the latest year alongside.",
         "operationId": "ridges_api_phenology_ridges_get",
         "parameters": [
           {
@@ -916,6 +917,24 @@
   },
   "components": {
     "schemas": {
+      "ActiveWeeks": {
+        "properties": {
+          "week_from": {
+            "type": "integer",
+            "title": "Week From"
+          },
+          "week_to": {
+            "type": "integer",
+            "title": "Week To"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_from",
+          "week_to"
+        ],
+        "title": "ActiveWeeks"
+      },
       "BandPoint": {
         "properties": {
           "year": {
@@ -1181,6 +1200,24 @@
         ],
         "title": "CountryCount"
       },
+      "DayRange": {
+        "properties": {
+          "doy_from": {
+            "type": "integer",
+            "title": "Doy From"
+          },
+          "doy_to": {
+            "type": "integer",
+            "title": "Doy To"
+          }
+        },
+        "type": "object",
+        "required": [
+          "doy_from",
+          "doy_to"
+        ],
+        "title": "DayRange"
+      },
       "Fit": {
         "properties": {
           "slope": {
@@ -1435,6 +1472,9 @@
           "weather_window": {
             "$ref": "#/components/schemas/WeatherWindow"
           },
+          "active_weeks": {
+            "$ref": "#/components/schemas/ActiveWeeks"
+          },
           "build": {
             "$ref": "#/components/schemas/BuildInfo"
           }
@@ -1453,6 +1493,7 @@
           "median_min_birds",
           "single_season_threshold",
           "weather_window",
+          "active_weeks",
           "build"
         ],
         "title": "Meta"
@@ -1912,12 +1953,9 @@
       },
       "RidgeSeason": {
         "properties": {
-          "weeks": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Weeks"
+          "doy_from": {
+            "type": "integer",
+            "title": "Doy From"
           },
           "mean": {
             "items": {
@@ -1928,7 +1966,14 @@
           },
           "latest": {
             "items": {
-              "type": "integer"
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "type": "array",
             "title": "Latest"
@@ -1973,7 +2018,7 @@
         },
         "type": "object",
         "required": [
-          "weeks",
+          "doy_from",
           "mean",
           "latest",
           "median_doy",
@@ -2056,12 +2101,16 @@
             "type": "integer",
             "title": "Latest Year"
           },
-          "weeks": {
-            "items": {
-              "$ref": "#/components/schemas/WeekInfo"
+          "data_through_doy": {
+            "type": "integer",
+            "title": "Data Through Doy"
+          },
+          "season_days": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/DayRange"
             },
-            "type": "array",
-            "title": "Weeks"
+            "type": "object",
+            "title": "Season Days"
           },
           "species": {
             "items": {
@@ -2076,7 +2125,8 @@
           "period",
           "reference_years",
           "latest_year",
-          "weeks",
+          "data_through_doy",
+          "season_days",
           "species"
         ],
         "title": "Ridges"

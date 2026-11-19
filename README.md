@@ -68,7 +68,7 @@ SMHI Open Data API ───────────────────┴�
 - **`build_aggregates.py`** builds the `agg_*` tables that the new
   FastAPI/React dashboard reads (counts, phenology medians, trends,
   morphometry, recoveries). Rules such as seasons, the partly staffed years
-  1990–2004 and the minimum sample come from `config/analysis.json`.
+  1991–2004 and the minimum sample come from `config/analysis.json`.
   **Run it after every database rebuild and weather fetch.**
 - **`fetch_observation_data.py`** (optional) downloads Artportalen sightings
   into a separate `bird_observations.db`. The dashboard doesn't use it yet.

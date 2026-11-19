@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.src.build_aggregates import ALL_SPECIES, N_WEEKS, WHOLE_YEAR
 from ..params import (
-    bad_request, get_cursor, get_store, normalized_doy, parse_period, parse_species, rnd,
+    bad_request, doy_to_date, get_cursor, get_store, normalized_doy, parse_period, parse_species, rnd,
     selected_first, verdict, week_infos,
 )
 from ..schemas import Calendar, PhenologyTable, Ridges, SeasonToDate
@@ -118,6 +118,19 @@ def migration_calendar(
             "weeks": week_infos(store), "max_value": rnd(max_value), "rows": rows}
 
 
+def _daily(cur, codes: list[str], years: list[int]) -> dict[str, list[float]]:
+    """Summed daily new ringings over the given years, per species (365 values)."""
+    out = {c: [0.0] * DAYS for c in codes}
+    if not codes or not years:
+        return out
+    for sp, doy, n in cur.execute("""
+        SELECT species, doy, sum(n_new) FROM agg_counts_day
+        WHERE list_contains(?, species) AND list_contains(?, year) GROUP BY ALL
+    """, [codes, years]).fetchall():
+        out[sp][doy - 1] = float(n)
+    return out
+
+
 @router.get("/ridges", response_model=Ridges)
 def ridges(
     species: str = Query(..., description="Comma-separated codes (max 6)"),
@@ -125,14 +138,20 @@ def ridges(
     store: DataStore = Depends(get_store),
     cur: duckdb.DuckDBPyConnection = Depends(get_cursor),
 ) -> dict:
+    """Mean daily catch per season (day resolution), the latest year alongside."""
     codes = parse_species(store, species)
     p = parse_period(store, period)
     ref = store.reference_years(p.year_from, p.year_to)
     latest_year = p.year_to
-    sums = _weekly(cur, codes, ref)
-    latest = _weekly(cur, codes, [latest_year])
+    sums = _daily(cur, codes, ref)
+    latest = _daily(cur, codes, [latest_year])
     medians = _medians(cur, p.id)
-    weeks = week_infos(store)
+    ringing_max = store.build["ringing_max_date"]
+    data_through = normalized_doy(ringing_max) if latest_year == ringing_max.year else DAYS
+
+    # Day ranges of the seasons, from the configured months (not hard-coded).
+    month_season = {m: se for se, cfg in store.config["seasons"].items() for m in cfg["months"]}
+    doy_season = [month_season[doy_to_date(d).month] for d in range(1, DAYS + 1)]
 
     out = []
     for code in codes:
@@ -143,14 +162,14 @@ def ridges(
             if info["single_season"] and info["single_season_season"] != season:
                 seasons[season] = None
                 continue
-            idx = [i for i, w in enumerate(weeks) if w["season"] == season]
+            idx = [i for i, se in enumerate(doy_season) if se == season]
             m = medians.get((code, season)) or {}
             s_mean = [mean[i] for i in idx]
-            s_latest = [int(latest[code][i]) for i in idx]
-            y_max = max([y_max, *s_mean, *s_latest])
+            s_latest = [int(latest[code][i]) if i < data_through else None for i in idx]
+            y_max = max([y_max, *s_mean, *(v for v in s_latest if v is not None)])
             seasons[season] = {
-                "weeks": [weeks[i]["week"] for i in idx],
-                "mean": [rnd(v) for v in s_mean],
+                "doy_from": idx[0] + 1,
+                "mean": [rnd(v, 3) for v in s_mean],
                 "latest": s_latest,
                 "median_doy": rnd(m.get("median")),
                 "q25_doy": rnd(m.get("q25")),
@@ -161,7 +180,9 @@ def ridges(
                     "single_season_season": info["single_season_season"],
                     "y_max": rnd(y_max), **seasons})
     return {"period": p.__dict__, "reference_years": ref, "latest_year": latest_year,
-            "weeks": weeks, "species": out}
+            "data_through_doy": data_through, "species": out,
+            "season_days": {se: {"doy_from": d.index(se) + 1, "doy_to": len(d) - d[::-1].index(se)}
+                            for se in ("var", "host") for d in [doy_season]}}
 
 
 @router.get("/season-to-date", response_model=SeasonToDate)

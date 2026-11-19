@@ -1,0 +1,726 @@
+.beforeBar {
+  height: 36px;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* --- Flyttningskalendern ---------------------------------------------- */
+
+.selectLabel {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.select {
+  min-height: var(--min-touch-target);
+  padding: 0 36px 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid #c2cdbe;
+  background: var(--color-surface);
+  font: 500 14px var(--font-sans);
+  color: var(--color-ink);
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}
+
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* The heat map is wide: it scrolls inside the card on small screens, with
+   the species names pinned to the left. */
+.calendarInner {
+  min-width: 860px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.calRow {
+  display: grid;
+  grid-template-columns: 160px 1fr 80px;
+  gap: 12px;
+  align-items: center;
+}
+
+.calSplit {
+  margin-bottom: 10px;
+}
+
+.calName {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 14px;
+  background: var(--color-surface);
+}
+
+.heat {
+  display: grid;
+  gap: 2px;
+}
+
+.heat > span {
+  height: 26px;
+  border-radius: 3px;
+  transition: background 0.5s ease;
+}
+
+.heat > .cell:hover {
+  outline: 2px solid var(--color-ink);
+  outline-offset: -1px;
+}
+
+/* A small gap where the colour normalisation switches from vår to höst. */
+.heat > .seasonStart {
+  margin-left: 4px;
+}
+
+.calTotal {
+  font-size: 12.5px;
+  text-align: right;
+  color: var(--color-text-secondary);
+}
+
+.calTotalHead {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.monthAxis {
+  position: relative;
+  height: 18px;
+  margin-top: 6px;
+}
+
+.monthAxis > span {
+  position: absolute;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  border-left: 1px solid var(--color-line);
+  padding-left: 4px;
+  white-space: nowrap;
+}
+
+.rampLegend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+.ramp {
+  width: 160px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+/* --- Ridgelines ------------------------------------------------------- */
+
+.ridgeLegend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.ridgeLegend li,
+.stdLegend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swArea {
+  width: 18px;
+  height: 10px;
+  border-radius: 2px;
+  background: #a7b8ad;
+}
+
+.swDashed {
+  width: 18px;
+  border-top: 2px dashed var(--color-ink);
+}
+
+.swMedian {
+  width: 2px;
+  height: 14px;
+  background: var(--color-ink);
+}
+
+.ridgesScroll {
+  overflow-x: auto;
+}
+
+.ridges {
+  min-width: 780px;
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+}
+
+.ridgeRow {
+  display: grid;
+  grid-template-columns: minmax(130px, 170px) 44px var(--panels);
+  gap: 16px;
+  align-items: end;
+}
+
+.ridge {
+  animation: ridge 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes ridge {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.seasonHead {
+  font-size: 13px;
+  font-weight: 700;
+  padding-bottom: 6px;
+}
+
+.ridgeLabel {
+  padding-bottom: 6px;
+  min-width: 0;
+}
+
+.ridgeName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ridgeMedian {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.ridgeAxis {
+  position: relative;
+  height: 78px;
+  margin-top: 26px;
+}
+
+.ridgeAxis > span {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  font-size: 10.5px;
+  color: var(--color-text-muted);
+}
+
+.panel {
+  position: relative;
+  height: 78px;
+  border-bottom: 1px solid var(--color-line);
+  margin-top: 26px;
+}
+
+.panelGrid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--color-grid);
+}
+
+.panelSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.panelEmpty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 8px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  background: var(--color-surface-tint);
+}
+
+.medianLine {
+  position: absolute;
+  top: 4px;
+  bottom: 0;
+  border-left: 2px solid var(--color-ink);
+  transition: left 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.medianLabel {
+  position: absolute;
+  top: -2px;
+  transform: translateX(6px);
+  font-size: 11.5px;
+  font-weight: 500;
+  background: rgb(255 255 255 / 0.9);
+  padding: 0 3px;
+  border-radius: 3px;
+  white-space: nowrap;
+  transition: left 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.medianLabelLeft {
+  transform: translateX(calc(-100% - 6px));
+}
+
+/* --- Season to date --------------------------------------------------- */
+
+.std {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tab {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  min-height: var(--min-touch-target);
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-line);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 14px var(--font-sans);
+  transition: background 0.2s;
+}
+
+.tab:hover {
+  background: var(--color-surface-tint);
+}
+
+.tab[aria-pressed="true"] {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: #fff;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}
+
+.stdSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  align-items: center;
+}
+
+.stdNow {
+  font-size: 40px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.stdNowLabel {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  max-width: 300px;
+}
+
+.stdDiff {
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 6px 13px;
+  border-radius: var(--radius-pill);
+  background: var(--color-badge-down-bg);
+  color: var(--color-badge-down-fg);
+}
+
+.stdDiff[data-up="true"] {
+  background: var(--color-badge-up-bg);
+  color: var(--color-badge-up-fg);
+}
+
+.stdTiles {
+  flex: 1 1 340px;
+  max-width: 520px;
+  margin: 0 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--color-line);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.stdTiles > div {
+  background: var(--color-surface);
+  padding: 8px 12px;
+}
+
+.stdTiles dt {
+  hyphens: auto;
+  overflow-wrap: anywhere;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.stdTiles dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.stdTiles dd + dd {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.stdLegend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.swCurrent,
+.swTop {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-chart-current-year);
+}
+
+.swTop {
+  background: var(--color-chart-top-year);
+}
+
+.swMean {
+  width: 18px;
+  border-top: 2px dashed var(--color-chart-mean);
+}
+
+.swBand {
+  width: 18px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--color-chart-band-fill);
+}
+
+.swWorst {
+  width: 18px;
+  border-top: 2px dotted var(--color-chart-worst-year);
+}
+
+.stdReadout {
+  font-size: 13px;
+  min-height: 20px;
+}
+
+.stdPlot {
+  --chart-gutter: 50px;
+  padding: 26px 14px 0 var(--chart-gutter);
+}
+
+/* The latest reported value of the running year: a dot that blinks slowly. */
+.liveDot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--color-chart-current-year);
+  box-shadow: 0 0 0 3px var(--color-surface);
+  pointer-events: none;
+  animation: blink 2.8s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveDot {
+    animation: none;
+  }
+}
+
+.liveLabel {
+  position: absolute;
+  transform: translate(10px, -50%);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.liveLabelLeft {
+  transform: translate(calc(-100% - 10px), -130%);
+}
+
+.ridgeReadout {
+  position: absolute;
+  top: -24px;
+  z-index: 2;
+  transform: translateX(8px);
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--color-ink);
+  color: #fff;
+  font-size: 11.5px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ridgeReadoutLeft {
+  transform: translateX(calc(-100% - 8px));
+}
+
+.panel[data-reading="true"] .medianLabel {
+  visibility: hidden;
+}
+
+/* --- Species table ---------------------------------------------------- */
+
+.tableBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: separate;
+  border-spacing: 0 2px;
+}
+
+.table thead th {
+  padding: 8px 14px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table tbody td,
+.table tbody th {
+  padding: 8px 14px;
+  font-size: 14.5px;
+  font-weight: inherit;
+  text-align: left;
+}
+
+.table tbody tr td:first-child,
+.table tbody tr th:first-child {
+  border-radius: 12px 0 0 12px;
+}
+
+.table tbody tr td:last-child {
+  border-radius: 0 12px 12px 0;
+}
+
+.table tbody tr:hover > * {
+  background: var(--color-surface-tint);
+}
+
+.table tbody tr[data-selected="true"] > * {
+  background: color-mix(in srgb, var(--color-data) 12%, var(--color-surface));
+}
+
+.table .num {
+  text-align: right;
+}
+
+.muted {
+  color: var(--color-text-secondary);
+}
+
+.rowButton {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--min-touch-target);
+}
+
+.rowButton:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}
+
+.rowButton:disabled {
+  cursor: not-allowed;
+}
+
+.rowNames {
+  display: flex;
+  flex-direction: column;
+}
+
+.rowName {
+  font-size: 15.5px;
+  font-weight: 600;
+}
+
+.rowSci {
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.sparkBox {
+  position: relative;
+  min-width: 110px;
+  cursor: crosshair;
+}
+
+.sparkDot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.spark {
+  display: block;
+  width: 100%;
+  min-width: 110px;
+  height: 32px;
+  overflow: visible;
+}
+
+.more {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--min-touch-target);
+  padding: 0 22px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-ink);
+  font: 600 15px var(--font-sans);
+  color: var(--color-ink);
+}
+
+.more:hover {
+  background: var(--color-surface-tint);
+}
+
+.more:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  /* Ridgelines: the species label goes above its panels, so both seasons
+     fit the width without scrolling. */
+  .ridges {
+    min-width: 0;
+  }
+
+  .ridgeRow {
+    grid-template-columns: 34px var(--panels);
+    gap: 4px 10px;
+  }
+
+  .ridgeLabel {
+    grid-column: 1 / -1;
+    padding: 18px 0 0;
+  }
+
+  .labelCell {
+    display: none;
+  }
+
+  .ridgeAxis,
+  .panel {
+    margin-top: 6px;
+  }
+
+  .stdNow {
+    font-size: 32px;
+  }
+
+  .stdTiles {
+    margin-left: 0;
+  }
+
+  .stdPlot {
+    --chart-gutter: 44px;
+    padding-right: 10px;
+  }
+
+  .calRow {
+    grid-template-columns: 120px 1fr 64px;
+  }
+}

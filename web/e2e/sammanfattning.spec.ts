@@ -27,7 +27,7 @@ test("counts per year as bars by default, with the partly staffed years marked",
   await expect(ts(page).getByText("Summa 1980–2025")).toBeVisible();
   await expect(ts(page).getByText(sv(series.series[0].total_new), { exact: true })).toBeVisible();
   await expect(ts(page).getByText("delvis bemannad", { exact: true })).toBeVisible();
-  await expect(ts(page).getByText(/1990–2004 är skuggat/)).toBeVisible();
+  await expect(ts(page).getByText(/1991–2004 är skuggat/)).toBeVisible();
 });
 
 test("week and day default to a line, and day needs a single year", async ({ page }) => {

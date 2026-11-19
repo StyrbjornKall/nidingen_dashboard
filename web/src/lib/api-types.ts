@@ -164,7 +164,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Ridges */
+        /**
+         * Ridges
+         * @description Mean daily catch per season (day resolution), the latest year alongside.
+         */
         get: operations["ridges_api_phenology_ridges_get"];
         put?: never;
         post?: never;
@@ -246,6 +249,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActiveWeeks */
+        ActiveWeeks: {
+            /** Week From */
+            week_from: number;
+            /** Week To */
+            week_to: number;
+        };
         /** BandPoint */
         BandPoint: {
             /** Year */
@@ -347,6 +357,13 @@ export interface components {
             /** N */
             n: number;
         };
+        /** DayRange */
+        DayRange: {
+            /** Doy From */
+            doy_from: number;
+            /** Doy To */
+            doy_to: number;
+        };
         /** Fit */
         Fit: {
             /** Slope */
@@ -446,6 +463,7 @@ export interface components {
             /** Single Season Threshold */
             single_season_threshold: number;
             weather_window: components["schemas"]["WeatherWindow"];
+            active_weeks: components["schemas"]["ActiveWeeks"];
             build: components["schemas"]["BuildInfo"];
         };
         /** MorphDetail */
@@ -587,12 +605,12 @@ export interface components {
         };
         /** RidgeSeason */
         RidgeSeason: {
-            /** Weeks */
-            weeks: number[];
+            /** Doy From */
+            doy_from: number;
             /** Mean */
             mean: number[];
             /** Latest */
-            latest: number[];
+            latest: (number | null)[];
             /** Median Doy */
             median_doy: number | null;
             /** Q25 Doy */
@@ -622,8 +640,12 @@ export interface components {
             reference_years: number[];
             /** Latest Year */
             latest_year: number;
-            /** Weeks */
-            weeks: components["schemas"]["WeekInfo"][];
+            /** Data Through Doy */
+            data_through_doy: number;
+            /** Season Days */
+            season_days: {
+                [key: string]: components["schemas"]["DayRange"];
+            };
             /** Species */
             species: components["schemas"]["RidgeSpecies"][];
         };

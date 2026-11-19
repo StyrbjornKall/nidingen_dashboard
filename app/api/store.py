@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 
 from app.src.build_aggregates import (
     ALL_SPECIES,
+    N_WEEKS,
     AGG_TABLES,
     config_digest,
     load_config,
@@ -33,7 +34,12 @@ log = logging.getLogger("nidingen.api")
 REPO = Path(__file__).resolve().parents[2]
 
 # Bump when response shapes change, so browsers drop cached responses.
-API_VERSION = "2"
+API_VERSION = "4"
+
+
+# Share of the mean annual catch a week needs to fall inside the station's
+# active weeks (see DataStore._active_weeks).
+ACTIVE_WEEK_SHARE = 0.001
 
 
 @dataclass(frozen=True)
@@ -107,6 +113,8 @@ class DataStore:
         self.first_year = int(self.build["ringing_min_date"].year)
         self.current_year = int(self.build["ringing_max_date"].year)
 
+        self.active_weeks = self._active_weeks()
+
         stamp = f"{self.build['built_at_utc']}|{self.build['config_digest']}|{API_VERSION}"
         self.etag = 'W/"' + hashlib.sha256(stamp.encode()).hexdigest()[:20] + '"'
 
@@ -132,6 +140,23 @@ class DataStore:
             if p.id == period_id:
                 return p
         raise KeyError(period_id)
+
+    def _active_weeks(self) -> tuple[int, int]:
+        """First and last week in which the station normally catches birds.
+
+        A week counts when the all-species mean catch in it is at least
+        ACTIVE_WEEK_SHARE of the mean annual total, over the first period's
+        reference years. A display window for week charts (weeks 10–47
+        today), not a season boundary.
+        """
+        base = self.periods[0]
+        ref = self.reference_years(base.year_from, base.year_to)
+        rows = self.con.execute(
+            "SELECT week, sum(n) FROM agg_counts_week WHERE species = ? AND list_contains(?, year) GROUP BY week",
+            [ALL_SPECIES, ref]).fetchall()
+        total = sum(n for _, n in rows)
+        active = sorted(w for w, n in rows if total and n / total >= ACTIVE_WEEK_SHARE)
+        return (active[0], active[-1]) if active else (1, N_WEEKS)
 
     def name(self, code: str) -> str:
         """Display name: Swedish name with a capital letter, or the code."""

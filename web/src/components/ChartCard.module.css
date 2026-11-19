@@ -30,14 +30,35 @@
   letter-spacing: -0.01em;
 }
 
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-tag-bg);
+  color: var(--color-tag-fg);
+}
+
 .subtitle {
   margin-top: 6px;
+  max-width: 720px;
+  line-height: 1.5;
   font-size: 14px;
   color: var(--color-text-muted);
 }
 
-/* Wide charts and tables scroll inside the card, not the page. */
+/* Wide charts and tables scroll inside the card, not the page. Relative,
+   so absolutely positioned children (e.g. .visually-hidden text) are
+   clipped by this box instead of widening the page. */
 .body {
+  position: relative;
   min-width: 0;
   overflow-x: auto;
 }

@@ -37,7 +37,7 @@
     "note_sv": "Väderuppgifterna för en dag gäller bara kl. 03–12 svensk tid, då de flesta fåglarna fångas, inte hela dygnet. Temperatur, vind, lufttryck, sikt och molnighet är medelvärden (eller högsta och lägsta värde) av SMHI:s timvärden under de timmarna, och nederbörden är summan för samma tid. Dagens vindriktning är ett medelvärde där timmar med starkare vind väger tyngre."
   },
   "trend_excluded_years": {
-    "from": 1990,
+    "from": 1991,
     "to": 2004,
     "reason_sv": "Stationen var bara delvis bemannad dessa år.",
     "reason_en": "The station was only partly operating in these years.",

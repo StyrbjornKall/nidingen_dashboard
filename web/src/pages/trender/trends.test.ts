@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ciText, forestExtent, forestTicks, forestX, formatSlope, nice, trendYearsCaption, yearRuns } from "./trends";
+import { yearRuns } from "../../lib/years";
+import { ciText, forestExtent, forestTicks, forestX, formatSlope, nice, trendYearsCaption } from "./trends";
 
 const GAP = { year_from: 1990, year_to: 2004, reason: "Stationen var bara delvis bemannad dessa år." };
 

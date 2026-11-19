@@ -4,6 +4,7 @@
  * every label is HTML positioned in percent, so text never scales.
  */
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import styles from "./charts.module.css";
 
 /** Width of an element, kept up to date (0 where ResizeObserver is missing). */
@@ -153,3 +154,26 @@ export function PlotSvg({ width, height, animationKey, children }: { width: numb
 }
 
 export { styles as chartStyles };
+
+/** What a tooltip needs: where the pointer is (viewport pixels) and what to say. */
+export type TipState = { x: number; y: number; lines: ReactNode } | null;
+
+/**
+ * A small floating readout that follows the pointer. Fixed to the viewport
+ * and rendered in `body`, so scrolling cards and animated rows never clip it.
+ * It flips to the left of the pointer near the right edge.
+ */
+export function Tooltip({ tip }: { tip: TipState }) {
+  if (!tip || typeof document === "undefined") return null;
+  const flip = tip.x > window.innerWidth - 240;
+  return createPortal(
+    <div
+      className={styles.tip}
+      role="presentation"
+      style={{ left: tip.x, top: tip.y, transform: `translate(${flip ? "calc(-100% - 14px)" : "14px"}, -110%)` }}
+    >
+      {tip.lines}
+    </div>,
+    document.body,
+  );
+}

@@ -405,7 +405,7 @@ Conventions shared by all `agg_*` tables:
   28 Feb), so a date has the same `doy` every year.
 - **`week`** = `(doy − 1) // 7 + 1`, capped at 52. A week's season is the
   season of its 4th day (week 26 = vår, week 27 = höst).
-- **`is_gap_year`** is TRUE for 1990–2004 (`trend_excluded_years`).
+- **`is_gap_year`** is TRUE for 1991–2004 (`trend_excluded_years`).
 
 | Table | Rows | Grain and key columns |
 |---|---:|---|
@@ -586,7 +586,8 @@ listed in `HANDOFF.md` §6 and documented live at `/api/docs`.
 
 - `store.py`: `DataStore` opens the DuckDB file **once per process,
   read-only**, loads `config/analysis.json`, `agg_build_info` and
-  `agg_species`, and hands out one cursor per request. Restart the API after
+  `agg_species`, computes the station's active weeks (`active_weeks` in
+  `/api/meta`, the display window for week charts), and hands out one cursor per request. Restart the API after
   the database is rebuilt or replaced. `DUCKDB_PATH` and
   `NIDINGEN_CONFIG_DIR` (default `config/`) set the paths.
 - `params.py`: species parsing (`species=RÖHAK,LÖSÅN`, max 6, `ALLA`

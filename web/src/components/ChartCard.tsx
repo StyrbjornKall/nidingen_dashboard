@@ -14,6 +14,8 @@ export interface CardQuery<T> {
 
 export interface ChartCardProps<T> {
   title: string;
+  /** A tag next to the title, e.g. "Påverkas inte av artväljaren". */
+  badge?: string;
   subtitle?: ReactNode;
   /** Controls shown at the right of the title (segmented controls etc.). */
   actions?: ReactNode;
@@ -37,7 +39,7 @@ export interface ChartCardProps<T> {
  * when empty, and an error that only affects this card, with a retry.
  */
 export function ChartCard<T>({
-  title, subtitle, actions, query, isEmpty, emptyMessage = "Det finns inga data för det här urvalet.",
+  title, badge, subtitle, actions, query, isEmpty, emptyMessage = "Det finns inga data för det här urvalet.",
   emptyAction, cachedAt, skeleton = "bars", footnote, children,
 }: ChartCardProps<T>) {
   const loading = query.isPending;
@@ -50,7 +52,10 @@ export function ChartCard<T>({
     <article className={styles.card} aria-busy={loading || refreshing}>
       <div className={styles.head}>
         <div>
-          <h2 className={styles.title}>{title}</h2>
+          <div className={styles.titleRow}>
+            <h2 className={styles.title}>{title}</h2>
+            {badge && <span className={styles.badge}>{badge}</span>}
+          </div>
           {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
         </div>
         <div className={styles.headRight}>

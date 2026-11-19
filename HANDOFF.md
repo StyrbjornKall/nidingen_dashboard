@@ -15,7 +15,7 @@ Where this document and the design files disagree, **this document wins**.
 | Topic | Decision |
 | --- | --- |
 | Seasons | **Vår = januari–juni, höst = juli–december**, by calendar month: `season = 'var' if month <= 6 else 'host'`. |
-| Gap years | **1990–2004** were only partly staffed. They are **excluded from all trends and multi-year statistics** (see §5.1) but still shown in raw time series, visually marked as "delvis bemannad". |
+| Gap years | **1991–2004** were only partly staffed. They are **excluded from all trends and multi-year statistics** (see §5.1) but still shown in raw time series, visually marked as "delvis bemannad". |
 | Single-season species | A species with **more than 90 %** of its new ringings (all years) in one season gets **one** median passage day, for that season only. All other species get one median per season. The threshold is `single_season_threshold` in `config/analysis.json`; there is no hand-made list. |
 | Trend units | Trends are absolute, never percent: **birds per year** for counts, **days** for timing. |
 | Charts with several species | Show **raw counts**. Each species gets its **own y axis** where species are drawn separately (ridgelines). |
@@ -123,15 +123,15 @@ Weather stays as it is (`weather_daily`, about 16 000 rows) and is queried live.
 
 ## 5. Statistical definitions
 
-### 5.1 Gap years (1990–2004)
+### 5.1 Gap years (1991–2004)
 
 Excluded from:
 - linear trends and their confidence bands, and the trend overview;
 - "normal year" averages, the ±1 SD band, top year and worst year in the season-to-date chart;
-- multi-year averages of weekly counts (ridgelines, migration calendar "Snitt alla år");
+- multi-year averages of counts (ridgelines, migration calendar "Snitt alla år");
 - mean median passage days, and "Snitt" columns in tables.
 
-Still shown in raw yearly or daily series, marked as "delvis bemannad" (for example hatched or lighter bars, plus a note). Gap years are not offered as single years in year pickers that feed statistics. The design's Flyttningskalendern year list still offers 1990, which is now a gap year; leave it out.
+Still shown in raw yearly or daily series, marked as "delvis bemannad" (for example hatched or lighter bars, plus a note). Gap years are not offered as single years in year pickers that feed statistics. The design's Flyttningskalendern year list still offers 1990, which is staffed again under the 1991–2004 range, but older design text calls it a gap year: follow `config/analysis.json`.
 
 ### 5.2 Trends
 
@@ -169,7 +169,7 @@ All endpoints return JSON shaped for the charts. Use `Cache-Control` and ETags; 
 | `GET /api/morphometrics/means` | `season` | all species: mean weight, wing, total (bubble chart) |
 | `GET /api/morphometrics/detail` | `species`, `season` | quartiles, 50-bin histograms, age and sex shares |
 | `GET /api/phenology/calendar` | `year=avg\|YYYY`, `top` | weekly counts per species |
-| `GET /api/phenology/ridges` | `species`, `period` | weekly average counts per season, and medians |
+| `GET /api/phenology/ridges` | `species`, `period` | mean daily counts per season (365 days, latest year alongside), and medians |
 | `GET /api/phenology/season-to-date` | `species`, `year` | mean curve, SD band, top and worst years, current year |
 | `GET /api/phenology/table` | `period` | per-species rows (2025 count, average, trend in birds per year, medians) |
 | `GET /api/recoveries` | `species`, `from`, `to`, `direction` | recovery points and summary |
@@ -206,6 +206,7 @@ All endpoints return JSON shaped for the charts. Use `Cache-Control` and ETags; 
 **As built in phase 5** (one PR per page):
 - *Sammanfattning*: periods are the config presets plus the last complete year (`?period=2025`, sent to the API as `year=`). Dag needs a single year (falls back to Vecka), and År is disabled for a single year (it would be one bar; falls back to Månad). Grain and chart type are page state, not URL state. Gap years are hatched in every grain, drawn lighter as bars, and named in the footnote. Recaptures are an optional dashed series ("Visa kontroller"), never added to ringings. The readout can be driven with the arrow keys (the chart is an ARIA slider). The top list shows 100 rows with "Visa alla"; once 6 species are selected the other rows are disabled. The species tile shows every ringed species code (210 today); the wording is still to settle with Hem. Unselected bars use the design's #B4C4B8 as a `color-mix` of tokens, because `design/` is read-only.
 - *Trender*: one `/api/trends` call feeds the comparison chart and the species cards. Gap years are hatched, drawn as lighter bars in the cards, and named in a caption generated from the period, gap years and current year ("Trenderna bygger på hela säsonger 1980–1989 samt 2005–2025 …"). The species cards also show the CI and first/last year labels (the design has neither). "Alla arter" leaves out species with fewer than 100 new ringings in the period and season (`min_total=100`), except selected ones, and has a "Visa alla arter" button. Rows are disabled once 6 species are selected. On phones the unit moves to the column header and only the outer ticks are shown. The comparison chart can be read with the keyboard.
+- *Fenologi*: week charts (calendar, ridgelines, season-to-date) show the station's **active weeks** instead of the design's fixed weeks 11–46. That is `/api/meta` `active_weeks`: the first and last week in which the all-species mean catch is at least 0.1 % of the mean annual total (`ACTIVE_WEEK_SHARE` in `store.py`; weeks 10–47 today). It is a display window, not a season boundary: the station also catches in summer, so vår (weeks 10–26) and höst (27–47) panels meet. The calendar offers "Snitt alla år" plus every non-gap year and marks where the per-season colour scale switches. The calendar names stay pinned while it scrolls sideways on phones. Ridgeline panels for the minor season of a single-season species read "Ringmärks nästan bara på hösten/våren", and medians show "för få fåglar" when no year reaches `median_min_birds`. Season-to-date covers the current year only. It says how far the data goes ("till och med 9 maj"), puts the "idag" marker at today's date, and can be read with the pointer or keyboard. The table colours trends by verdict (certain up/down), not by sign, and shows 10 rows with "Visa alla".
 
 ## 8. Feature parity checklist
 

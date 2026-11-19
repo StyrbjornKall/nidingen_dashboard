@@ -69,6 +69,11 @@ class BuildInfo(BaseModel):
     weather_max_date: Optional[date]
 
 
+class ActiveWeeks(BaseModel):
+    week_from: int
+    week_to: int
+
+
 class Meta(BaseModel):
     species: list[SpeciesInfo]
     seasons: list[SeasonInfo]
@@ -82,6 +87,7 @@ class Meta(BaseModel):
     median_min_birds: int
     single_season_threshold: float
     weather_window: WeatherWindow
+    active_weeks: ActiveWeeks     # display window for week charts
     build: BuildInfo
 
 
@@ -279,9 +285,9 @@ class Calendar(BaseModel):
 
 
 class RidgeSeason(BaseModel):
-    weeks: list[int]
-    mean: list[float]
-    latest: list[int]
+    doy_from: int                 # day of year (non-leap) of the first value
+    mean: list[float]             # mean daily catch, one value per day of the season
+    latest: list[Optional[int]]   # latest year; null after the last ringing date
     median_doy: Optional[float]
     q25_doy: Optional[float]
     q75_doy: Optional[float]
@@ -297,11 +303,17 @@ class RidgeSpecies(BaseModel):
     host: Optional[RidgeSeason]
 
 
+class DayRange(BaseModel):
+    doy_from: int
+    doy_to: int
+
+
 class Ridges(BaseModel):
     period: PeriodInfo
     reference_years: list[int]
     latest_year: int
-    weeks: list[WeekInfo]
+    data_through_doy: int         # the latest year has data up to this day
+    season_days: dict[str, DayRange]   # first and last day of each season (var, host)
     species: list[RidgeSpecies]
 
 

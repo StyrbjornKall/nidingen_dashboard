@@ -63,5 +63,6 @@ def meta(store: DataStore = Depends(get_store)) -> dict:
             "timezone": cfg["weather_window"]["timezone"],
             "note": cfg["weather_window"].get("note_sv", ""),
         },
+        "active_weeks": {"week_from": store.active_weeks[0], "week_to": store.active_weeks[1]},
         "build": store.build,
     }

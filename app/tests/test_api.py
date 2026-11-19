@@ -89,6 +89,9 @@ def test_meta(client):
                                    "timezone": "Europe/Stockholm", "note": "Väder kl. 03–12."}
     single = {s["code"]: (s["single_season"], s["single_season_season"]) for s in m["species"]}
     assert single["AAA"] == (True, "var") and single["BBB"] == (False, None)
+    # Catches in the reference years run from 29 Feb/1 Mar 1988 (week 9) to
+    # 1 Oct 1989 (week 40); the 1990 gap-year birds (week 25) don't count.
+    assert m["active_weeks"] == {"week_from": 9, "week_to": 40}
 
 
 def test_kpis(client):
@@ -222,7 +225,13 @@ def test_ridges(client):
     r = get(client, "/api/phenology/ridges?species=AAA,BBB&period=all")
     aaa, bbb = r["species"]
     assert aaa["host"] is None and aaa["var"]["median_doy"] == 120.0 and aaa["var"]["years_used"] == 3
-    assert aaa["var"]["mean"][aaa["var"]["weeks"].index(18)] == pytest.approx(17 / 9, abs=0.01)
+    v = aaa["var"]
+    assert v["doy_from"] == 1 and len(v["mean"]) == 181                # Jan–Jun, a day each
+    assert v["mean"][120 - 1] == pytest.approx(17 / 9, abs=0.001)      # 30 Apr: 5 (1985) + 12 (1993)
+    assert v["mean"][121 - 1] == 0 and v["latest"][120 - 1] == 0
+    assert len(bbb["host"]["mean"]) == 184 and bbb["host"]["doy_from"] == 182   # Jul–Dec
+    assert r["data_through_doy"] == 365
+    assert r["season_days"] == {"var": {"doy_from": 1, "doy_to": 181}, "host": {"doy_from": 182, "doy_to": 365}}
     assert bbb["var"] is not None and bbb["host"] is not None
     assert bbb["var"]["median_doy"] is None                           # 3 birds < minimum sample
     assert r["latest_year"] == 1995

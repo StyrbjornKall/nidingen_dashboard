@@ -74,7 +74,7 @@ design/                 Design reference (read-only)
 
 - **Seasons:** vår = januari–juni, höst = juli–december (`month <= 6`), on
   every page including Väder.
-- **Gap years 1990–2004** are excluded from every trend, average, SD band,
+- **Gap years 1991–2004** are excluded from every trend, average, SD band,
   top/worst year and mean median. They are shown in raw series, marked
   "delvis bemannad".
 - **"Ringmärkta" = new ringings (`ringon`) only.** Recaptures (`kontr`) are
