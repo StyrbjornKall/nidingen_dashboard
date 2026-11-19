@@ -16,16 +16,19 @@ const TREND_COLOR = { up: "var(--color-badge-up-fg)", down: "var(--color-badge-d
 
 /** "Arterna": latest year, recent average, trend, medians and a sparkline per species. */
 export function SpeciesTableCard({
-  period, selected, colorOf, onToggle, max,
+  period, defaultPeriod, selected, colorOf, onToggle, max,
 }: {
+  /** The page's period; a single year falls back to `defaultPeriod`, as the table compares periods. */
   period: PeriodInfo;
+  defaultPeriod: PeriodInfo;
   selected: readonly string[];
   colorOf: (c: string) => string | undefined;
   onToggle: (c: string) => void;
   max: number;
 }) {
   const [all, setAll] = useState(false);
-  const query = useApi<Schemas["PhenologyTable"]>("/api/phenology/table", { period: period.id, species: selected }, { keepPrevious: true });
+  const shown = period.year_from === period.year_to ? defaultPeriod : period;
+  const query = useApi<Schemas["PhenologyTable"]>("/api/phenology/table", { period: shown.id, species: selected }, { keepPrevious: true });
   const full = selected.length >= max;
 
   return (
@@ -35,7 +38,7 @@ export function SpeciesTableCard({
       query={query}
       skeleton="rows"
       isEmpty={(d) => d.rows.length === 0}
-      footnote={query.data && tableNote(query.data)}
+      footnote={query.data && tableNote(query.data) + (shown !== period ? ` Tabellen jämför perioder, så den visar ${shown.label} även när ett enskilt år är valt.` : "")}
     >
       {(data) => {
         const rows = all ? data.rows : data.rows.slice(0, Math.max(FIRST_ROWS, data.rows.filter((r) => r.selected).length));

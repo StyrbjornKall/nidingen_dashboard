@@ -1,5 +1,5 @@
 import { area, line } from "d3-shape";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { chartStyles, Crosshair, GapBands, PlotSvg, Scrubber, useWidth, XLabels, YTicks } from "../../components/charts/Plot";
 import { gapRuns, maxValue, yAxis } from "../../components/charts/scale";
 import { formatInt } from "../../lib/format";
@@ -27,6 +27,8 @@ export interface TimeSeriesChartProps {
   valueText: string;
   /** Changes whenever the chart should replay its entry animation. */
   animationKey: string;
+  /** Drag across the chart to zoom: first and last bucket index of the dragged range. */
+  onZoom?: (first: number, last: number) => void;
 }
 
 const W = 1000;
@@ -41,7 +43,8 @@ const PAGE_STEP: Record<Grain, number> = { day: 30, week: 52, month: 12, year: 5
  * stretches to the box (viewBox 1000 × 300, no aspect ratio) and the axis
  * labels are HTML, so the text never scales.
  */
-export function TimeSeriesChart({ buckets, grain, type, series, hover, onHover, valueText, animationKey }: TimeSeriesChartProps) {
+export function TimeSeriesChart({ buckets, grain, type, series, hover, onHover, valueText, animationKey, onZoom }: TimeSeriesChartProps) {
+  const [drag, setDrag] = useState<[number, number] | null>(null);
   const n = buckets.length;
   const [plotRef, width] = useWidth<HTMLDivElement>();
   const stacked = type === "bar";
@@ -128,8 +131,17 @@ export function TimeSeriesChart({ buckets, grain, type, series, hover, onHover, 
             />
           ))}
         </PlotSvg>
-        {hover >= 0 && hover < n && <Crosshair left={(x(hover) / W) * 100} />}
-        <Scrubber n={n} hover={hover} onHover={onHover} valueText={valueText} pageStep={PAGE_STEP[grain]} />
+        {drag && <div className={styles.selection} style={{ left: `${(drag[0] / n) * 100}%`, width: `${((drag[1] - drag[0] + 1) / n) * 100}%` }} />}
+        {hover >= 0 && hover < n && !drag && <Crosshair left={(x(hover) / W) * 100} />}
+        <Scrubber
+          n={n}
+          hover={hover}
+          onHover={onHover}
+          valueText={valueText}
+          pageStep={PAGE_STEP[grain]}
+          onSelect={onZoom}
+          onDrag={onZoom ? setDrag : undefined}
+        />
       </div>
       <XLabels labels={labels} />
     </div>

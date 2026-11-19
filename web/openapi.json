@@ -515,11 +515,29 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "'avg' (mean over all non-gap years) or a year",
+              "description": "'avg' (mean over the period's non-gap years) or a year",
               "default": "avg",
               "title": "Year"
             },
-            "description": "'avg' (mean over all non-gap years) or a year"
+            "description": "'avg' (mean over the period's non-gap years) or a year"
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Period for 'avg' (default: the first preset)",
+              "title": "Period"
+            },
+            "description": "Period for 'avg' (default: the first preset)"
           },
           {
             "name": "top",
@@ -583,7 +601,7 @@
     "/api/phenology/ridges": {
       "get": {
         "summary": "Ridges",
-        "description": "Mean daily catch per season (day resolution), the latest year alongside.",
+        "description": "Mean daily catch per season (day resolution), the latest year alongside.\n\nWith `year` the \"mean\" is that single year and the dashed \"latest\" line is\nstill the last complete year.",
         "operationId": "ridges_api_phenology_ridges_get",
         "parameters": [
           {
@@ -612,6 +630,24 @@
               ],
               "title": "Period"
             }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "One year instead of a period; the last complete year stays alongside",
+              "title": "Year"
+            },
+            "description": "One year instead of a period; the last complete year stays alongside"
           }
         ],
         "responses": {

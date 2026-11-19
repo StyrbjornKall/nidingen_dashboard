@@ -13,7 +13,7 @@ const FALLBACK = ["RÖHAK"];
 const SEASONS = ["var", "host", "helar"] as const;
 
 export default function Trender() {
-  const selection = usePageSelection({ defaults: null, fallback: FALLBACK, seasons: SEASONS, defaultSeason: "host" });
+  const selection = usePageSelection({ defaults: null, fallback: FALLBACK, seasons: SEASONS, defaultSeason: "helar" });
   const { meta, species, period, season } = selection;
 
   const info = useMemo(() => new Map(meta?.species.map((s) => [s.code, s]) ?? []), [meta]);

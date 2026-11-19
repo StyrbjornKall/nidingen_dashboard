@@ -99,8 +99,9 @@ export function faq(f: Facts): Qa[] {
       id: "filter",
       q: "Var gäller filtren?",
       a:
-        "Raden som börjar med ”Visar” eller ”Jämför” gäller alla diagram på sidan. Återfynd, Väder och Flyttningskalendern på Fenologi har egna " +
-        "kontroller och påverkas inte av artväljaren, eftersom de bygger på andra data.",
+        "Raden som börjar med ”Visar” eller ”Jämför” gäller alla diagram på sidan. Återfynd och Väder har egna " +
+        "kontroller och påverkas inte av artväljaren, eftersom de bygger på andra data. Diagrammet över innevarande säsong på Sammanfattning " +
+        "följer inte periodvalet.",
     },
     {
       id: "band",
@@ -123,7 +124,7 @@ export function faq(f: Facts): Qa[] {
       q: `Varför är ${f.currentYear} inte med i trenderna?`,
       a:
         `Trenderna räknas på hela säsonger. Data för ${f.currentYear} går till och med ${formatDate(f.ringingMaxDate, true)}, så året jämförs i stället med ` +
-        `tidigare år på sidan Fenologi, under ”Säsongen ${f.currentYear}”.`,
+        `tidigare år på sidan Sammanfattning, under ”Säsongen ${f.currentYear}”.`,
     });
   }
   items.push(

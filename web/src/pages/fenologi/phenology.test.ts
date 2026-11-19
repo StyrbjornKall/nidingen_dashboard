@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { calendarYears, heatColor, monthTicks, weekEnd, weekSlice, weekStart } from "./phenology";
+import { pickableYears } from "../../lib/years";
+import { heatColor, monthTicks, weekEnd, weekSlice, weekStart } from "./phenology";
 
 describe("weeks as days", () => {
   it("counts 7-day weeks from 1 January, week 52 to the year's end", () => {
@@ -28,9 +29,9 @@ describe("heatColor", () => {
   });
 });
 
-describe("calendarYears", () => {
+describe("pickableYears", () => {
   it("leaves out the partly staffed years", () => {
-    const years = calendarYears(1985, 2008, { year_from: 1990, year_to: 2004 });
+    const years = pickableYears(1985, 2008, { year_from: 1990, year_to: 2004 });
     expect(years.slice(0, 4)).toEqual([2008, 2007, 2006, 2005]);
     expect(years).not.toContain(1990);
     expect(years.at(-1)).toBe(1985);

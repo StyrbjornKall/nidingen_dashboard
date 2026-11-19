@@ -6,8 +6,8 @@ import { useApi, type Meta, type Schemas } from "../../lib/api";
 import { formatDoy, formatInt } from "../../lib/format";
 import { color } from "../../lib/tokens";
 import { yearRuns } from "../../lib/years";
-import styles from "./Fenologi.module.css";
-import { monthTicks, weekEnd, weekStart } from "./phenology";
+import { monthTicks, weekEnd, weekStart } from "../fenologi/phenology";
+import styles from "./SeasonToDateCard.module.css";
 
 const W = 1000;
 const H = 300;
@@ -34,6 +34,7 @@ export function SeasonToDateCard({
   return (
     <ChartCard
       title={`Säsongen ${year} mot alla tidigare år`}
+      badge="Påverkas inte av periodvalet"
       subtitle="Hur många fåglar som ringmärkts hittills under året, räknat upp dag för dag, jämfört med tidigare år vid samma datum."
       query={query}
       footnote={

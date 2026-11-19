@@ -33,6 +33,10 @@ export function TimeSeriesCard({ meta, period, species, colorOf, nameOf }: TimeS
   const [type, setType] = useState<ChartType>("bar");
   const [showRecap, setShowRecap] = useState(false);
   const [hover, setHover] = useState(-1);
+  // Zoom: a bucket range, valid only for the grain and period it was dragged in.
+  const zoomKey = `${chosenGrain}|${period.id}`;
+  const [zoomState, setZoomState] = useState<{ key: string; range: [number, number] } | null>(null);
+  const zoom = zoomState?.key === zoomKey ? zoomState.range : null;
   // Daily resolution needs a single year; leaving one falls back to weeks
   // (design). A single year per year would be one bar, so that shows months.
   const grain: Grain = chosenGrain === "day" && !single ? "week" : chosenGrain === "year" && single ? "month" : chosenGrain;
@@ -45,6 +49,7 @@ export function TimeSeriesCard({ meta, period, species, colorOf, nameOf }: TimeS
 
   const pickGrain = (g: Grain) => {
     setGrain(g);
+    setZoomState(null);
     setType(defaultChartType(g));
     setHover(-1);
   };
@@ -80,6 +85,11 @@ export function TimeSeriesCard({ meta, period, species, colorOf, nameOf }: TimeS
               { value: "line", label: "Linje" },
             ]}
           />
+          {zoom && (
+            <button type="button" className={styles.zoomReset} onClick={() => setZoomState(null)}>
+              Återställ zoom
+            </button>
+          )}
         </>
       }
       footnote={
@@ -87,6 +97,7 @@ export function TimeSeriesCard({ meta, period, species, colorOf, nameOf }: TimeS
           {grain === "day" || grain === "week"
             ? "Linje är förvalt för dag och vecka eftersom staplarna blir för tunna. Stationen är bemannad vår och höst, därav luckorna."
             : `Håll muspekaren över diagrammet, eller använd piltangenterna, för att läsa av en enskild ${noun}.`}
+          {" Dra över diagrammet för att zooma in på ett intervall."}
           {gapInPeriod &&
             ` ${meta.gap_years.year_from}–${meta.gap_years.year_to} är skuggat: ${meta.gap_years.reason.charAt(0).toLowerCase()}${meta.gap_years.reason.slice(1)}`}
           {showRecap && " Streckade linjer är kontroller, fåglar som redan var ringmärkta och fångades igen på Nidingen."}
@@ -101,6 +112,13 @@ export function TimeSeriesCard({ meta, period, species, colorOf, nameOf }: TimeS
           onToggleRecap={() => setShowRecap((v) => !v)}
           hover={hover}
           onHover={setHover}
+          zoom={zoom}
+          onZoom={(a, b) => {
+            setHover(-1);
+            // Indices are relative to what is shown, so zooming twice nests.
+            const base = zoom?.[0] ?? 0;
+            setZoomState({ key: zoomKey, range: [base + a, base + b] });
+          }}
           colorOf={colorOf}
           nameOf={nameOf}
         />
@@ -110,7 +128,7 @@ export function TimeSeriesCard({ meta, period, species, colorOf, nameOf }: TimeS
 }
 
 function TimeSeriesBody({
-  data, type, showRecap, onToggleRecap, hover, onHover, colorOf, nameOf,
+  data, type, showRecap, onToggleRecap, hover, onHover, zoom, onZoom, colorOf, nameOf,
 }: {
   data: Schemas["TimeSeries"];
   type: ChartType;
@@ -118,9 +136,15 @@ function TimeSeriesBody({
   onToggleRecap: () => void;
   hover: number;
   onHover: (i: number) => void;
+  zoom: [number, number] | null;
+  onZoom: (first: number, last: number) => void;
   colorOf: (code: string) => string | undefined;
   nameOf: (code: string) => string;
 }) {
+  // The visible slice of the buckets; `off` maps its indices back to `data`.
+  const off = zoom ? Math.min(zoom[0], data.buckets.length - 1) : 0;
+  const end = zoom ? Math.min(zoom[1], data.buckets.length - 1) : data.buckets.length - 1;
+  const buckets = useMemo(() => (zoom ? data.buckets.slice(off, end + 1) : data.buckets), [data, zoom, off, end]);
   const series: ChartSeries[] = useMemo(
     () =>
       data.series.map((s) => ({
@@ -128,28 +152,33 @@ function TimeSeriesBody({
         name: nameOf(s.species),
         // A species just removed keeps its old data until the new answer arrives.
         color: colorOf(s.species) ?? color.chart_mean,
-        values: s.new,
-        recap: showRecap ? s.recap : undefined,
+        values: zoom ? s.new.slice(off, end + 1) : s.new,
+        recap: showRecap ? (zoom ? s.recap.slice(off, end + 1) : s.recap) : undefined,
       })),
-    [data, colorOf, nameOf, showRecap],
+    [data, colorOf, nameOf, showRecap, zoom, off, end],
   );
 
-  const i = hover >= 0 && hover < data.buckets.length ? hover : -1;
-  const bucket = i >= 0 ? data.buckets[i] : undefined;
+  const i = hover >= 0 && hover < buckets.length ? hover : -1;
+  const bucket = i >= 0 ? buckets[i] : undefined;
+  const first = buckets[0];
+  const last = buckets[buckets.length - 1];
   const title = bucket
     ? `${bucketLabel(bucket, data.grain)}${bucket.is_gap_year ? " · delvis bemannad" : ""}`
-    : `Summa ${yearSpan(data.period)}`;
+    : zoom && first && last
+      ? `Summa ${bucketLabel(first, data.grain)}${first === last ? "" : ` – ${bucketLabel(last, data.grain)}`}`
+      : `Summa ${yearSpan(data.period)}`;
+  const sum = (list: readonly number[]) => list.slice(off, end + 1).reduce((a, b) => a + b, 0);
   const rows = data.series.map((s, k) => ({
     code: s.species,
     name: series[k]?.name ?? s.species,
     color: series[k]?.color ?? color.chart_mean,
-    n: bucket ? (s.new[i] ?? 0) : s.total_new,
-    recap: bucket ? (s.recap[i] ?? 0) : s.total_recap,
+    n: bucket ? (s.new[i + off] ?? 0) : zoom ? sum(s.new) : s.total_new,
+    recap: bucket ? (s.recap[i + off] ?? 0) : zoom ? sum(s.recap) : s.total_recap,
   }));
   const valueText = `${title}: ${rows
     .map((r) => `${r.name} ${formatInt(r.n)}${showRecap ? `, ${formatInt(r.recap)} kontroller` : ""}`)
     .join("; ")}`;
-  const animationKey = `${data.grain}|${type}|${data.period.id}|${data.series.map((s) => s.species).join(",")}`;
+  const animationKey = `${data.grain}|${type}|${data.period.id}|${zoom ? `${off}-${end}` : "all"}|${data.series.map((s) => s.species).join(",")}`;
 
   return (
     <div className={styles.tsBody}>
@@ -174,7 +203,7 @@ function TimeSeriesBody({
         </button>
       </div>
       <TimeSeriesChart
-        buckets={data.buckets}
+        buckets={buckets}
         grain={data.grain}
         type={type}
         series={series}
@@ -182,6 +211,7 @@ function TimeSeriesBody({
         onHover={onHover}
         valueText={valueText}
         animationKey={animationKey}
+        onZoom={onZoom}
       />
     </div>
   );

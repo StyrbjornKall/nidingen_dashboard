@@ -239,6 +239,24 @@ def test_ridges(client):
     assert r["latest_year"] == 1995
 
 
+def test_calendar_period_param(client):
+    all_ = get(client, "/api/phenology/calendar?top=5")
+    same = get(client, "/api/phenology/calendar?top=5&period=all")
+    assert same["rows"] == all_["rows"]
+    get(client, "/api/phenology/calendar?period=nope", status=422)
+
+
+def test_ridges_single_year(client):
+    r = get(client, "/api/phenology/ridges?species=AAA&year=1993")
+    v = r["species"][0]["var"]
+    assert r["reference_years"] == [1993] and r["period"]["year_from"] == 1993
+    assert v["mean"][120 - 1] == 12 and v["median_doy"] is not None    # 12 birds on 30 Apr 1993
+    assert v["years_used"] == 1
+    assert r["latest_year"] == get(client, "/api/phenology/ridges?species=AAA&period=all")["latest_year"]
+    get(client, "/api/phenology/ridges?species=AAA&year=1990", status=422)               # gap year
+    get(client, "/api/phenology/ridges?species=AAA&year=1993&period=all", status=422)    # one or the other
+
+
 def test_season_to_date(client):
     s = get(client, "/api/phenology/season-to-date?species=AAA&year=1993")
     assert s["reference_years"] == [1985, 1986, 1987, 1988, 1989, 1992]

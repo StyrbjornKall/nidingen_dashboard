@@ -1,24 +1,22 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const card = (page: Page, title: string | RegExp) => page.locator("article").filter({ has: page.getByRole("heading", { name: title }) });
-const calendar = (page: Page) => card(page, "Flyttningskalendern");
+const calendar = (page: Page) => card(page, "Märkningskalendern");
 const ridges = (page: Page) => card(page, "När passerar arterna i detalj?");
-const std = (page: Page) => card(page, /^Säsongen \d{4} mot alla tidigare år$/);
 const table = (page: Page) => card(page, "Arterna");
 
-test("the page is in the planned order, with the calendar above the species bar", async ({ page }) => {
+test("the selection bar is on top, then the calendar, the ridgelines and the table", async ({ page }) => {
   await page.goto("/fenologi");
   const headings = page.getByRole("heading", { level: 2 });
-  await expect(headings).toHaveText(["Flyttningskalendern", "När passerar arterna i detalj?", /^Säsongen \d{4}/, "Arterna"]);
-  const barTop = (await page.getByRole("region", { name: "Urval" }).boundingBox())!.y;
-  const calBottom = (await calendar(page).boundingBox())!.y;
-  expect(calBottom).toBeLessThan(barTop);
+  await expect(headings).toHaveText(["Märkningskalendern", "När passerar arterna i detalj?", "Arterna"]);
+  const barBottom = (await page.getByRole("region", { name: "Urval" }).boundingBox())!.y;
+  const calTop = (await calendar(page).boundingBox())!.y;
+  expect(barBottom).toBeLessThan(calTop);
   await expect(page.getByRole("group", { name: "Säsong" })).toHaveCount(0); // no season toggle on this page
 });
 
-test("calendar: selected species first, top N, own year choice without gap years", async ({ page }) => {
+test("calendar: selected species first, top N", async ({ page }) => {
   await page.goto("/fenologi");
-  await expect(calendar(page).getByText("Påverkas inte av artväljaren")).toBeVisible();
   const names = calendar(page).locator("[class*=calName]");
   await expect(names).toHaveCount(10);
   await expect(names.nth(0)).toContainText("Rödhake");
@@ -28,13 +26,41 @@ test("calendar: selected species first, top N, own year choice without gap years
   await calendar(page).getByRole("button", { name: "Topp 15" }).click();
   await expect(names).toHaveCount(15);
 
-  const options = await calendar(page).getByLabel("År").locator("option").allTextContents();
-  expect(options[0]).toBe("Snitt alla år");
+});
+
+test("the year dropdown has no gap years and drives calendar, ridgelines and table", async ({ page, request }) => {
+  const meta = await (await request.get("/api/meta")).json();
+  await page.goto("/fenologi");
+  const bar = page.getByRole("region", { name: "Urval" });
+  await expect(bar.getByLabel("Välj specifikt år")).toBeVisible();
+  const options = await bar.getByLabel("Välj specifikt år").locator("option").allTextContents();
+  expect(options[0]).toBe("Välj specifikt år");
   expect(options).not.toContain("1995");
   expect(options).toContain("2005");
-  await calendar(page).getByLabel("År").selectOption("2008");
+  expect(options).toContain(String(meta.complete_through));
+
+  const ridgesCall = page.waitForResponse((r) => r.url().includes("/api/phenology/ridges") && r.url().includes("year=2008"));
+  await bar.getByLabel("Välj specifikt år").selectOption("2008");
+  const body = await (await ridgesCall).json();
+  expect(body.reference_years).toEqual([2008]); // the data is that one year, not the period average
+  await expect(page).toHaveURL(/period=2008/);
   await expect(calendar(page).getByText("totalt", { exact: true })).toBeVisible();
   await expect(calendar(page).getByText(/^Snitt per år för/)).toHaveCount(0);
+  // The ridgelines show 2008 against the last complete year.
+  await expect(ridges(page).getByText(/Säsongens fångst per dag, 2008, jämfört med det senaste kompletta året \(\d{4}\)/)).toBeVisible();
+  // No preset is pressed while a specific year is chosen.
+  await expect(bar.getByRole("group", { name: "Period" }).locator("[aria-pressed=true]")).toHaveCount(0);
+
+  await bar.getByRole("button", { name: "Senaste 10 år" }).click();
+  await expect(calendar(page).getByText(/^Snitt per år för/)).toBeVisible();
+});
+
+test("the period presets change the calendar's average", async ({ page, request }) => {
+  const meta = await (await request.get("/api/meta")).json();
+  await page.goto("/fenologi");
+  await page.getByRole("region", { name: "Urval" }).getByRole("button", { name: "Senaste 10 år" }).click();
+  const from = meta.complete_through - 9;
+  await expect(calendar(page).getByText(new RegExp(`^Snitt per år för ${from}–${meta.complete_through}`))).toBeVisible();
 });
 
 test("calendar weeks are 7-day periods from 1 January", async ({ page }) => {
@@ -42,7 +68,8 @@ test("calendar weeks are 7-day periods from 1 January", async ({ page }) => {
   await expect(calendar(page).getByText(/sjudagarsperioder från 1 januari/)).toBeVisible();
 });
 
-test("calendar: hovering a cell shows its species, week with dates and value", async ({ page }) => {
+test("calendar: hovering a cell shows its species, week with dates and value", async ({ page }, info) => {
+  test.skip(info.project.name === "mobile", "pointer hover");
   await page.goto("/fenologi");
   const row = calendar(page).locator("[class*=calRow]").first();
   const cells = row.locator("[class*=heat] > span");
@@ -64,23 +91,7 @@ test("ridgelines: one row per species, medians, single-season species", async ({
   // Ängspiplärka is ringed almost only in autumn: one median.
   await expect(ridges(page).getByText("median vår: –")).toBeVisible();
   await expect(ridges(page).getByText("Ringmärks nästan bara på hösten")).toBeVisible();
-  await expect(ridges(page).getByText(/Säsongens fångst per dag, snitt för 1980–1990 samt 2005–2025\./)).toBeVisible();
-});
-
-test("season to date compares this year with the reference years", async ({ page, request }) => {
-  const meta = await (await request.get("/api/meta")).json();
-  await page.goto("/fenologi");
-  await expect(std(page).getByRole("heading")).toHaveText(`Säsongen ${meta.current_year} mot alla tidigare år`);
-  await expect(std(page).getByText(/^Rödhake, ringmärkta \d{4}/)).toBeVisible();
-  await expect(std(page).getByText(/fåglar mot ett normalt år/)).toBeVisible();
-  await expect(std(page).getByText("Medel 1980–1990 samt 2005–2025")).toBeVisible();
-
-  // The running year ends in a blinking dot; there is no "idag" line.
-  await expect(std(page).locator("[class*=liveDot]")).toHaveCount(1);
-  await expect(std(page).getByText(/^idag/)).toHaveCount(0);
-
-  await std(page).getByRole("button", { name: "Lövsångare" }).click();
-  await expect(std(page).getByText(/^Lövsångare, ringmärkta/)).toBeVisible();
+  await expect(ridges(page).getByText(/Säsongens fångst per dag, snitt för 1980–1990 samt 2005–2025, jämfört med/)).toBeVisible();
 });
 
 test("species table: selected first, ten rows, then all", async ({ page }) => {
@@ -96,7 +107,7 @@ test("species table: selected first, ten rows, then all", async ({ page }) => {
   await expect(page.getByRole("region", { name: "Urval" }).getByRole("button", { name: /^Ta bort / })).toHaveCount(4);
 });
 
-test("the species bar changes ridgelines and table, not the calendar", async ({ page }) => {
+test("the species bar changes the calendar order, ridgelines and table", async ({ page }) => {
   await page.goto("/fenologi");
   await expect(calendar(page).locator("[class*=calName]")).toHaveCount(10);
   const before = await calendar(page).locator("[class*=calName]").allTextContents();

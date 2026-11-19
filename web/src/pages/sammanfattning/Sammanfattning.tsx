@@ -5,13 +5,14 @@ import { useApi, type Schemas } from "../../lib/api";
 import { formatInt } from "../../lib/format";
 import { ALL_SPECIES } from "../../lib/urlState";
 import { SelectionBar, usePageSelection } from "../shared/selection";
+import { SeasonToDateCard } from "./SeasonToDateCard";
 import { TimeSeriesCard } from "./TimeSeriesCard";
 import { TopSpeciesCard } from "./TopSpeciesCard";
 
 const DEFAULTS = [ALL_SPECIES];
 
 export default function Sammanfattning() {
-  const selection = usePageSelection({ defaults: DEFAULTS, fallback: DEFAULTS, singleYear: true });
+  const selection = usePageSelection({ defaults: DEFAULTS, fallback: DEFAULTS, singleYear: true, yearPicker: true });
   const { meta, species, period } = selection;
   const kpis = useApi<Schemas["Kpis"]>("/api/summary/kpis").data;
 
@@ -41,6 +42,9 @@ export default function Sammanfattning() {
         <>
           <Section>
             <TimeSeriesCard meta={meta} period={period} species={species.selected} colorOf={species.colorOf} nameOf={nameOf} />
+          </Section>
+          <Section>
+            <SeasonToDateCard meta={meta} species={species.selected} colorOf={species.colorOf} nameOf={nameOf} />
           </Section>
           <Section last>
             <TopSpeciesCard

@@ -12,13 +12,14 @@ test("the page is in the planned order and starts with the design's three specie
   await expect(keys(page).getByText("Rödhake", { exact: true })).toBeVisible();
   await expect(keys(page).getByText("Ängspiplärka", { exact: true })).toBeVisible();
   await expect(keys(page).getByText("Skärpiplärka", { exact: true })).toBeVisible();
-  // Season has "Båda" for the whole year; the default is höst, and there is no period choice.
-  await expect(page.getByRole("button", { name: "Höst" })).toHaveAttribute("aria-pressed", "true");
+  // The whole year is "Helår", never "Båda", and it is the default. There is no period choice.
+  await expect(page.getByRole("button", { name: "Helår" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Båda" })).toHaveCount(0);
   await expect(page.getByRole("group", { name: "Period" })).toHaveCount(0);
 });
 
 test("key figures agree with the API", async ({ page, request }) => {
-  const api = await (await request.get("/api/morphometrics/detail?species=R%C3%96HAK&season=host")).json();
+  const api = await (await request.get("/api/morphometrics/detail?species=R%C3%96HAK&season=helar")).json();
   const w = api.species[0].weight;
   await page.goto("/morfometri?arter=R%C3%96HAK");
   const text = (n: number) => n.toFixed(1).replace(".", ",");
@@ -27,7 +28,7 @@ test("key figures agree with the API", async ({ page, request }) => {
 });
 
 test("bubbles: one per species with enough birds, a click adds and removes a species", async ({ page, request }) => {
-  const means = await (await request.get("/api/morphometrics/means?season=host")).json();
+  const means = await (await request.get("/api/morphometrics/means?season=helar")).json();
   await page.goto("/morfometri?arter=R%C3%96HAK");
   await expect(bubbles(page).locator("button[aria-pressed]")).toHaveCount(means.rows.length);
   const tern = bubbles(page).getByRole("button", { name: "Taltrast, lägg till i jämförelsen" });
@@ -39,7 +40,8 @@ test("bubbles: one per species with enough birds, a click adds and removes a spe
 });
 
 test("bubbles: hovering one reads its means and count", async ({ page }) => {
-  await page.goto("/morfometri?arter=R%C3%96HAK");
+  // In autumn Taltrast is not hidden behind its overlapping neighbour at the bubble's centre.
+  await page.goto("/morfometri?arter=R%C3%96HAK&sasong=host");
   await bubbles(page).getByRole("button", { name: "Taltrast, lägg till i jämförelsen" }).hover({ force: true });
   await expect(bubbles(page).getByText(/ringmärkta sedan 1980$/).first()).toBeVisible();
   await expect(bubbles(page).locator("div[class*=readout]")).toContainText("Taltrast");

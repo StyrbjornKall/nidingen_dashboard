@@ -168,8 +168,6 @@ export function Globe({
     const centre: [number, number] = [v.lon, v.lat];
     const seen: { x: number; y: number; i: number }[] = [];
     const r = 5 * k;
-    ctx.lineWidth = 1.5 * k;
-    ctx.strokeStyle = color.surface;
     // One path per direction: thousands of separate fills and strokes are slow.
     const byDirection = { out: new Path2D(), in: new Path2D() };
     pts.forEach((p, i) => {
@@ -184,7 +182,6 @@ export function Globe({
     for (const [dir, fill] of [["out", color.data], ["in", color.trend]] as const) {
       ctx.fillStyle = fill;
       ctx.fill(byDirection[dir]);
-      ctx.stroke(byDirection[dir]);
     }
     hit.current = seen;
 

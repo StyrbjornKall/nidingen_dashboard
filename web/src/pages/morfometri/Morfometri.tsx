@@ -25,7 +25,7 @@ type Details = Schemas["MorphDetails"];
  * no period choice.
  */
 export default function Morfometri() {
-  const selection = usePageSelection({ defaults: DEFAULTS, fallback: FALLBACK, seasons: SEASONS, defaultSeason: "host" });
+  const selection = usePageSelection({ defaults: DEFAULTS, fallback: FALLBACK, seasons: SEASONS, defaultSeason: "helar" });
   const { meta, species, season } = selection;
   const info = useMemo(() => new Map(meta?.species.map((s) => [s.code, s]) ?? []), [meta]);
   const nameOf = useCallback((code: string) => info.get(code)?.name ?? code, [info]);
@@ -51,7 +51,7 @@ export default function Morfometri() {
         title="Morfometri"
         lead="Hur ser fåglarna ut när de fångas här? Vikt, vinglängd, ålder och kön för de arter du valt, mot alla andra arter."
       />
-      <SelectionBar selection={selection} before="Jämför" after="fångade" showPeriod={false} seasonLabels={{ helar: "Båda" }} />
+      <SelectionBar selection={selection} before="Jämför" after="fångade" showPeriod={false} />
       {meta && (
         <>
           <Section>

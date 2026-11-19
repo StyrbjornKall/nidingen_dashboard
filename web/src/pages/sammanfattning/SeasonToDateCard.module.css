@@ -1,0 +1,233 @@
+.calDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.stdLegend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.std {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tab {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  min-height: var(--min-touch-target);
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-line);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 14px var(--font-sans);
+  transition: background 0.2s;
+}
+
+.tab:hover {
+  background: var(--color-surface-tint);
+}
+
+.tab[aria-pressed="true"] {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: #fff;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}
+
+.stdSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  align-items: center;
+}
+
+.stdNow {
+  font-size: 40px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.stdNowLabel {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  max-width: 300px;
+}
+
+.stdDiff {
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 6px 13px;
+  border-radius: var(--radius-pill);
+  background: var(--color-badge-down-bg);
+  color: var(--color-badge-down-fg);
+}
+
+.stdDiff[data-up="true"] {
+  background: var(--color-badge-up-bg);
+  color: var(--color-badge-up-fg);
+}
+
+.stdTiles {
+  flex: 1 1 340px;
+  max-width: 520px;
+  margin: 0 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--color-line);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.stdTiles > div {
+  background: var(--color-surface);
+  padding: 8px 12px;
+}
+
+.stdTiles dt {
+  hyphens: auto;
+  overflow-wrap: anywhere;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.stdTiles dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.stdTiles dd + dd {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.stdLegend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.swCurrent,
+.swTop {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-chart-current-year);
+}
+
+.swTop {
+  background: var(--color-chart-top-year);
+}
+
+.swMean {
+  width: 18px;
+  border-top: 2px dashed var(--color-chart-mean);
+}
+
+.swBand {
+  width: 18px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--color-chart-band-fill);
+}
+
+.swWorst {
+  width: 18px;
+  border-top: 2px dotted var(--color-chart-worst-year);
+}
+
+.stdReadout {
+  font-size: 13px;
+  min-height: 20px;
+}
+
+.stdPlot {
+  --chart-gutter: 50px;
+  padding: 26px 14px 0 var(--chart-gutter);
+}
+
+/* The latest reported value of the running year: a dot that blinks slowly. */
+.liveDot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--color-chart-current-year);
+  box-shadow: 0 0 0 3px var(--color-surface);
+  pointer-events: none;
+  animation: blink 2.8s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveDot {
+    animation: none;
+  }
+}
+
+.liveLabel {
+  position: absolute;
+  transform: translate(10px, -50%);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.liveLabelLeft {
+  transform: translate(calc(-100% - 10px), -130%);
+}
+
+@media (max-width: 640px) {
+  .stdNow {
+    font-size: 32px;
+  }
+
+  .stdTiles {
+    margin-left: 0;
+  }
+
+  .stdPlot {
+    --chart-gutter: 44px;
+    padding-right: 10px;
+  }
+}

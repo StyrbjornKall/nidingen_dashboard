@@ -122,7 +122,6 @@
   transform: translate(-50%, -50%);
   cursor: pointer;
   background: var(--color-chart-band-fill);
-  border: 1px solid color-mix(in srgb, var(--color-chart-mean) 60%, white);
   transition: left 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.5s, background 0.25s;
   animation: pop 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
@@ -136,10 +135,6 @@
 .clip[data-dragging="true"] .bubble,
 .clip[data-dragging="true"] .bubbleLabel {
   transition: none;
-}
-
-.bubble[data-on="true"] {
-  border: 2px solid var(--color-surface);
 }
 
 .bubble[aria-disabled="true"] {

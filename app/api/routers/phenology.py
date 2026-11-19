@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.src.build_aggregates import ALL_SPECIES, N_WEEKS, WHOLE_YEAR
 from ..params import (
-    bad_request, doy_to_date, get_cursor, get_store, normalized_doy, parse_period, parse_species, rnd,
+    bad_request, doy_to_date, get_cursor, get_store, normalized_doy, parse_period, parse_species, period_or_year, rnd,
     selected_first, verdict, week_infos,
 )
 from ..schemas import Calendar, PhenologyTable, Ridges, SeasonToDate
@@ -49,7 +49,8 @@ def _medians(cur, period_id: str) -> dict[tuple[str, str], dict]:
 
 @router.get("/calendar", response_model=Calendar)
 def migration_calendar(
-    year: str = Query("avg", description="'avg' (mean over all non-gap years) or a year"),
+    year: str = Query("avg", description="'avg' (mean over the period's non-gap years) or a year"),
+    period: Optional[str] = Query(None, description="Period for 'avg' (default: the first preset)"),
     top: Literal["5", "10", "15", "all"] = "10",
     species: Optional[str] = Query(None, description="Selected species, listed first"),
     store: DataStore = Depends(get_store),
@@ -57,7 +58,8 @@ def migration_calendar(
 ) -> dict:
     selected = [c for c in parse_species(store, species, required=False) if c != ALL_SPECIES]
     base = store.periods[0]
-    ref = store.reference_years(base.year_from, base.year_to)
+    p = parse_period(store, period) if period else base
+    ref = store.reference_years(p.year_from, p.year_to)
     if year == "avg":
         mode, the_year, years, divisor = "avg", None, ref, len(ref)
     else:
@@ -70,9 +72,11 @@ def migration_calendar(
         if store.is_gap(the_year):
             raise bad_request(f"{the_year} is a partly staffed year and is not offered")
         mode, years, divisor = "year", [the_year], 1
+        # A single year keeps the ranking of the first preset, so the species
+        # list doesn't change when another year is picked.
+        ref = store.reference_years(base.year_from, base.year_to)
 
-    # Rank by mean annual total over the reference years, so the species list
-    # doesn't change when another year is picked.
+    # Rank by mean annual total over the reference years.
     ranking = cur.execute(f"""
         SELECT species, sum(n_new) / ? AS mean_total FROM agg_counts_year_season
         WHERE season = '{WHOLE_YEAR}' AND list_contains(?, year) AND species <> '{ALL_SPECIES}'
@@ -118,6 +122,17 @@ def migration_calendar(
             "weeks": week_infos(store), "max_value": rnd(max_value), "rows": rows}
 
 
+def _year_medians(cur, year: int) -> dict[tuple[str, str], dict]:
+    """The medians of one year, as `_medians` gives them for a period."""
+    rows = cur.execute("""
+        SELECT species, season, median_doy, q25_doy, q75_doy, meets_min_sample
+        FROM agg_phenology_median WHERE year = ?
+    """, [year]).fetchall()
+    return {(sp, se): {"median": m if ok else None, "q25": q25 if ok else None,
+                       "q75": q75 if ok else None, "years_used": 1 if ok else 0}
+            for sp, se, m, q25, q75, ok in rows}
+
+
 def _daily(cur, codes: list[str], years: list[int]) -> dict[str, list[float]]:
     """Summed daily new ringings over the given years, per species (365 values)."""
     out = {c: [0.0] * DAYS for c in codes}
@@ -135,17 +150,29 @@ def _daily(cur, codes: list[str], years: list[int]) -> dict[str, list[float]]:
 def ridges(
     species: str = Query(..., description="Comma-separated codes (max 6)"),
     period: Optional[str] = None,
+    year: Optional[int] = Query(None, description="One year instead of a period; the last complete year stays alongside"),
     store: DataStore = Depends(get_store),
     cur: duckdb.DuckDBPyConnection = Depends(get_cursor),
 ) -> dict:
-    """Mean daily catch per season (day resolution), the latest year alongside."""
+    """Mean daily catch per season (day resolution), the latest year alongside.
+
+    With `year` the "mean" is that single year and the dashed "latest" line is
+    still the last complete year.
+    """
     codes = parse_species(store, species)
-    p = parse_period(store, period)
+    if year is not None:
+        if period is not None:
+            raise bad_request("give either period or year, not both")
+        if not store.first_year <= year <= store.complete_through:
+            raise bad_request(f"year must be between {store.first_year} and {store.complete_through}")
+        if store.is_gap(year):
+            raise bad_request(f"{year} is a partly staffed year and is not offered")
+    p = period_or_year(store, period, year)
     ref = store.reference_years(p.year_from, p.year_to)
-    latest_year = p.year_to
+    latest_year = store.complete_through if year is not None else p.year_to
     sums = _daily(cur, codes, ref)
     latest = _daily(cur, codes, [latest_year])
-    medians = _medians(cur, p.id)
+    medians = _year_medians(cur, year) if year is not None else _medians(cur, p.id)
     ringing_max = store.build["ringing_max_date"]
     data_through = normalized_doy(ringing_max) if latest_year == ringing_max.year else DAYS
 

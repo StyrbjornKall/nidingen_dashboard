@@ -51,7 +51,7 @@ test("the FAQ opens one answer at a time, with the first open", async ({ page })
   await page.getByRole("button", { name: "Var gäller filtren?" }).click();
   await expect(page.getByRole("button", { name: "Hur jämför jag flera arter?" })).toHaveAttribute("aria-expanded", "false");
   await expect(page.getByText(/Du kan välja upp till 6 arter/)).toHaveCount(0);
-  await expect(page.getByText(/Återfynd, Väder och Flyttningskalendern på Fenologi har egna/)).toBeVisible();
+  await expect(page.getByText(/Återfynd och Väder har egna/)).toBeVisible();
   // Clicking the open one closes it.
   await page.getByRole("button", { name: "Var gäller filtren?" }).click();
   await expect(page.getByRole("button", { name: "Var gäller filtren?" })).toHaveAttribute("aria-expanded", "false");

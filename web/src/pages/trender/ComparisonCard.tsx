@@ -26,8 +26,12 @@ export function ComparisonCard({
   return (
     <ChartCard
       title="Antal ringmärkta per år, valda arter"
-      subtitle="Faktiskt antal fåglar per år, alla arter på samma skala. Den heldragna linjen är den anpassade trenden i fåglar per år och bandet visar hur säker den är (95 % konfidensintervall)."
-      actions={<span className={`mono ${styles.readout}`}>{query.data ? readout : ""}</span>}
+      subtitle={
+        <>
+          Faktiskt antal fåglar per år, alla arter på samma skala. Den heldragna linjen är den anpassade trenden i fåglar per år och bandet visar hur säker den är (95 % konfidensintervall).
+          <span className={`mono ${styles.readout}`}>{query.data ? readout : ""}</span>
+        </>
+      }
       query={query}
       isEmpty={(d) => d.species.every((s) => s.years.every((p) => p.n === 0))}
       emptyMessage="Inga fåglar av de valda arterna ringmärktes under perioden och säsongen."

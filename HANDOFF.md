@@ -23,7 +23,9 @@ Where this document and the design files disagree, **this document wins**.
 | Language | The UI is **Swedish only**. Code, comments and commit messages are in English. |
 | Colours and type | The "Ejder" palette in `design/tokens.json`, with Hanken Grotesk and IBM Plex Mono. |
 | Species comparison | Up to **6** species, each with a fixed colour by selection order. The selection is shared by Sammanfattning, Trender, Morfometri and Fenologi, and is kept in the URL (`?arter=RÖHAK,LÖSÅN`). |
-| Own controls | Återfynd, Väder and Flyttningskalendern (on Fenologi) have their own controls and are not affected by the species picker. |
+| Own controls | Återfynd and Väder have their own controls and are not affected by the species picker. On Fenologi the calendar (now **Märkningskalendern**) follows the page's species, period and year; the season-to-date chart moved to Sammanfattning and ignores the period. Decided 2026-11-19. |
+| Season names | The whole year is always **Helår** (never "Båda") and is the default wherever Vår/Höst/Helår can be chosen (Trender, Morfometri). |
+| Specific year | Sammanfattning and Fenologi add a "Välj specifikt år" dropdown next to the period presets (`?period=<year>`; complete years, gap years left out). |
 
 ## 2. Open questions and answers
 
@@ -168,8 +170,8 @@ All endpoints return JSON shaped for the charts. Use `Cache-Control` and ETags; 
 | `GET /api/trends/overview` | `season`, `period` | slope and CI for all species |
 | `GET /api/morphometrics/means` | `season` | all species: mean weight, wing, total (bubble chart) |
 | `GET /api/morphometrics/detail` | `species`, `season` | quartiles, 50-bin histograms, age and sex shares |
-| `GET /api/phenology/calendar` | `year=avg\|YYYY`, `top` | weekly counts per species |
-| `GET /api/phenology/ridges` | `species`, `period` | mean daily counts per season (365 days, latest year alongside), and medians |
+| `GET /api/phenology/calendar` | `year=avg\|YYYY`, `period` (for `avg`), `top` | weekly counts per species |
+| `GET /api/phenology/ridges` | `species`, `period` or `year` | mean daily counts per season (365 days; with `year` that year's counts; the last complete year alongside), and medians |
 | `GET /api/phenology/season-to-date` | `species`, `year` | mean curve, SD band, top and worst years, current year |
 | `GET /api/phenology/table` | `period` | per-species rows (2025 count, average, trend in birds per year, medians) |
 | `GET /api/recoveries` | `species`, `period`, `direction` | recovery points, summary, countries, longest finds and the species options |
@@ -179,7 +181,7 @@ All endpoints return JSON shaped for the charts. Use `Cache-Control` and ETags; 
 - `from`/`to` are replaced by `period=<id>` (presets only). Sammanfattning also accepts `year=YYYY` instead, for the design's single-year option; `grain=day` needs it.
 - Lists that put selected species first take the selection as `species=` (`top-species`, `trends/overview`, `phenology/calendar`, `phenology/table`).
 - `trends/overview` takes `min_total` (default 0) to leave out species with few birds; the page decides the cut-off.
-- `phenology/calendar` ranks species by mean annual total over the first period's non-gap years, so the list doesn't change with the year; non-selected rows are ordered by spring median, then autumn-only species by autumn median. `year=` rejects gap years.
+- `phenology/calendar` ranks species by mean annual total over the chosen period's non-gap years (the first period when a single year is shown, so the list doesn't change with the year); non-selected rows are ordered by spring median, then autumn-only species by autumn median. `year=` rejects gap years.
 - `phenology/season-to-date` takes one species. Reference years are the earlier complete years without gap years; the ±1 SD band is the per-day SD of cumulative counts. The "idag" marker is drawn by the frontend; `data_through_doy` says where the data ends.
 - `phenology/table`: "Snitt" is the mean of the 10 years before the period's last year, gap years removed (`avg_years` lists them).
 - `weather` reads `agg_weather_daily` (Swedish local dates, vector-mean wind, Vinga flags). The wind rose averages the catch over days when the station was active (any ringing or recapture that day).

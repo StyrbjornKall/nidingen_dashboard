@@ -258,3 +258,37 @@
     font-size: 13px;
   }
 }
+
+/* The range being dragged out for a zoom. */
+.selection {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--color-data);
+  opacity: 0.14;
+  border-left: 1.5px solid var(--color-data);
+  border-right: 1.5px solid var(--color-data);
+  pointer-events: none;
+}
+
+.zoomReset {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--min-touch-target);
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-ink);
+  font: 600 14px var(--font-sans);
+}
+
+.zoomReset:hover {
+  background: var(--color-surface-tint);
+}
+
+.zoomReset:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}

@@ -28,7 +28,12 @@ export function RidgesCard({
   colorOf: (c: string) => string | undefined;
   nameOf: (c: string) => string;
 }) {
-  const query = useApi<Schemas["Ridges"]>("/api/phenology/ridges", { species, period: period.id }, { keepPrevious: true });
+  const single = period.year_from === period.year_to;
+  const query = useApi<Schemas["Ridges"]>(
+    "/api/phenology/ridges",
+    { species, ...(single ? { year: period.year_from } : { period: period.id }) },
+    { keepPrevious: true },
+  );
   // Days drawn per season: the season's days (from the API) cut to the
   // station's active weeks, so the panels meet without a gap.
   const sd = query.data?.season_days;
@@ -46,8 +51,9 @@ export function RidgesCard({
       subtitle={
         query.data ? (
           <>
-            Säsongens fångst per dag, snitt för {yearRuns(query.data.reference_years)}. Det lodräta strecket är mediandagen
-            för flytt, samma median som i tabellen nedan. Flytten är uppdelad i två säsonger: vår (januari–juni) och höst
+            {`Säsongens fångst per dag, ${single ? String(period.year_from) : `snitt för ${yearRuns(query.data.reference_years)}`}, jämfört med det senaste kompletta året (${query.data.latest_year}).`}{" "}
+            Det lodräta strecket är mediandagen
+            för flytt{single ? "" : ", samma median som i tabellen nedan"}. Flytten är uppdelad i två säsonger: vår (januari–juni) och höst
             (juli–december). Arter som nästan bara ringmärks under en säsong har en enda median. Diagrammen visar råa antal
             ringmärkta per dag. Varje art har sin egen y-axel, gemensam för vår och höst, så höjderna går inte att jämföra
             mellan arter.
@@ -59,7 +65,7 @@ export function RidgesCard({
           <ul className={styles.ridgeLegend}>
             <li>
               <span className={styles.swArea} aria-hidden="true" />
-              Snitt
+              {single ? period.year_from : "Snitt"}
             </li>
             <li>
               <span className={styles.swDashed} aria-hidden="true" />
@@ -108,7 +114,7 @@ export function RidgesCard({
                     ))}
                   </div>
                   {(["var", "host"] as const).map((se) => (
-                    <RidgePanel key={se} season={se} name={nameOf(s.species)} data={s[se]} window={win[se]} top={y.top} ticks={y.ticks} color={c} latestYear={data.latest_year} />
+                    <RidgePanel key={se} season={se} name={nameOf(s.species)} data={s[se]} window={win[se]} top={y.top} ticks={y.ticks} color={c} latestYear={data.latest_year} meanLabel={single ? String(period.year_from) : "snitt"} />
                   ))}
                 </div>
               );
@@ -142,7 +148,7 @@ function medianText(s: RidgeSeason | null | undefined): string {
 }
 
 function RidgePanel({
-  season, name, data, window: [d0, d1], top, ticks, color: c, latestYear,
+  season, name, data, window: [d0, d1], top, ticks, color: c, latestYear, meanLabel,
 }: {
   season: Season;
   name: string;
@@ -152,6 +158,7 @@ function RidgePanel({
   ticks: number[];
   color: string;
   latestYear: number;
+  meanLabel: string;
 }) {
   const [hover, setHover] = useState(-1);
   const grid = ticks.filter((t) => t > 0);
@@ -182,7 +189,7 @@ function RidgePanel({
     hd > 0
       ? [
           formatDoy(hd),
-          `snitt ${formatNumber(meanAt(hd), meanAt(hd) < 1 ? 2 : meanAt(hd) < 10 ? 1 : 0)}`,
+          `${meanLabel} ${formatNumber(meanAt(hd), meanAt(hd) < 1 ? 2 : meanAt(hd) < 10 ? 1 : 0)}`,
           latestAt(hd) !== null ? `${latestYear}: ${formatInt(latestAt(hd)!)}` : null,
         ]
           .filter(Boolean)

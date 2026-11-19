@@ -167,6 +167,9 @@ export interface paths {
         /**
          * Ridges
          * @description Mean daily catch per season (day resolution), the latest year alongside.
+         *
+         *     With `year` the "mean" is that single year and the dashed "latest" line is
+         *     still the last complete year.
          */
         get: operations["ridges_api_phenology_ridges_get"];
         put?: never;
@@ -1267,8 +1270,10 @@ export interface operations {
     migration_calendar_api_phenology_calendar_get: {
         parameters: {
             query?: {
-                /** @description 'avg' (mean over all non-gap years) or a year */
+                /** @description 'avg' (mean over the period's non-gap years) or a year */
                 year?: string;
+                /** @description Period for 'avg' (default: the first preset) */
+                period?: string | null;
                 top?: "5" | "10" | "15" | "all";
                 /** @description Selected species, listed first */
                 species?: string | null;
@@ -1305,6 +1310,8 @@ export interface operations {
                 /** @description Comma-separated codes (max 6) */
                 species: string;
                 period?: string | null;
+                /** @description One year instead of a period; the last complete year stays alongside */
+                year?: number | null;
             };
             header?: never;
             path?: never;

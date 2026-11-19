@@ -100,7 +100,7 @@ export function Crosshair({ left }: { left: number }) {
  * PageUp/PageDown), as an ARIA slider whose value text is the readout.
  */
 export function Scrubber({
-  n, hover, onHover, valueText, pageStep = 5, label = "Läs av diagrammet",
+  n, hover, onHover, valueText, pageStep = 5, label = "Läs av diagrammet", onSelect, onDrag,
 }: {
   n: number;
   /** Index being read, or −1. */
@@ -109,11 +109,34 @@ export function Scrubber({
   valueText: string;
   pageStep?: number;
   label?: string;
+  /** Click and drag across the chart: called with the first and last index of the dragged range. */
+  onSelect?: (first: number, last: number) => void;
+  /** The range while it is being dragged (for drawing it), null when the drag ends. */
+  onDrag?: (range: [number, number] | null) => void;
 }) {
-  const pick = (e: PointerEvent<HTMLDivElement>) => {
+  const from = useRef<number | null>(null);
+  const indexAt = (e: PointerEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
-    const i = Math.max(0, Math.min(n - 1, Math.floor(((e.clientX - r.left) / r.width) * n)));
+    return Math.max(0, Math.min(n - 1, Math.floor(((e.clientX - r.left) / r.width) * n)));
+  };
+  const pick = (e: PointerEvent<HTMLDivElement>) => {
+    const i = indexAt(e);
     if (i !== hover) onHover(i);
+    if (from.current !== null) onDrag?.([Math.min(from.current, i), Math.max(from.current, i)]);
+  };
+  const start = (e: PointerEvent<HTMLDivElement>) => {
+    pick(e);
+    if (!onSelect || e.button !== 0) return;
+    from.current = indexAt(e);
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+  const end = (e: PointerEvent<HTMLDivElement>) => {
+    const a = from.current;
+    if (a === null) return;
+    from.current = null;
+    onDrag?.(null);
+    const b = indexAt(e);
+    if (a !== b) onSelect?.(Math.min(a, b), Math.max(a, b));
   };
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
     const from = hover < 0 ? (e.key === "ArrowLeft" || e.key === "ArrowDown" ? n : -1) : hover;
@@ -136,8 +159,13 @@ export function Scrubber({
       aria-valuenow={Math.max(0, hover)}
       aria-valuetext={valueText}
       onPointerMove={pick}
-      onPointerDown={pick}
-      onPointerLeave={(e) => e.pointerType === "mouse" && onHover(-1)}
+      onPointerDown={start}
+      onPointerUp={end}
+      onPointerCancel={() => {
+        from.current = null;
+        onDrag?.(null);
+      }}
+      onPointerLeave={(e) => e.pointerType === "mouse" && from.current === null && onHover(-1)}
       onKeyDown={onKey}
       onBlur={() => onHover(-1)}
     />

@@ -12,3 +12,10 @@ export function yearRuns(years: readonly number[]): string {
   if (parts.length <= 1) return parts[0] ?? "";
   return `${parts.slice(0, -1).join(", ")} samt ${parts[parts.length - 1]}`;
 }
+
+/** Years a visitor can pick: newest first, gap years left out. */
+export function pickableYears(first: number, last: number, gap: { year_from: number; year_to: number }): number[] {
+  const out: number[] = [];
+  for (let y = last; y >= first; y--) if (y < gap.year_from || y > gap.year_to) out.push(y);
+  return out;
+}

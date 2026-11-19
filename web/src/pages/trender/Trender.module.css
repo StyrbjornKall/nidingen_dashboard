@@ -1,10 +1,11 @@
 /* --- Comparison chart ------------------------------------------------- */
 
 .readout {
+  display: block;
+  margin-top: 8px;
   font-size: 13px;
   min-height: 20px;
-  max-width: 560px;
-  text-align: right;
+  color: var(--color-text);
 }
 
 .comparison {
@@ -141,6 +142,12 @@
 
 .cardSub > span:first-child {
   font-weight: 600;
+}
+
+.cardReadout {
+  min-height: 20px;
+  margin: 2px 0 4px;
+  font-size: 13px;
 }
 
 .miniPlot {
@@ -334,10 +341,6 @@
 }
 
 @media (max-width: 640px) {
-  .readout {
-    text-align: left;
-  }
-
   .bigPlot {
     --chart-gutter: 44px;
     padding-right: 10px;

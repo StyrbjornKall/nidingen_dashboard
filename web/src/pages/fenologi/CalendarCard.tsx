@@ -1,41 +1,44 @@
-import { useId, useState } from "react";
+import { useState } from "react";
 import { Tooltip, type TipState } from "../../components/charts/Plot";
 import { ChartCard } from "../../components/ChartCard";
 import { SegmentedControl } from "../../components/SegmentedControl";
-import { useApi, type Meta, type Schemas } from "../../lib/api";
+import { useApi, type Meta, type PeriodInfo, type Schemas } from "../../lib/api";
 import { formatDate, formatInt, formatNumber, formatWeek } from "../../lib/format";
 import { heatRamp } from "../../lib/tokens";
 import { yearRuns } from "../../lib/years";
 import styles from "./Fenologi.module.css";
-import { calendarYears, heatColor, LAST_SPRING_WEEK, monthTicks, weekEnd, weekSlice, weekStart } from "./phenology";
+import { heatColor, LAST_SPRING_WEEK, monthTicks, weekEnd, weekSlice, weekStart } from "./phenology";
 
 type Top = "5" | "10" | "15" | "all";
 type Scale = "rel" | "abs";
 
 /**
- * Flyttningskalendern: weekly catch per species as a heat map, with its own
- * year, top-N and colour-scale controls (not the species picker's period).
+ * Märkningskalendern: weekly catch per species as a heat map for the page's
+ * period (average) or specific year, with its own top-N and colour-scale controls.
  */
-export function CalendarCard({ meta, selected, colorOf }: { meta: Meta; selected: readonly string[]; colorOf: (c: string) => string | undefined }) {
-  const [year, setYear] = useState("avg");
+export function CalendarCard({
+  meta, period, selected, colorOf,
+}: {
+  meta: Meta;
+  period: PeriodInfo;
+  selected: readonly string[];
+  colorOf: (c: string) => string | undefined;
+}) {
   const [top, setTop] = useState<Top>("10");
   const [scale, setScale] = useState<Scale>("rel");
-  const yearId = useId();
   const [tip, setTip] = useState<TipState>(null);
   const query = useApi<Schemas["Calendar"]>(
     "/api/phenology/calendar",
-    { year, top, species: selected },
+    { ...(period.year_from === period.year_to ? { year: period.year_from } : { year: "avg", period: period.id }), top, species: selected },
     { keepPrevious: true },
   );
   const { week_from: w0, week_to: w1 } = meta.active_weeks;
-  const years = calendarYears(meta.first_year, meta.current_year, meta.gap_years);
   const d0 = weekStart(w0);
   const span = weekEnd(w1) - d0 + 1;
 
   return (
     <ChartCard
-      title="Flyttningskalendern"
-      badge="Påverkas inte av artväljaren"
+      title="Märkningskalendern"
       subtitle="Hela fågelsamhällets år, vecka för vecka. Färgen normaliseras per art och säsong, vår och höst var för sig, så att båda flyttningarna syns. Arter du jämför ligger överst, markerade med en prick, därefter sorteras övriga efter när de passerar."
       query={query}
       skeleton="rows"
@@ -43,17 +46,6 @@ export function CalendarCard({ meta, selected, colorOf }: { meta: Meta; selected
       emptyMessage="Inga fåglar ringmärktes det året."
       actions={
         <>
-          <label htmlFor={yearId} className={styles.selectLabel}>
-            År
-          </label>
-          <select id={yearId} className={styles.select} value={year} onChange={(e) => setYear(e.target.value)}>
-            <option value="avg">Snitt alla år</option>
-            {years.map((y) => (
-              <option key={y} value={String(y)}>
-                {y}
-              </option>
-            ))}
-          </select>
           <SegmentedControl
             label="Antal arter"
             value={top}

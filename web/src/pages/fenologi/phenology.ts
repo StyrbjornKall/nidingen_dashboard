@@ -24,13 +24,6 @@ export function monthTicks(d0: number, d1: number): { doy: number; label: string
 /** 0–1 on the three-stop heat ramp from tokens.json (design's `ramp`). */
 export const heatColor = (t: number): string => rampColor(heatRamp, t);
 
-/** Years offered by the migration calendar: newest first, gap years left out. */
-export function calendarYears(first: number, last: number, gap: { year_from: number; year_to: number }): number[] {
-  const out: number[] = [];
-  for (let y = last; y >= first; y--) if (y < gap.year_from || y > gap.year_to) out.push(y);
-  return out;
-}
-
 /** Index range [a, b] into a 52-week array for weeks w0..w1. */
 export function weekSlice<T>(values: readonly T[], w0: number, w1: number): T[] {
   return values.slice(w0 - 1, w1);

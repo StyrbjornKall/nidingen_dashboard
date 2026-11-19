@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const card = (page: Page, title: string) => page.locator("article").filter({ has: page.getByRole("heading", { name: title }) });
+const card = (page: Page, title: string | RegExp) => page.locator("article").filter({ has: page.getByRole("heading", { name: title }) });
 const ts = (page: Page) => card(page, "Ringmärkta över tid");
 const top = (page: Page) => card(page, "Flest ringmärkta arter");
 const grain = (page: Page, name: string) => ts(page).getByRole("group", { name: "Upplösning" }).getByRole("button", { name });
@@ -107,4 +107,44 @@ test("a full comparison disables the other rows", async ({ page }) => {
   await page.goto("/sammanfattning?arter=R%C3%96HAK,L%C3%96S%C3%85N,KUF%C3%85G,%C3%84NPIP,SKPIP,STARE");
   await expect(top(page).getByRole("button", { name: /Gransångare/ })).toBeDisabled();
   await expect(top(page).getByRole("button", { name: /Rödhake/ })).toBeEnabled();
+});
+
+test("the season-to-date chart is here and ignores the period", async ({ page, request }) => {
+  const meta = await (await request.get("/api/meta")).json();
+  await page.goto("/sammanfattning?period=r10");
+  const std = card(page, /^Säsongen \d{4} mot alla tidigare år$/);
+  await expect(std.getByRole("heading")).toHaveText(`Säsongen ${meta.current_year} mot alla tidigare år`);
+  await expect(std.getByText(/ringmärkta \d{4}/)).toBeVisible();
+  await expect(std.getByText(/Medel 1980–1990 samt 2005–2025/)).toBeVisible();
+});
+
+test("a specific year can be picked from a dropdown", async ({ page, request }) => {
+  const meta = await (await request.get("/api/meta")).json();
+  await page.goto("/sammanfattning");
+  const pick = page.getByLabel("Välj specifikt år");
+  await expect(pick).toBeVisible();
+  const options = await pick.locator("option").allTextContents();
+  expect(options).not.toContain("1995");
+  expect(options).toContain(String(meta.complete_through));
+  await pick.selectOption("2008");
+  await expect(page).toHaveURL(/period=2008/);
+  await expect(grain(page, "Månad")).toHaveAttribute("aria-pressed", "true");
+  await expect(grain(page, "Dag")).toBeEnabled();
+  await expect(ts(page).getByText("Summa 2008")).toBeVisible();
+});
+
+test("dragging across the chart zooms in, and the reset button zooms out", async ({ page }, info) => {
+  test.skip(info.project.name === "mobile", "pointer drag");
+  await page.goto("/sammanfattning");
+  await expect(ts(page).getByText("Summa 1980–2025")).toBeVisible();
+  const box = (await slider(page).boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.8, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.95, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.up();
+  await expect(ts(page).getByText(/^Summa 20\d\d – 20\d\d$/)).toBeVisible();
+  await expect(ts(page).getByRole("button", { name: "Återställ zoom" })).toBeVisible();
+  await page.getByRole("button", { name: "Återställ zoom" }).click();
+  await expect(ts(page).getByText("Summa 1980–2025")).toBeVisible();
+  await expect(ts(page).getByRole("button", { name: "Återställ zoom" })).toHaveCount(0);
 });
