@@ -32,7 +32,7 @@ export default function Sammanfattning() {
             { value: fmt(kpis?.n_new), label: "ringmärkta fåglar" },
             { value: fmt(kpis?.n_recap), label: "kontroller" },
             { value: fmt(kpis?.n_recoveries), label: "återfynd världen över" },
-            { value: fmt(kpis?.n_species), label: "arter i databasen" },
+            { value: fmt(kpis?.n_species), label: "unika arter och raser" },
           ]}
         />
       </PageHeader>

@@ -164,10 +164,10 @@ function Tiles({ data }: { data: Recoveries }) {
   return (
     <div>
       <dl className={styles.tiles}>
-        <div><dd className="mono" style={{ color: color.data }}>{formatInt(s.n_out)}</dd><dt>utgående</dt></div>
-        <div><dd className="mono" style={{ color: color.badge_down_fg }}>{formatInt(s.n_in)}</dd><dt>inkommande</dt></div>
-        <div><dd className="mono">{s.longest_km == null ? "–" : kmText(s.longest_km)}</dd><dt>längsta avstånd</dt></div>
-        <div><dd className="mono">{s.median_km == null ? "–" : `${formatNumber(s.median_km)} km`}</dd><dt>medianavstånd</dt></div>
+        <div><dt>utgående</dt><dd className="mono" style={{ color: color.data }}>{formatInt(s.n_out)}</dd></div>
+        <div><dt>inkommande</dt><dd className="mono" style={{ color: color.badge_down_fg }}>{formatInt(s.n_in)}</dd></div>
+        <div><dt>längsta avstånd</dt><dd className="mono">{s.longest_km == null ? "–" : kmText(s.longest_km)}</dd></div>
+        <div><dt>medianavstånd</dt><dd className="mono">{s.median_km == null ? "–" : `${formatNumber(s.median_km)} km`}</dd></div>
       </dl>
       <p className={styles.tilesNote}>
         Antalen utgående och inkommande ignorerar riktningsvalet. Avstånden gäller de {formatInt(s.n_points)} återfynd som visas.

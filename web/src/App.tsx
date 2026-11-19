@@ -2,7 +2,7 @@ import { Route, Routes } from "react-router";
 import { Layout } from "./components/Layout";
 import Aterfynd from "./pages/aterfynd/Aterfynd";
 import Fenologi from "./pages/fenologi/Fenologi";
-import Hem from "./pages/Hem";
+import Hem from "./pages/hem/Hem";
 import Morfometri from "./pages/morfometri/Morfometri";
 import NotFound from "./pages/NotFound";
 import Om from "./pages/Om";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  formatDate, formatDateTime, formatDoy, formatInt, formatNumber, formatPercent, formatTrend, formatWeek,
+  formatApprox, formatDate, formatDateTime, formatDoy, formatInt, formatNumber, formatPercent, formatTrend, formatWeek,
 } from "./format";
 
 const NBSP = " ";
@@ -46,5 +46,15 @@ describe("dates", () => {
   it("shows UTC build times in Swedish time", () => {
     expect(formatDateTime("2026-11-16T05:00:00")).toBe("16 nov 2026, 06:00");   // CET = UTC+1
     expect(formatDateTime("2026-07-01T22:30:00Z")).toBe("2 jul 2026, 00:30");    // CEST = UTC+2
+  });
+});
+
+describe("formatApprox", () => {
+  it("rounds headline figures to thousands with a tilde, keeping small numbers exact", () => {
+    expect(formatApprox(395777)).toBe("~396\u00a0000");
+    expect(formatApprox(54292)).toBe("~54\u00a0000");
+    expect(formatApprox(6223)).toBe("~6\u00a0000");
+    expect(formatApprox(999)).toBe("999");
+    expect(formatApprox(0)).toBe("0");
   });
 });
