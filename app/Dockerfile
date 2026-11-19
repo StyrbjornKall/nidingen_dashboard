@@ -40,10 +40,14 @@ COPY app/ $HOME/app/
 COPY config/ $HOME/config/
 COPY --from=web /build/web/dist $HOME/web/dist
 
+# Serve runs the start command as ./start-script.sh from the working directory
+# (set in its app settings), so the script must also sit directly in $HOME.
+COPY app/start-script.sh $HOME/start-script.sh
+
 # Serve bind-mounts its persistent volume over $HOME/data, so the directory
 # has to exist in the image.
 RUN mkdir -p $HOME/data \
-    && chmod +x $HOME/app/start-script.sh \
+    && chmod +x $HOME/app/start-script.sh $HOME/start-script.sh \
     && chown -R $USER:$USER $HOME
 
 WORKDIR $HOME
@@ -61,4 +65,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health').status == 200 else 1)"
 
-ENTRYPOINT ["./app/start-script.sh"]
+ENTRYPOINT ["./start-script.sh"]
