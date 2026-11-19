@@ -1773,6 +1773,13 @@
             "type": "array",
             "title": "Countries"
           },
+          "species_options": {
+            "items": {
+              "$ref": "#/components/schemas/SpeciesCount"
+            },
+            "type": "array",
+            "title": "Species Options"
+          },
           "longest": {
             "items": {
               "$ref": "#/components/schemas/RecoveryPoint"
@@ -1789,6 +1796,7 @@
           "points",
           "summary",
           "countries",
+          "species_options",
           "longest"
         ],
         "title": "Recoveries"
@@ -2331,6 +2339,24 @@
           "total_recap"
         ],
         "title": "Series"
+      },
+      "SpeciesCount": {
+        "properties": {
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "n": {
+            "type": "integer",
+            "title": "N"
+          }
+        },
+        "type": "object",
+        "required": [
+          "species",
+          "n"
+        ],
+        "title": "SpeciesCount"
       },
       "SpeciesInfo": {
         "properties": {

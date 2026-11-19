@@ -402,6 +402,11 @@ class CountryCount(BaseModel):
     n: int
 
 
+class SpeciesCount(BaseModel):
+    species: str
+    n: int
+
+
 class Recoveries(BaseModel):
     period: PeriodInfo
     direction: Literal["both", "out", "in"]
@@ -409,6 +414,7 @@ class Recoveries(BaseModel):
     points: list[RecoveryPoint]
     summary: RecoverySummary
     countries: list[CountryCount]
+    species_options: list[SpeciesCount]   # species with recoveries in the period and direction
     longest: list[RecoveryPoint]
 
 

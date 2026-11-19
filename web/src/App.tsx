@@ -1,6 +1,6 @@
 import { Route, Routes } from "react-router";
 import { Layout } from "./components/Layout";
-import Aterfynd from "./pages/Aterfynd";
+import Aterfynd from "./pages/aterfynd/Aterfynd";
 import Fenologi from "./pages/fenologi/Fenologi";
 import Hem from "./pages/Hem";
 import Morfometri from "./pages/morfometri/Morfometri";

@@ -10,6 +10,7 @@ Run from the repo root:
 
 import csv
 import json
+from datetime import date
 import math
 import statistics
 
@@ -277,8 +278,24 @@ def test_recoveries(client):
     out = get(client, "/api/recoveries?direction=out")
     assert [p["country"] for p in out["points"]] == ["Spanien"]
     assert out["summary"]["n_in"] == 1                                 # tiles ignore direction
+    assert out["species_options"] == [{"species": "AAA", "n": 1}]      # options follow the direction
+    assert r["species_options"] == [{"species": "AAA", "n": 1}, {"species": "BBB", "n": 1}]
     assert get(client, "/api/recoveries?species=AAA")["summary"]["n_in"] == 0
+    assert get(client, "/api/recoveries?species=AAA")["species_options"] == r["species_options"]  # not narrowed by species
     assert get(client, "/api/recoveries?period=late")["points"] == []
+
+
+def test_recoveries_period_runs_to_the_newest_find(client):
+    """A preset that ends before the newest find is extended to it (no complete-year rule here)."""
+    store = client.app.state.store
+    assert get(client, "/api/recoveries?period=late&direction=both")["period"]["year_to"] == 1995
+    saved = store.build["recoveries_max_date"]
+    store.build["recoveries_max_date"] = date(1997, 3, 1)
+    try:
+        assert get(client, "/api/recoveries?species=ALLA&period=late")["period"] == {
+            "id": "late", "label": "1992–1995", "year_from": 1992, "year_to": 1997}
+    finally:
+        store.build["recoveries_max_date"] = saved
 
 
 def test_weather(client):

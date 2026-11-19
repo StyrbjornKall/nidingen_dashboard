@@ -1,12 +1,16 @@
 """Återfynd: recovery points for the globe, with summary, countries and longest finds.
 
-The period filters on the find year. Outbound points are find sites of
-Nidingen birds; inbound points are the ringing sites of foreign birds.
+The period filters on the find year. Recoveries have no "complete year"
+rule (no trend is computed), so a period that ends before the newest find
+is extended to it: finds from the current year are included.
+Outbound points are find sites of Nidingen birds; inbound points are the
+ringing sites of foreign birds.
 """
 
 from __future__ import annotations
 
 import statistics
+from dataclasses import replace
 from typing import Literal, Optional
 
 import duckdb
@@ -34,6 +38,9 @@ def recoveries(
     codes = parse_species(store, species, max_n=1, required=False)
     code = codes[0] if codes and codes[0] != ALL_SPECIES else None
     p = parse_period(store, period)
+    newest = store.build["recoveries_max_date"]
+    year_to = max(p.year_to, newest.year) if newest else p.year_to
+    p = replace(p, year_to=year_to)
 
     res = cur.execute(f"""
         SELECT {POINT_COLUMNS} FROM agg_recoveries
@@ -43,6 +50,14 @@ def recoveries(
     cols = [c[0] for c in res.description]
     all_points = [dict(zip(cols, r)) for r in res.fetchall()]
     points = [pt for pt in all_points if direction == "both" or pt["direction"] == direction]
+
+    # Species to choose from: every species with a recovery in the period and
+    # direction, whatever species is chosen now.
+    options = cur.execute("""
+        SELECT species, count(*) AS n FROM agg_recoveries
+        WHERE find_year BETWEEN ? AND ? AND (? = 'both' OR direction = ?)
+        GROUP BY species ORDER BY n DESC, species
+    """, [p.year_from, p.year_to, direction, direction]).fetchall()
 
     km = sorted(pt["distance_km"] for pt in points if pt["distance_km"] is not None)
     countries: dict[str, int] = {}
@@ -64,5 +79,6 @@ def recoveries(
         },
         "countries": [{"country": c, "n": n}
                       for c, n in sorted(countries.items(), key=lambda kv: (-kv[1], kv[0]))],
+        "species_options": [{"species": sp, "n": n} for sp, n in options],
         "longest": sorted(points, key=lambda pt: -(pt["distance_km"] or 0))[:5],
     }

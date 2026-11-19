@@ -556,6 +556,8 @@ export interface components {
             summary: components["schemas"]["RecoverySummary"];
             /** Countries */
             countries: components["schemas"]["CountryCount"][];
+            /** Species Options */
+            species_options: components["schemas"]["SpeciesCount"][];
             /** Longest */
             longest: components["schemas"]["RecoveryPoint"][];
         };
@@ -705,6 +707,13 @@ export interface components {
             total_new: number;
             /** Total Recap */
             total_recap: number;
+        };
+        /** SpeciesCount */
+        SpeciesCount: {
+            /** Species */
+            species: string;
+            /** N */
+            n: number;
         };
         /** SpeciesInfo */
         SpeciesInfo: {
