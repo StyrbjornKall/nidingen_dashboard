@@ -1,0 +1,442 @@
+﻿Artkod,Svenskt namn,Latinskt namn
+PRGÅS,Prutgås,Branta bernicla
+BBBER,Prutgås (bernicla),Branta bernicla bernicla
+BBHRO,Prutgås (hrota),Branta bernicla hrota
+KAGÅS,Kanadagås,Branta canadensis
+VIGÅS,Vitkindad gås,Branta leucopsis
+STGÅS,Stripgås,Anser indicus
+SNGÅS,Snögås,Anser caerulescens
+GRGÅS,Grågås,Anser anser
+SÄGÅS,Sädgås,Anser fabalis
+AFFAB,Tajgasädgås (fabalis),Anser fabalis fabalis
+TUGÅS,Tundrasädgås (rossicus),Anser serrirostris rossicus
+SPGPS,Spetsbergsgås,Anser brachyrhynchus
+SPGÅS,Spetsbergsgås,Anser brachyrhynchus
+BLGÅS,Bläsgås,Anser albifrons
+FJGÅS,Fjällgås,Anser erythropus
+KNSVA,Knölsvan,Cygnus olor
+MISÅN,Mindre sångsvan,Cygnus columbianus
+SÅSVA,Sångsvan,Cygnus cygnus
+TATAD,Gravand,Tadorna tadorna
+ROAND,Rostand,Tadorna ferruginea
+MAAND,Mandarinand,Aix galericulata
+ÅRTA,Årta,Spatula querquedula
+SKAND,Skedand,Spatula clypeata
+SNAND,Snatterand,Mareca strepera
+BLAND,Bläsand,Mareca penelope
+ANPLA,Gräsand,Anas platyrhynchos
+ANACU,Stjärtand,Anas acuta
+KRICK,Kricka,Anas crecca
+RÖDYK,Rödhuvad dykand,Netta rufina
+BRAND,Brunand,Aythya ferina
+VIGG,Vigg,Aythya fuligula
+BEAND,Bergand,Aythya marila
+ALFÖR,Alförrädare,Polysticta stelleri
+EJDER,Ejder,Somateria mollissima
+SVÄRT,Svärta,Melanitta fusca
+SJORR,Sjöorre,Melanitta nigra
+ALFÅG,Alfågel,Clangula hyemalis
+KNIPA,"Knipa
+",Bucephala clangula
+SASKR,Salskrake,Mergellus albellus
+MEMER,Storskrake,Mergus merganser
+SMSKR,Småskrake,Mergus serrator
+JÄRPE,Järpe,Tetrastes bonasia
+DARIP,Dalripa,Lagopus lagopus
+FJRIP,Fjällripa,Lagopus muta
+TJÄDE,Tjäder,Tetrao urogallus
+ORRE,Orre,Lyrurus tetrix
+RAHÖN,Rapphöna,Perdix perdix
+FASAN,Fasan,Phasianus colchicus
+VAKTE,Vaktel,Coturnix coturnix
+NASKÄ,Nattskärra,Caprimulgus europaeus
+TOSEG,Tornseglare,Apus apus
+GÖK,Gök,Cuculus canorus
+RTURD,Turturduva,Streptopelia turtur
+RKDUV,Turkduva,Streptopelia decaocto
+SKDUV,Skogsduva,Columba oenas
+RIDUV,Ringduva,Columba palumbus
+VARAL,Vattenrall,Rallus aquaticus
+KOKNA,Kornknarr,Crex crex
+SMSUM,Småfläckig sumphöna,Porzana porzana
+RÖHÖN,Rörhöna,Gallinula chloropus
+SOHÖN,Sothöna,Fulica atra
+MISUM,Mindre sumphöna,Zapornia parva
+TRANA,Trana,Grus grus
+SMDOP,Smådopping,Tachybaptus ruficollis
+GRDOP,Gråhakedopping,Podiceps grisegena
+SKDOP,Skäggdopping,Podiceps cristatus
+POAUR,Svarthakedopping,Podiceps auritus
+PONIG,Svarthalsad dopping,Podiceps nigricollis
+HAOST,Strandskata,Haematopus ostralegus
+SKFLÄ,Skärfläcka,Recurvirostra avosetta
+KUPIP,Kustpipare,Pluvialis squatarola
+LJPIP,Ljungpipare,Pluvialis apricaria
+PAAPR,Ljungpipare (apricaria),Pluvialis apricaria apricaria
+PAALT,Ljungpipare (altifrons),Pluvialis apricaria altifrons
+FJPIP,Fjällpipare,Eudromias morinellus
+STSTR,Större strandpipare,Charadrius hiaticula
+HIATI,Större strandpipare (hiaticula),Charadrius hiaticula hiaticula
+TUNDR,Större strandpipare (tundrae),Charadrius hiaticula tundrae
+MISTR,Mindre strandpipare,Charadrius dubius
+TOVIP,Tofsvipa,Vanellus vanellus
+SVSTR,Svartbent strandpipare,Anarhynchus alexandrinus
+SMSPO,Småspov,Numenius phaeopus
+STSPO,Storspov,Numenius arquata
+MYSPO,Myrspov,Limosa lapponica
+RÖSPO,Rödspov,Limosa limosa
+LLLIM,Rödspov (limosa),Limosa limosa limosa
+LLISL,Rödspov (islandica),Limosa limosa islandica
+LYMIN,Dvärgbeckasin,Lymnoctyptes minimus
+MOKUL,Morkulla,Scolopax rusticola
+GAMED,Dubbelbeckasin,Gallinago media
+ENBEC,Enkelbeckasin,Gallinago gallinago
+BRSIM,Brednäbbad simsnäppa,Phalaropus fulicarius
+SMSIM,Smalnäbbad simsnäppa,Phalaropus lobatus
+TESNÄ,Tereksnäppa,Xenus cinereus
+DRSNÄ,Drillsnäppa,Actitis hypoleucos
+TROCH,Skogssnäppa,Tringa ochropus
+DASNÄ,Dammsnäppa,Tringa stagnatilis
+GRBEN,Grönbena,Tringa glareola
+RÖBEN,Rödbena,Tringa totanus
+TTTOT,Rödbena (totanus),Tringa totanus totanus
+TTROB,Rödbena (robusta),Tringa totanus robusta
+SVSNÄ,Svartsnäppa,Tringa erythropus
+GLSNÄ,Gluttsnäppa,Tringa nebularia
+ROKAR,Roskarl,Arenaria interpres
+KUSNÄ,Kustsnäppa,Calidris canutus
+BRHAN,Brushane,Calidris pugnax
+MYSNÄ,Myrsnäppa,Calidris falcinellus
+SPSNÄ,Spovsnäppa,Calidris ferruginea
+MOSNÄ,Mosnäppa,Calidris temminckii
+LÅSNÄ,Långtåsnäppa,Calidris subminuta
+CARUF,Rödhalsad snäppa,Calidris ruficollis
+PRLÖP,Prärielöpare,Calidris subruficollis
+SALÖP,Sandlöpare,Calidris alba
+KÄSNA,Kärrsnäppa,Calidris alpina
+CAALP,Kärrsnäppa (alpina),Calidris alpina alpina
+CAARC,Kärrsnäppa (arctica),Calidris alpina arctica
+CASCH,Kärrsnäppa (schinzii),Calidris alpina schinzii
+CACEN,Kärrsnäppa (centralis),Calidris alpina centralis
+CAMAR,Skärsnäppa,Calidris maritima
+SMSNÄ,Småsnäppa,Calidris minuta
+VISNÄ,Vitgumpsnäppa,Calidris fuscicollis
+TUSNÄ,Tuvsnäppa,Calidris melanotos
+FJLAB,Fjällabb,Stercorarius longicaudus
+KULAB,Kustlabb,Stercorarius parasiticus
+BRLAB,Bredstjärtad labb,Stercorarius pomarinus
+STLAB,Storlabb,Stercorarius skua
+LUFÅG,Lunnefågel,Fratercula arctica
+TOGRI,Tobisgrissla,Cepphus gylle
+TOMUL,Tordmule,Alca torda
+ALKUN,Alekung,Alle alle
+SIGRI,Sillgrissla,Uria aalge
+SMTÄR,Småtärna,Sternula albifrons
+SKTÄR,Skräntärna,Hydroprogne caspia
+SVTÄR,Svarttärna,Chlidonias niger
+VITÄR,Vitvingad tärna,Chlidonias leucopterus
+KETÄR,Kentsk tärna,Thalasseus sandvicensis
+SITÄR,Silvertärna,Sterna paradisaea
+FITÄR,Fisktärna,Stema hirundo
+DVMÅS,Dvärgmås,Hydrocoloeus minutus
+TRMÅS,Tretåig mås,Rissa tridactyla
+ISMÅS,Ismås,Pagophila ebumea
+SKMÅS,Skrattmås,Chroicocephalus ridibundus
+SVMÅS,Svarthuvad mås,Ichthyaetus melanocephalus
+FIMÅS,Fiskmås,Larus canus
+LAHYP,Vittrut,Lanus hyperboreus
+GRTRU,Gråtrut,Larus argentatus
+LATAT,Gråtrut (argentatus),Lanus argentatus argentatus
+LATEU,Gråtrut (argenteus),Larus argentatus argenteus
+LACAC,Kaspisk trut,Larus cachinnans
+SITRU,Silltrut,Larus fuscus
+LFFUS,Silltrut (fuscus),Lanus fuscus fuscus
+LFGRA,Silltrut (graellsii),Larus fuscus graellsii
+LFINT,Silltrut (intemedius),Lanus fuscus iråemedius
+HATRU,Havstrut,Larus marinus
+SMLOM,Smålom,Gavia stellata
+STLOM,Storlom,Gavia arctica
+VILOM,Vitnäbbad islom,Gavia adamsii
+STSVA,Stormsvala,Hydrobates pelagicus
+KLSTO,Klykstjärtad stormsvala,Hydrobates leucorhoa
+STFÅG,Stormfågel,Fulmarus glacialis
+SVSTO,Svart stork,Ciconia nigra
+VISTO,Vit stork,Ciconia ciconia
+HASUL,Havssula,Morus bassanus
+PHCAR,Storskarv,Phalacrocorax carbo
+PCCAR,Storskarv (carbo),Phalacmcorax carbo carbo
+PCSIN,Storskarv (sinensis),Phalacrocorax carbo sinensis
+TOSKA,Toppskarv,Gulosus anstotelis
+RÖDRO,Rördrom,Botaurus stellaris
+ÄGHÄG,Ägretthäger,Ardea alba
+GRHÄG,Gråhäger,Ardea cinerea
+FIGJU,Fiskgjuse,Pandion haliaetus
+BIVRÅ,Bvråk,Pemis apivorus
+MISKR,Mindre skrikörn,Clanga pomanna
+CLCLA,Större skriköm,Clanga clanga
+AQNIP,Stäppörn,Aquila nipalensis
+KUÖRN,Kungsörn,Aquila chrysaetos
+SPHÖK,Sparvhök,Accipiter nisus
+DUHÖK,Duvhök,Accipter gentilis
+AGGEN,Duvhök (gentilis),Accipiter gentilis gentilis
+AGBUT,Duvhök (buteoides),Accipiter gentilis buteoides
+BRKÄR,Brun kärrhök,Circus aeruginosus
+BLHÖK,Blå kärrhök,Circus cyaneus
+STHÖK,Stäpphök,Circus macrourus
+ÄNHÖK,Ängshök,Circus pygargus
+RÖGLA,Röd glada,Milvus milvus
+BRGLA,Brun glada,Milvus migrans
+HAÖRN,Havsörn,Haliaeetus albicilla
+FJVRÅ,Fjällvråk,Buteo lagopus
+ORVRÅ,Ormvråk,Buteo buteo
+BBUTE,Ormvråk (buteo),Buteo buteo buteo
+BBVUL,Ormvråk (vulpinus),Buteo buteo vulpinus
+TOUGG,Tornuggla,Tyto alba
+PÄUGG,Pärluggla,Aegofius funereus
+MIUGG,Minervauggla,Athene noctua
+SUULU,Hökuggla,Sumia ulula
+SPUGG,Sparvuggla,Glaucidium passerinum
+OTSCO,Dvärguv,Otus scops
+ASOTU,Hornuggla,Asio otus
+JOUGG,Jorduggla,Asio flammeus
+FJUGG,Fjälluggla,Bubo scandiacus
+BEUV,Berguv,Bubo bubo
+KAUGG,Kattuggla,Strix aluco
+SLUGG,Slaguggla,Strix uralensis
+LAUGG,Lappuggla,Strix nebulosa
+HÄFÅG,Härfågel,Upupa epops
+BIÄTA,Biätare,Merops apiaster
+BLKRÅ,Blåkråka,Coracias ganulus
+KUFIS,Kungsfiskare,Acedo atthis
+GÖTYT,Göktyta,Jynx torquilla
+TRHAC,Tretåig hackspett,Picoides tndactylus
+MESPE,Mellanspett,Dendrocoptes medius
+MIHAC,Mindre hackspett,Dendrocopos minor
+STHAC,Större hackspett,Dendrocopos major
+VIHAC,Vitryggig hackspett,Dendrocopos leucotos
+SPKRÅ,Spillkråka,Dryocopus martius
+GRGÖL,Gröngöling,Picus vindis
+GRSPE,Gråspett,Picus canus
+TOFAL,Tornfalk,Falco tinnunculus
+AFFAL,Aftonfalk,Falco vespertinus
+STFAL,Stenfalk,Falco columbarius
+LÄFAL,Lärkfalk,Falco subbuteo
+JAFAL,Jaktfalk,Falco rusticolus
+PIFAL,Pilgrimsfalk,Falco peregrinus
+SOGYL,Sommargylling,Oriolus oriulus
+VAFÅG,Varfågel,Lanius excubitor
+ÖKVAR,Ökenvarfågel,Lanius elegans
+LEPAL,Ökenvarfågel (pallidrostris),Lanius elegans pallidirostris
+LANUB,Masktörnskata,Lanius nubicus
+SVTÖR,Svartpannad törnskata,Lanius minor
+RÖTÖR,Rödhuvad törnskata,Lanius senator
+ISTÖR,Isabellatörnskata,Lanius isabellinus
+TÖSKA,Törnskata,Lanius collurio
+BRTÖR,Brun törnskata,Lanius cristatus
+LASKR,Lavskrika,Pensoreus infaustus
+NÖSKR,Nötskrika,Glandarius glandarius
+SKATA,Skata,Pica pica
+NÖKRA,Nötkråka,Nucifraga caryocatactes
+NCCAR,Nötkråka (caryocatactes),Nucifraga caryocatactes caryocatactes
+NCMAC,Nötkråka (macrorhynchos),Nucifraga caryocatactes macrohynchos
+KAJA,Kaja,Corvus monedula
+RÅKA,Råka,Corvus frugilegus
+KORP,Korp,Corvus corax
+SVKRÅ,Svartkråka,Corvus corone
+GRKRÅ,Gråkråka,Corvus comix
+SVMES,Svartmes,Peripatus ater
+TOMES,Tofsmes,Lophophanes cristatus
+LAMES,Lappmes,Poecile cinctus
+ENTIT,Entita,Poecile palustris
+TATIT,Talltita,Poecile montanus
+BLMES,Blåmes,Cyanistes caeruleus
+AZMES,Azurmes,Cyanistes cyanus
+TAOXE,Talgoxe,Parus major
+PUMES,Pungmes,Remiz pendulinus
+SKMES,Skäggmes,Panurus biamicus
+TRLÄR,Trädlärka,Lullula arborea
+SÅLÄR,Sånglärka,Aauda arvensis
+TOLÄR,Tofslärka,Galerida cristata
+BELÄR,Berglärka,Eremophila alpestlis
+KOLÄR,Korttålärka,Calandrella brachydactyla
+BASVA,Backsvala,Ripana riparia
+LASVA,Ladusvala,Hirundo rustica
+HUSVA,Hussvala,Delichon urbicum
+ROSVA,Rostgumpsvala,Cecropis daunca
+CESÅN,Cettisångare,Cettia cetti
+STMES,Stjärtmes,Aegithalos caudatus
+ACCAU,Stjärtmes (caudatus),Aegithalos caudatus caudatus
+ACEUR,Stjärtmes (europaeus),Aegithalos caudatus europaeus
+PHSIB,Grönsångare,Phylloscopus sibilatlix
+BESÅN,Bergsångare,Phylloscopus bonelli
+BASÅN,Balkansångare,Phylloscopus orientalis
+PHHUM,Bergtajgasångare,Phylloscopus humei
+TASÅN,Tajgasångare,Phylloscopus inomatus
+KUSÅN,Kungsfågelsångare,Phylloscopus proregulus
+VISÅN,Videsångare,Phylloscopus schwarzi
+BRSÅN,Brunsångare,Phylloscopus fuscatus
+PHNEG,Dvärgsångare,Phylloscopus neglectus
+LÖSÅN,Lövsångare,Phylloscopus trochilus
+PHCOL,Gransångare,Phylloscopus collybita
+PCCOL,Gransångare (collybita),Phylloscopus collybtta collybita
+PCTRI,Gransångare (tristis),Phylloscopus collybita tristis
+PCABI,Gransångare (abietinus),Phylloscopus collybtta abietinus
+IBGRA,Iberisk gransångare,Phylloscopus ibericus
+PHNIT,Kaukasisk lundsångare,Phylloscopus nitidus
+PHPLU,Sibirisk lundsångare,Phylloscopus plumbeitarsus
+LUSÅN,Lundsångare,Phylloscopus trochiloides
+NOSÅN,Nordsångare,Phylloscopus borealis
+ACARU,Trastsångare,Acrocephalus arundinaceus
+ACMEL,Kaveldunsångare,Acrocephalus melanopogon
+ACPAL,Vattensångare,Acrocephalus paludicola
+SÄSÅN,Sävsångare,Acrocephalus schoenobaenus
+FÄSÅN,Fältsångare,Acrocephalus agncola
+BUSÅN,Busksångare,Acrocephalus dumetorum
+ACSCI,Rörsångare,Acrocephalus scirpaceus
+KRÅNG,Kärrsångare,Acrocephalus palustris
+IDCAL,Stäppsångare,Iduna caligata
+IDRAM,Saxaulsångare,Iduna rama
+IDPAL,Eksångare,Iduna pallida
+IDOPA,Macchiasångare,Iduna opaca
+POSÅN,Polyglottsångare,Hippolais polyglotta
+HIICT,Härmsångare,Hippolais idetina
+HECER,Starrsångare,Helopsaltes certhiola
+LOLAN,Träsksångare,Locustella lanceolata
+FLSÅN,Flodsångare,Locustella fluviatilis
+LOLUS,Vassångare,Locustella luscinioides
+LONAE,Gräshoppsångare,Locustella naevia
+SVHÄT,Svarthätta,Sylvia atricapilla
+SYBOR,Trädgårdssångare,Sylvia borin
+HOSÅN,Höksångare,Curruca nisoria
+ÄRSÅN,Ärtsångare,Curruca curruca
+CCCUR,Ärtsångare (curruca),Curruca curruca curruca
+CCBLY,Ärtsångare (blyhtii),Curruca curruca blyhtii
+ÖKSAN,Ökensångare,Curruca nana
+SAHÄT,Sammetshätta,Curruca melanocephala
+CUIBE,Rostsångare,Curruca iberiae
+CUSUB,Moltonisångare,Curruca subalpina
+CUCAN,Rödstrupig sångare,Curruca cantillans
+TOSÅN,Törnsångare,Curruca communis
+CUUND,Provencesångare,Curruca undata
+BRKUN,Brandkronad kungsfågel,Regulus ignicapilla
+KUFÅG,Kungsfågel,Regulus regulus
+SISVA,Sidensvans,Bombycilla ganulus
+GÄSMY,Gärdsmyg,Troglodytes troglodytes
+NÖVÄC,Nötväcka,Sitta europaea
+SEEUR,Nötväcka (europaea),Sitta europaea europaea
+SEASI,Nötväcka (asiatica),Sitta europaea asiatica
+TRKRY,Trädkrypare,Certhia familiaris
+TRTRÄ,Trädgårdsträdkrypare,Catha brachydactyla
+STARE,Stare,Stumus vulgaris
+ROSTA,Rosenstare,Stumus roseus
+ZOAUR,Guldtrast,Zoothera aurea
+ROSKO,Rostskogstrast,Catharus fuscescens
+SITRA,Sibirisk trast,Geokichla sibirica
+TATRA,Taltrast,Turdus philomelos
+DUTRA,Dubbeltrast,Turdus viscivorus
+RÖTRA,Rödvingetrast,Turdus iliacus
+KOTRA,Koltrast,Turdus merula
+BJTRA,Björktrast,Turdus pilaris
+RITRA,Ringtrast,Turdus torquatus
+TUATR,Svarthalsad trast,Turdus atrogularis
+MUDAU,Glasögonflugsnappare,Muscicapa dauurica
+GRFLU,Grå flugsnappare,Muscicapa striata
+RÖHAK,Rödhake,Erithacus rubecula
+VINÄK,Vistrupig näktergal,Irania gutturalis
+NÄGAL,Näktergal,Luscinia luscinia
+SYNÄK,Sydnäktergal,Luscinia megarhynchos
+BLHAK,Blåhake,Luscinia svecica
+LSSVE,Båhake (svecica),Luscinia svecica svecica
+LSCYA,Blåhake (cyanecula),Luscinia svecica cyanecula
+FINAR,Narcissflugsnappare,ficedula narcissina
+MIFLU,Mindre flugsnappare,Ficedula parva
+SVFLU,Svartvit flugsnappare,ficedula hypoleuca
+HAFLU,Halsbandsflugsnappare,Ficedula albicollis
+TABLÅ,Tajgablåstjärt,Tarsiger cyanurus
+SVRÖD,Svart rödstjärt,Phoenicurus ochruros
+POMUR,Svart rödstjärt (murinus),Phoenicurus ochruros murinus
+RÖSTJ,Rödstjärt,Phoenicurus phoenicurus
+BUSKV,Buskskvätta,Saxicola rubetra
+VIBUS,Vitgumpad buskskväta,Saxicola maurus
+SMMAU,Vitgumpad buskskvätta (maurus),Saxicola maurus maurus
+SMHEM,Vitgumpad buskskvätta (hemprichii),Saxicola maurus hempnchii
+SMVAR,Vitgumpad buskskvätta (variegatus),Saxicola maurus variegatus
+SVBUS,Svarthakad buskskvätta,Saxicola rubicola
+SRRUB,Svarthakad buskskvätta (rubicola),Saxicola rubicola rubicola
+SRHIB,Svarthakad buskskvätta (hibernans),Saxicola rubicola hbemans
+STSKV,Stenskvätta,Oenanthe oenanthe
+OOOEN,Stenskvätta (oenanthe),Oenanthe oenanthe oenanthe
+OOLEU,Stenskvätta (leucorhoa),Oenanthe oenanthe leucorhoa
+OEDES,Ökenstenskvätta,Oenanthe deserti
+OEHIS,Västlig medelhavsstenskvätta,Oenanthe hispanica
+OEPLE,Nunnestenskvätta,Oenanthe pleschanka
+OEMEL,Östlig medelhavsstenskvätta,Oenanthe melanoleuca
+STSTA,Strömstare,Cinclus cinclus
+ALJÄR,Alpjärnsparv,Prunella collaris
+SIJÄR,Sibirisk järnsparv,Prunella montanella
+PRAATR,Svartstrupig järnsparv,Prunella atrogularis
+JÄSPA,Järnsparv,Prunella modulahs
+PIFIN,Pilfink,Passer montanus
+GRSPA,Gråsparv,Passer domesticus
+GUÄRL,Gulärla,Motacilla flava
+MFAVA,Gulärla flava),Motacilla flava flava
+MFISS,Gulärla (flavissima),Motacilla flava flavissima
+MFTHU,Gulärla (thunbergi),Motacilla flava thunbergi
+MFFEL,Gulärla (feldegg),Motacilla flava feldegg
+CIÄRL,Citronärla,Motacilla ctreola
+FOÄRL,Forsärla,Motacilla cinerea
+SÄÄRL,Sädesärla,Motacilla alba
+MAALB,Sädesärla (alba),Motacilla alba alba
+MAYAR,Sädesärla (yarrellii),Motacilla alba yarrellii
+FÄPIP,Fältpiplärka,Anthus campestris
+STPIP,Större piplärka,Anthus richardi
+ANGOD,Mongolpiplärka,Anthus godlewskii
+ANGUS,Tundrapiplärka,Anthus gustavi
+TRPIP,Trädpiplärka,Annthus trivialis
+SIPIP,Sibirisk piplärka,Anthus hodgsoni
+RÖPIP,Rödstrupig piplärka,Anthus cervinus
+HEPIP,Hedpiplärka,Anthus rubescens
+ÄNPIP,Ängspiplärka,Anthus pratensis
+VAPIP,Vattenpiplärka,Anthus spinoletta
+SKPIP,Skärpiplärka,Anthus petrosus
+BOFIN,Bofink,hingilla coelebs
+BEFIN,Bergfink,Fringilla montfringilla
+STKNÄ,Stenknäck,Coccothraustes coccothraustes
+TABIT,Tallbit,Pinicola enucleator
+DOHER,Domherre,Pynhula pynhula
+ROSEN,Rosenfink,Carpodacus erythrinus
+GRFIN,Grönfink,Chlotis chloris
+VIHÄM,Vinterhämpling,Linaha flavirostns
+HÄMPL,Hämpling,Linaria cannabina
+ACFLA,Gråsiska,Acanthis flammea
+AFMEA,Gråsiska (flammea),Acanthis flammea flammea
+AFROS,Gråsiska (rostrata),Acanthis flammea rostrata
+AFCAB,Gråsiska (cabaret),Acanthis flammea cabaret
+AFEXI,Gråsiska (exilipes),Acanthis flammea exilipes
+AFFEX,Gråsiska (flammea /exilipes),Acanthis flammea flammea / exilipes
+STKOR,Större korsnäbb,Loxia pytyopsittacus
+MIKOR,Mindre korsnäbb,Loxia curvirostra
+BÄKOR,Bändelkorsnäbb,Loxia bifasciata
+STEGL,Steglits,Carduelis carduefis
+GUHÄM,Gulhämpling,Serinus serinus
+SPSPI,Grönsiska,Spinus spinus
+LASPA,Lappsparv,Calcarius lapponicus
+SNSPA,Snösparv,Plectrophenax nivalis
+SVSPA,Svarthuvad sparv,Emberiza melanocephala
+KOSPA,Kornsparv,Embetiza calandra
+KLSPA,Klippsparv,Emberiza cia
+ORSPA,Ortolansparv,Emberiza hortulana
+ROSPA,Rostsparv,Emberiza caesia
+EMCIR,Häcksparv,Emberiza cidus
+GUSPA,Gulsparv,Emberiza citrinella
+EMLEU,Tallsparv,Embenza leucocephalos
+SÄSPA,Sävsparv,Emberiza schoeniclus
+GYSPA,Gyllensparv,Emberiza aureola
+EMRUS,Videsparv,Emberiza rustica
+DVSPA,Dvärgsparv,Emberiza pusilla
+EMSPO,Gråhuvad sparv,Emberiza spodocephala
+MEMEL,Sångsparv,Melospiza melodia
+PHLUD,Brokig kardinal,Pheucticus ludovicianus
+OKÄND,Okänd (eller miss i notering),
+NYART,Ny art som saknar kod (ange i textrad),
+KASS,Kasserad ring,
