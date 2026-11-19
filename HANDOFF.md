@@ -42,14 +42,14 @@ Answered by the owner in phase 1 (2026-11-18) unless marked **open**.
 ## 2b. Decisions from phase 1
 
 - **Single-season species** are derived from the data in `build_aggregates.py` (threshold in config), for every species, not only waders.
-- **Feature parity kept** beyond the design: the weather variable choice ("Visa" chips) with values gap-filled from Vinga A marked as such (precipitation, pressure, visibility); recaptures as data; species codes without a Swedish name (78 codes, for example `KASS`, `KETÄR`) stay selectable by code, with the code as fallback name.
+- **Feature parity kept** beyond the design: the weather variable choice ("Visa" chips) with values gap-filled from Vinga A marked as such (precipitation, pressure, visibility); recaptures as data; species codes without a Swedish name (78 codes at the time, for example `KASS`, `KETÄR`; 2 after the manual code list) stay selectable by code, with the code as fallback name.
 - **Dropped from the Dash app:** free date ranges, heatmap top-N 30 / 50 / 100 (the design's Topp 5 / 10 / 15 / Alla only), violin plots (replaced by 50-bin histograms), fat score, and later (phase 7) the `TOTAL` rows in `ring_records`.
 - **Återfynd** filters its period on the **find date**, as the Dash app does. Recoveries are not subject to the gap-year rule (no trend is computed).
 - **Daily weather covers only 03:00–12:00 Swedish time**, when most birds are caught (72 % of new ringings with a recorded hour), for every weather metric. Precipitation sums the hours ending 04:00–12:00. The window and its Swedish note are in `config/analysis.json` (`weather_window`); Väder and Om show the note. Decided 2026-11-18.
 - **Weeks** are 7-day periods counted from 1 January (week 1 = 1–7 January, week 52 = 24–31 December), never calendar (ISO) week numbers, on every page. The Om page explains this; the copy is in `design/README.md`. Decided 2026-11-18.
 - **Morfometri** aggregates use **all years** (descriptive statistics, no trend).
 - **Current year** = the latest year in `ringon`; **complete years** end at the upper bound of `period_options`. The "idag" marker uses the real date.
-- **Species count on Hem:** the real number of ringed species codes (210 today, of which 132 have a Swedish name) is computed from the data. The design's "133" is the number of mapped names; settle the wording in the Hem PR.
+- **Species count on Hem:** the real number of ringed species codes (210 today; 209 have a Swedish name since the manual code list was added) is computed from the data. The design's "133" is the number of mapped names; settle the wording in the Hem PR.
 - **Countries for Återfynd:** `fynd.province_code` is a EURING place code (country prefix + region, for example `SV`, `DK`, `ES`, `+A`). Phase 2 adds a EURING country → Swedish name lookup.
 - **Line endings:** 24 tracked files under `app/` are stored with CRLF and there is no `.gitattributes`. Preserve CRLF when editing them, or normalise them in a separate whitespace-only commit.
 - **Design corrections** to apply when building pages are listed in `design/README.md`, "Design deviations decided in phase 1".

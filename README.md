@@ -88,7 +88,7 @@ run `uv run pytest`.
 | `fynd` | ~6 k | Recovery reports (Nidingen birds found elsewhere, foreign birds found at Nidingen) |
 | `frring` | 764 | Original ringing data for foreign-ringed birds caught at Nidingen |
 | `ring_records` | ~900 k | Analysis table: `ringon` + `kontr` + taxonomy, **plus a `TOTAL` copy of every row** |
-| `species_metadata`, `artkod_lookup` | 133 | Taxonomy (Artfakta + eBird) and species code → Swedish name |
+| `species_metadata`, `artkod_lookup` | 213, 216 | Taxonomy (Artfakta + eBird) and species code → Swedish name; the manual list in `data/metadata/RUBIN_code_mappning.csv` fills in missing names |
 | `signaturer`, `lokaler` | 367 / 5 | Ringer codes and location codes |
 | `weather_data`, `weather_data_vinga`, `weather_daily` | 303 k / 218 k / 16 k | SMHI hourly and daily weather |
 | `species_list`, `year_list`, `date_range_cache`, `rediscoveries_species_options` | small | Precomputed lookups for app start-up |

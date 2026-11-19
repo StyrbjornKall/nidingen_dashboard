@@ -34,4 +34,4 @@ testpaths = ["app/tests"]
 pythonpath = ["."]
 # Most other files in app/tests are exploratory scripts that run on import
 # (some against the legacy bird_ringing.db); only collect the real suites.
-python_files = ["test_aggregates.py", "test_api.py", "test_api_parity.py", "test_fetch_observations.py"]
+python_files = ["test_aggregates.py", "test_api.py", "test_api_parity.py", "test_fetch_observations.py", "test_manual_code_names.py"]

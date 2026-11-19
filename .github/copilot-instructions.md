@@ -84,6 +84,7 @@ ringing/
 ```
 RingDb0016.mdb ──(convert_mdb_to_duckdb.py, Windows + Access ODBC driver)──► bird_ringing_0016.duckdb
 data/processed/combined_species_metadata.csv ──┘   (artkod_lookup, species_metadata)
+data/metadata/RUBIN_code_mappning.csv ─────────┘   (fills only the names that are missing)
 SMHI Open Data API ──(fetch_smhi_weather.py)──► weather_data, weather_data_vinga, weather_daily
                     (rebuild_precomputed_tables.py)──► species_list, year_list, date_range_cache, … (refresh only)
 config/analysis.json + config/euring_countries.csv ──(build_aggregates.py)──► agg_* tables (for the new API)
@@ -103,7 +104,11 @@ uv run python app/src/build_aggregates.py                # agg_* tables; run aft
 
 - The converter needs the **Microsoft Access Driver (*.mdb, *.accdb)**
   (Windows) and decodes text as **cp1252**.
-- Converter options: `--mdb PATH --db PATH`. Weather fetcher options:
+- Converter options: `--mdb PATH --db PATH`, and `--from-existing`, which
+  skips the `.mdb` (no Access driver needed) and rebuilds the lookup tables,
+  `ring_records` and the precomputed tables from the native tables already in
+  `--db`. Use it after editing a metadata CSV; run `build_aggregates.py`
+  afterwards. Weather fetcher options:
   `--db-path`, `--dry-run`, `--no-vinga`, `--output-nidingen-csv`,
   `--output-vinga-csv`. Rebuild script option: `--db PATH`. Aggregate
   builder options: `--db PATH --config-dir PATH`.
@@ -127,8 +132,8 @@ constraints; joins are by convention (see §5.4).
 | `frring` | 764 | native (MDB `FrRing`) | **Original ringing data of foreign-ringed birds** later caught at Nidingen |
 | `signaturer` | 367 | native | Ringer code → full name |
 | `lokaler` | 5 | native | Station's location codes → coordinates |
-| `artkod_lookup` | 133 | derived (CSV) | RUBIN species code (`RÖHAK`) → Swedish name (`rödhake`) |
-| `species_metadata` | 133 | derived (CSV) | Taxonomy (Artfakta + eBird), keyed by Swedish name |
+| `artkod_lookup` | 216 | derived (CSV) | RUBIN species code (`RÖHAK`) → Swedish name (`rödhake`) |
+| `species_metadata` | 213 | derived (CSV) | Taxonomy (Artfakta + eBird), keyed by Swedish name; 80 rows added from the manual list have only a Latin name |
 | `ring_records` | 900,138 | derived | **Main analysis table** used by the dashboard: `ringon ∪ kontr` + taxonomy + `TOTAL` duplicates |
 | `species_list` | 216 | precomputed | Species dropdown, with taxonomy sort keys |
 | `rediscoveries_species_options` | 109 | precomputed | Species dropdown for the Återfynd tab |
@@ -299,19 +304,24 @@ The station's own location codes: `0016NID` (Nidingen), `RC-NID`, `0016FLA`
 
 ### 5.3 Derived tables
 
-#### `artkod_lookup` (133 rows)
+#### `artkod_lookup` (216 rows)
 | Column | Type | Meaning |
 |---|---|---|
 | `artkod` | VARCHAR | RUBIN code, upper case (`RÖHAK`) — indexed |
 | `swedish_name` | VARCHAR | Swedish common name, lower case (`rödhake`) |
 
 Built from the `sökträff` column of
-`data/processed/combined_species_metadata.csv`. **Only 133 of the 216 codes
-in `ring_records` are mapped.** 82 codes (1,526 rows, e.g. `KASS`, hybrids,
-rare species) get `swedish_name = NULL`. To map more species, add rows to the
-CSV and re-run the converter.
+`data/processed/combined_species_metadata.csv` (133 codes), then **filled in**
+from the hand-curated `data/metadata/RUBIN_code_mappning.csv` (columns
+`Artkod`, `Svenskt namn`, `Latinskt namn`): 83 more codes, names in lower
+case. The manual list only supplies what is missing. A code that already has
+a name keeps it, codes that do not occur in the data are not added, and its
+Latin name goes into `species_metadata` for names that are not there yet.
+Two codes in the data are still unnamed (`CUCAX`, 5 new ringings; `AVSKR`,
+5 recaptures) and get `swedish_name = NULL`. To name more codes, add rows to
+the manual list and re-run the converter (`--from-existing`, below).
 
-#### `species_metadata` (133 rows, PK `swedish_name`)
+#### `species_metadata` (213 rows, PK `swedish_name`)
 | Column | Type | Meaning |
 |---|---|---|
 | `swedish_name` | VARCHAR PK | Join key (lower case) |
@@ -362,7 +372,7 @@ as a species in the dropdown.
 | `foreign_bird`, `original_centre`, `original_ring` | VARCHAR | Only from `ringon` (NULL for `'R'`) |
 | `find_type`, `find_date_type`, `find_date_accuracy` | VARCHAR | Only from `kontr` (NULL for `'C'`) |
 | `distance_km`, `bearing_deg`, `days_since_ring`, `hours_since_ring`, `serial_number` | BIGINT | Only from `kontr` |
-| `swedish_name` | VARCHAR | Via `artkod_lookup`; `'Total'` for TOTAL rows; NULL for 82 unmapped codes |
+| `swedish_name` | VARCHAR | Via `artkod_lookup`; `'Total'` for TOTAL rows; NULL for the 2 codes still unnamed (`CUCAX`, `AVSKR`) |
 | `scientific_name`, `taxon_id` | VARCHAR, DOUBLE | Via `species_metadata` |
 | `data_source` | VARCHAR | Always `'RingDb0016'` |
 | `created_at`, `updated_at` | TIMESTAMPTZ | Build time |
@@ -409,7 +419,7 @@ Conventions shared by all `agg_*` tables:
 
 | Table | Rows | Grain and key columns |
 |---|---:|---|
-| `agg_species` | 216 | One row per species code (incl. codes seen only as recaptures) + `ALLA`: `swedish_name` (NULL for 78 unmapped codes), `scientific_name`, `english_name`, `order_name`, `family_name`, `taxon_order`, `n_new_total`, `n_recap_total`, `n_new_var/host`, `share_var`, `single_season`, `single_season_season`, `first_date`, `last_date` |
+| `agg_species` | 216 | One row per species code (incl. codes seen only as recaptures) + `ALLA`: `swedish_name` (NULL for `CUCAX` and `AVSKR`), `scientific_name`, `english_name`, `order_name`, `family_name`, `taxon_order`, `n_new_total`, `n_recap_total`, `n_new_var/host`, `share_var`, `single_season`, `single_season_season`, `first_date`, `last_date` |
 | `agg_counts_day` | 85 k | species × date with any capture: `year, doy, month, week, season, n_new, n_recap, is_gap_year` |
 | `agg_counts_year_season` | 30 k | species × year × season (`var`/`host`/`helar`), **dense**: years with no birds are 0, from the first data year to the end of the longest period |
 | `agg_counts_week` | 32 k | species × year × week (sparse): `season, n` (new), `n_recap`, `is_gap_year` |
