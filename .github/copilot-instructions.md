@@ -708,22 +708,43 @@ the Dash app keeps running until phase 7.
 uv sync
 uv run python app/app.py                 # http://localhost:8050 (debug=True)
 
-# Docker locally
+# New site: API + built frontend, one process
+uv run uvicorn app.api.main:app --reload --port 8000
+
+# Docker locally (what Serve runs)
 docker build -f app/Dockerfile -t nidingen-dashboard .
-docker run -p 8000:8000 -v "$PWD/data:/home/appuser/data" nidingen-dashboard
+docker run -d -p 8000:8000 -v "$PWD/data:/home/appuser/data:ro" nidingen-dashboard
+uv run python app/tests/smoke_test.py http://localhost:8000
 ```
 
-- The image copies only `app/`. `.dockerignore` excludes `data/`,
-  `notebooks/`, `figures/`, `*.md` and `.env`.
+- **The image is the new site, not the Dash app** (the Dash app still runs
+  locally with `uv run python app/app.py` until phase 7). `app/Dockerfile` has
+  three stages: Node 24 builds `web/dist`; Python 3.13 installs
+  `app/requirements.txt` (FastAPI, uvicorn, gunicorn, duckdb, numpy,
+  python-dotenv; no Dash, pandas, polars or pyodbc); the runtime copies
+  `app/`, `config/` and `web/dist` into `/home/appuser`, mirroring the repo
+  layout, so the API finds `config/` and `web/dist` relative to its repo root.
+  `.dockerignore` excludes `data/`, `notebooks/`, `figures/`, `*.md`, `.env`,
+  `node_modules/`, `web/e2e/` and `app/tests/`.
+- Entrypoint `app/start-script.sh`: `gunicorn -k uvicorn.workers.UvicornWorker
+  app.api.main:app`, options from `GUNICORN_CMD_ARGS` (2 workers, port 8000,
+  120 s timeout). The image has a `HEALTHCHECK` on `/api/health`.
 - In the container: `DUCKDB_PATH=/home/appuser/data/bird_ringing_0016.duckdb`.
   On **SciLifeLab Serve**, upload the `.duckdb` file through the File Manager
-  to the persistent volume mounted at `/home/appuser/data`. Gunicorn runs
-  2 workers on port 8000 with a 120 s timeout. The container must run as
-  UID 1000.
-- CI (`.github/workflows/docker-publish.yml`): on push to `main` or a `v*.*.*`
-  tag it builds `linux/amd64` and pushes
-  `<DOCKERHUB_USERNAME>/nidingen-dashboard` tagged with branch, `sha-…`, date
-  and semver.
+  to the persistent volume mounted at `/home/appuser/data`. The container
+  must run as UID 1000. The API opens the file read-only, so a read-only
+  mount works. Restart the container after replacing the database (the
+  store and the response cache load it once per process).
+- CI (`.github/workflows/docker-publish.yml`): a `test` job (backend pytest on
+  the fixture DB, frontend typecheck and Vitest) must pass before
+  `build-and-push`. On push to `main` or a `v*.*.*` tag it builds
+  `linux/amd64` and pushes `<DOCKERHUB_USERNAME>/nidingen-dashboard` tagged
+  with branch, `sha-…`, date and semver; on pull requests it only checks
+  that the image builds. Playwright and the smoke test need the real
+  database, so they run locally.
+- `app/tests/smoke_test.py <url>` checks health, every page route, a hashed
+  asset, every API router with real parameters, ETag/304 and that warm
+  responses are under 300 ms. Run it against the container before a deploy.
 - When you change the database, rebuild it locally and **re-upload the
   `.duckdb` file to Serve**. A new image alone won't change the data.
 
@@ -749,6 +770,7 @@ The real pytest suites (`pyproject.toml` limits collection to them, so a bare
   pinning the intended differences (new ringings vs `ring_records`,
   centre-aware recovery join, one inbound row per bird).
 - `test_fetch_observations.py`: temporary DBs and mocks.
+- `smoke_test.py`: not a pytest suite; run it by hand against a running site on the real database (§8).
 
 ```bash
 uv run pytest                                   # all suites

@@ -6,9 +6,45 @@ on:
       - main
     tags:
       - "v*.*.*"          # also trigger on semantic version tags, e.g. v1.2.3
+  pull_request:           # tests and a build check, nothing is pushed
 
 jobs:
+  # The real database is not in the repo, so CI runs the fixture-based suites
+  # (backend pytest, frontend typecheck and Vitest). The Playwright and smoke
+  # tests need the real database and run locally (see CLAUDE.md).
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Backend tests
+        run: |
+          uv sync --frozen
+          uv run pytest
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Frontend typecheck and unit tests
+        run: |
+          npm --prefix web ci
+          npm --prefix web run typecheck
+          npm --prefix web test
+
   build-and-push:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -47,6 +83,7 @@ jobs:
 
       # ── 5. Log in to Docker Hub ──────────────────────────────────────────────
       - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -59,7 +96,7 @@ jobs:
           context: .
           file: ./app/Dockerfile
           platforms: linux/amd64          # Serve runs on amd64
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}   # pull requests only check that it builds
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha           # GitHub Actions layer cache

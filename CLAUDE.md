@@ -49,10 +49,12 @@ npm --prefix web run e2e                                         # Playwright ag
 npm --prefix web run gen:api                                     # after changing app/api/schemas.py: openapi.json + TS types
 ```
 
-Still a target (phase 6; keep this list accurate as it becomes real):
+Container (phase 6; the image runs FastAPI + the built site, not the Dash app):
 
 ```bash
-docker build -f app/Dockerfile -t nidingen-dashboard .      # single container
+docker build -f app/Dockerfile -t nidingen-dashboard .      # node build, then Python runtime
+docker run -d -p 8000:8000 -v "$PWD/data:/home/appuser/data:ro" nidingen-dashboard
+uv run python app/tests/smoke_test.py http://localhost:8000  # real-DB smoke test, warm responses < 300 ms
 ```
 
 ## Target layout

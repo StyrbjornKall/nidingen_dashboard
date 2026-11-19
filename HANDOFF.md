@@ -242,6 +242,8 @@ Keep everything the old app supports that the design does not explicitly drop. A
 
 The Dash app stays runnable until phase 7.
 
+**Phase 6 as built (2026-11-19):** the image now contains the new site only (the Dash app is no longer served from it; it still runs locally). Multi-stage `app/Dockerfile` (Node 24 → Python 3.13 → runtime as UID 1000), `app/requirements.txt` cut to the API's dependencies, `start-script.sh` runs Gunicorn with Uvicorn workers, CI runs the fixture-based tests before building (and builds without pushing on pull requests), and `app/tests/smoke_test.py` checks a running container on the real database. Verified locally with `docker run` and the real DB mounted read-only: healthy, all checks pass, warm responses under 10 ms, image 448 MB. **Not done by me:** the upload to Serve and switching the Serve app to the new image, which need the owner's access.
+
 ## 10. Definition of done
 
 - Every page matches its design file in layout, colours, copy and behaviour, using real data.
