@@ -1,0 +1,412 @@
+/* --- Controls --------------------------------------------------------- */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+}
+
+.controlLabel {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.select {
+  min-height: var(--min-touch-target);
+  max-width: 100%;
+  padding: 0 36px 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  font: 500 15px var(--font-sans);
+  color: var(--color-ink);
+}
+
+.select:focus-visible,
+.switch:focus-visible,
+.globeButton:focus-visible,
+.longest:focus-visible,
+.stage:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}
+
+.switch {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--min-touch-target);
+  font: 500 14px var(--font-sans);
+}
+
+.switch:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}
+
+.track {
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--color-line);
+  position: relative;
+  transition: background 0.2s;
+}
+
+.knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+}
+
+.switch[aria-pressed="true"] .track {
+  background: var(--color-ink);
+}
+
+.switch[aria-pressed="true"] .knob {
+  transform: translateX(18px);
+}
+
+/* --- Layout ----------------------------------------------------------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.key {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 13.5px;
+}
+
+.key li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.keyDot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+/* --- Globe ------------------------------------------------------------ */
+
+.globeBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.stage:active {
+  cursor: grabbing;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-ocean);
+  color: var(--color-text-secondary);
+  font-size: 15px;
+}
+
+.nid {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.nidPulse,
+.nidDot {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.nidPulse {
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  background: var(--color-highlight);
+  animation: pulse 2s ease-out infinite;
+}
+
+.nidDot {
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  background: var(--color-highlight);
+  border: 3px solid var(--color-ink);
+  box-sizing: border-box;
+}
+
+.nidLabel {
+  position: absolute;
+  transform: translate(12px, -130%);
+  font-size: 13px;
+  font-weight: 700;
+  background: rgb(255 255 255 / 0.92);
+  padding: 1px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.globeButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.globeButton {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: var(--min-touch-target);
+  min-height: var(--min-touch-target);
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  font: 600 14px var(--font-sans);
+  color: var(--color-ink);
+}
+
+.globeButton:hover {
+  background: var(--color-surface-tint);
+}
+
+.globeHint {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-left: 6px;
+}
+
+/* --- Side panels ------------------------------------------------------ */
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.focus {
+  background: var(--color-ink);
+  color: #fff;
+  border-radius: 20px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 120px;
+}
+
+.kicker {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #fff 70%, var(--color-ink));
+}
+
+.focusTitle {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.focusText {
+  font-size: 14px;
+  line-height: 1.5;
+  color: color-mix(in srgb, #fff 85%, var(--color-ink));
+}
+
+.tiles {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--color-line);
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.tiles > div {
+  background: var(--color-surface);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.tiles dd {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.tiles dt {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.tilesNote {
+  margin: 8px 4px 0;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.countryRow {
+  display: grid;
+  grid-template-columns: 110px 1fr 40px;
+  gap: 10px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.countryName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.countryRow > .mono {
+  text-align: right;
+}
+
+.countryTrack {
+  display: block;
+  background: var(--color-surface-tint);
+  border-radius: 0 4px 4px 0;
+}
+
+.countryBar {
+  display: block;
+  height: 12px;
+  border-radius: 0 4px 4px 0;
+  background: var(--heat-1);
+  transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.longest {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  width: 100%;
+  padding: 9px 8px;
+  border-top: 1px solid var(--color-grid);
+  border-radius: 8px;
+  transition: background 0.18s;
+}
+
+.longest:hover {
+  background: var(--color-surface-tint);
+}
+
+.longestName {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.longestKm {
+  font-size: 14px;
+  text-align: right;
+}
+
+.longestWhere {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.longestWhen {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: right;
+}

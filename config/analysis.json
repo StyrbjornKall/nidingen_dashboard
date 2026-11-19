@@ -1,0 +1,90 @@
+{
+  "seasons": {
+    "var": {
+      "label_sv": "Vår",
+      "label_en": "Spring",
+      "months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "description": "1 januari–30 juni"
+    },
+    "host": {
+      "label_sv": "Höst",
+      "label_en": "Autumn",
+      "months": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "description": "1 juli–31 december"
+    }
+  },
+  "season_rule": "season = 'var' if month(date) <= 6 else 'host'. Defined by calendar month, so leap years need no special handling.",
+  "season_scope": "The two seasons apply to every page, including Väder (decided 2026-11-18; the design's Vår / Sommar / Höst on Väder is dropped).",
+  "weather_window": {
+    "from_hour": 3,
+    "to_hour": 12,
+    "timezone": "Europe/Stockholm",
+    "rule": "Daily weather metrics use only the hourly observations from from_hour to to_hour inclusive, Swedish local time, when most birds are caught (72 % of new ringings with a recorded hour). Precipitation is a 1-hour sum ending at the timestamp, so it sums the hours ending after from_hour up to to_hour (04:00–12:00). Decided 2026-11-18.",
+    "note_sv": "Väderuppgifterna för en dag gäller bara kl. 03–12 svensk tid, då de flesta fåglarna fångas, inte hela dygnet. Temperatur, vind, lufttryck, sikt och molnighet är medelvärden (eller högsta och lägsta värde) av SMHI:s timvärden under de timmarna, och nederbörden är summan för samma tid. Dagens vindriktning är ett medelvärde där timmar med starkare vind väger tyngre."
+  },
+  "trend_excluded_years": {
+    "from": 1991,
+    "to": 2004,
+    "reason_sv": "Stationen var bara delvis bemannad dessa år.",
+    "reason_en": "The station was only partly operating in these years.",
+    "applies_to": [
+      "linear trends and confidence bands",
+      "the all-species trend overview",
+      "'normal year' averages, ±1 SD bands, top year and worst year in the season-to-date chart",
+      "multi-year averages of weekly counts and median passage days",
+      "'Snitt' averages in tables"
+    ],
+    "display": "Show these years in raw time series, but visually marked as partly staffed (for example hatched or lighter bars and a short note)."
+  },
+  "median_min_birds": 10,
+  "median_min_birds_note": "A species' median passage day for one year and season counts toward its mean only if at least this many birds were newly ringed in that year and season.",
+  "single_season_threshold": 0.9,
+  "single_season_rule": "A species gets a single season (one median passage day) if more than single_season_threshold of its new ringings (ringon, all years) fall in one season; it is shown only for that season. Otherwise it gets a median for both vår and höst. Computed from the data in build_aggregates.py for every species; there is no hand-made list. Decided 2026-11-18.",
+  "max_compare_species": 6,
+  "default_selection": [
+    "RÖHAK",
+    "LÖSÅN",
+    "KUFÅG"
+  ],
+  "current_season_year": 2026,
+  "period_options": [
+    {
+      "id": "all",
+      "label_sv": "1980–2025",
+      "from": 1980,
+      "to": 2025
+    },
+    {
+      "id": "r20",
+      "label_sv": "Senaste 20 år",
+      "from": 2006,
+      "to": 2025
+    },
+    {
+      "id": "r10",
+      "label_sv": "Senaste 10 år",
+      "from": 2016,
+      "to": 2025
+    }
+  ],
+  "counts_basis": "ringon",
+  "counts_basis_note": "'Ringmärkta' means new ringings (ringon) only. Recaptures (kontr) are kept separately as n_recap.",
+  "age_classes": {
+    "display": "raw",
+    "note": "Show the raw age_code values as stored in ringon/kontr (e.g. 10, 2+, 20, 3+, 00, 1+), not grouped into classes. NULL and '' are shown as 'Okänd'. Decided 2026-11-18."
+  }
+}

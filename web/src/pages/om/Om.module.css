@@ -1,0 +1,228 @@
+.intro {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .intro {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 760px;
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+}
+
+.text p {
+  margin: 0;
+}
+
+.lead {
+  font-size: 22px;
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+
+.h2 {
+  margin: 16px 0 0;
+  font-size: 26px;
+  letter-spacing: -0.015em;
+  color: var(--color-ink);
+}
+
+.sources {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 16.5px;
+  line-height: 1.55;
+}
+
+.contact {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.logos {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.logos img {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: contain;
+}
+
+.contactTitle {
+  margin: 0;
+  font-size: 20px;
+}
+
+.contactBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.contactBody p {
+  margin: 0;
+}
+
+.contactBody a,
+.report a {
+  color: var(--color-link-hover);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.report {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.sectionTitle {
+  margin: 0 0 20px;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+
+/* --- Glossary --------------------------------------------------------- */
+
+.terms {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 14px;
+}
+
+.term {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.term dt {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.term dd {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+/* --- FAQ -------------------------------------------------------------- */
+
+.faq {
+  max-width: 860px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  padding: 6px 24px;
+}
+
+.faqItem {
+  border-bottom: 1px solid var(--color-grid);
+}
+
+.faqItem:last-child {
+  border-bottom: 0;
+}
+
+.faqHead {
+  margin: 0;
+  font-size: inherit;
+}
+
+.question {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 64px;
+  padding: 16px 4px;
+  font: 600 18px var(--font-sans);
+  color: var(--color-ink);
+}
+
+.question:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.chev {
+  flex: none;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.question[aria-expanded="true"] .chev {
+  transform: rotate(180deg);
+}
+
+.answer {
+  margin: 0;
+  padding: 0 4px 20px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  max-width: 720px;
+  animation: reveal 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .faq {
+    padding: 4px 16px;
+  }
+
+  .question {
+    font-size: 16.5px;
+  }
+
+  .lead {
+    font-size: 19px;
+  }
+}

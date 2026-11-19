@@ -33,14 +33,21 @@ Re-running the script is safe: all bird tables are dropped and recreated from
 the MDB. Weather tables are preserved if they already exist.
 """
 
+from __future__ import annotations
+
 import argparse
+import csv
 import sys
 from datetime import datetime
 from pathlib import Path
 
 import duckdb
 import polars as pl
-import pyodbc
+
+try:  # Only needed to read the .mdb (Windows + Access driver); --from-existing works without it.
+    import pyodbc
+except ImportError:  # pragma: no cover - depends on the machine
+    pyodbc = None
 
 # ── default paths ────────────────────────────────────────────────────────────
 _SCRIPT_DIR = Path(__file__).parent
@@ -48,6 +55,9 @@ _PROJECT_DIR = _SCRIPT_DIR.parent.parent
 _DEFAULT_MDB = _PROJECT_DIR / "data" / "RingDb0016.mdb"
 _DEFAULT_DB  = _PROJECT_DIR / "data" / "bird_ringing_0016.duckdb"
 _METADATA_CSV = _PROJECT_DIR / "data" / "processed" / "combined_species_metadata.csv"
+# Hand-curated RUBIN code → Swedish and Latin name. Only used for codes that
+# the main metadata above does not name (see fill_missing_names_from_manual_list).
+_MANUAL_CODES_CSV = _PROJECT_DIR / "data" / "metadata" / "RUBIN_code_mappning.csv"
 
 
 # ── column rename maps ───────────────────────────────────────────────────────
@@ -188,8 +198,13 @@ _LOKALER    = {
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
-def _open_mdb(mdb_path: Path) -> pyodbc.Connection:
+def _open_mdb(mdb_path: Path) -> "pyodbc.Connection":
     """Open the Access database with Swedish cp1252 encoding."""
+    if pyodbc is None:
+        raise RuntimeError(
+            "pyodbc (with an ODBC driver manager) is not available here. Reading the .mdb needs "
+            "Windows with the Microsoft Access driver; use --from-existing to rebuild from an existing database."
+        )
     conn_str = (
         f"Driver={{Microsoft Access Driver (*.mdb, *.accdb)}};"
         f"DBQ={mdb_path};"
@@ -446,6 +461,61 @@ def load_species_metadata(duck: duckdb.DuckDBPyConnection, metadata_csv: Path) -
     duck.execute("CREATE INDEX idx_meta_order     ON species_metadata(order_scientific_name)")
     duck.execute("CREATE INDEX idx_meta_family    ON species_metadata(family_scientific_name)")
     print(f"  species_metadata: {len(meta):,} rows")
+
+
+def fill_missing_names_from_manual_list(duck: duckdb.DuckDBPyConnection, manual_csv: Path) -> None:
+    """
+    Name the species codes that the main metadata leaves without a name, from
+    the hand-curated list (columns Artkod, Svenskt namn, Latinskt namn).
+
+    The list only ever *adds*: a code that already has a name in artkod_lookup
+    keeps it, and codes that do not occur in the data are not added. Names are
+    stored in lower case like the others. The Latin name goes into
+    species_metadata for names it does not have yet (nothing else is known
+    about those taxa, so the other columns stay NULL).
+    """
+    if not manual_csv.exists():
+        print(f"  WARNING: manual code list not found at {manual_csv}; skipping")
+        return
+
+    manual: dict[str, tuple[str, str]] = {}
+    with open(manual_csv, encoding="utf-8-sig", newline="") as fh:
+        for row in csv.DictReader(fh):
+            code = (row.get("Artkod") or "").strip().upper()
+            name = (row.get("Svenskt namn") or "").strip().lower()
+            if code and name:
+                manual[code] = (name, (row.get("Latinskt namn") or "").strip())
+
+    # Codes used anywhere in the data that have no name yet.
+    unnamed = duck.execute("""
+        WITH used AS (
+            SELECT species_code AS code FROM ringon
+            UNION ALL SELECT species_code FROM kontr
+            UNION ALL SELECT species_code FROM fynd
+            UNION ALL SELECT species_code FROM frring
+        )
+        SELECT u.code, count(*) AS n
+        FROM used u LEFT JOIN artkod_lookup al ON u.code = al.artkod
+        WHERE u.code IS NOT NULL AND u.code <> '' AND al.swedish_name IS NULL
+        GROUP BY u.code ORDER BY n DESC, u.code
+    """).fetchall()
+
+    filled = [(code, n) for code, n in unnamed if code in manual]
+    for code, _ in filled:
+        duck.execute("INSERT INTO artkod_lookup VALUES (?, ?)", [code, manual[code][0]])
+        name, latin = manual[code]
+        if latin:
+            duck.execute(
+                """INSERT INTO species_metadata (swedish_name, scientific_name)
+                   SELECT ?, ? WHERE NOT EXISTS (SELECT 1 FROM species_metadata WHERE swedish_name = ?)""",
+                [name, latin, name],
+            )
+
+    left = [(code, n) for code, n in unnamed if code not in manual]
+    print(f"  manual list: named {len(filled)} of {len(unnamed)} unnamed codes "
+          f"({sum(n for _, n in filled):,} records)")
+    if left:
+        print("  still without a name: " + ", ".join(f"{c} ({n})" for c, n in left))
 
 
 def build_ring_records(duck: duckdb.DuckDBPyConnection) -> None:
@@ -807,10 +877,10 @@ def build_precomputed_tables(duck: duckdb.DuckDBPyConnection) -> None:
     print(f"    year_list: {n4} rows")
 
 
-def convert(mdb_path: Path, db_path: Path) -> None:
+def convert(mdb_path: Path, db_path: Path, read_mdb: bool = True) -> None:
     now = datetime.now().strftime("%H:%M:%S")
     print(f"\n[{now}] Starting conversion")
-    print(f"  Source : {mdb_path}")
+    print(f"  Source : {mdb_path if read_mdb else '(existing tables in the target; the .mdb is not read)'}")
     print(f"  Target : {db_path}")
     print()
 
@@ -822,16 +892,20 @@ def convert(mdb_path: Path, db_path: Path) -> None:
     duck.execute("SET threads=4")
 
     # ── 1. native tables ──────────────────────────────────────────────
-    print("[1/6] Reading Access tables…")
-    tables = read_native_tables(mdb_path)
+    if read_mdb:
+        print("[1/6] Reading Access tables…")
+        tables = read_native_tables(mdb_path)
 
-    print("[2/6] Writing native tables to DuckDB…")
-    write_native_tables(duck, tables)
+        print("[2/6] Writing native tables to DuckDB…")
+        write_native_tables(duck, tables)
+    else:
+        print("[1-2/6] Keeping the native tables already in the database…")
 
     # ── 2. lookup / metadata ─────────────────────────────────────────
     print("[3/6] Loading species metadata…")
     load_artkod_lookup(duck, _METADATA_CSV)
     load_species_metadata(duck, _METADATA_CSV)
+    fill_missing_names_from_manual_list(duck, _MANUAL_CODES_CSV)
 
     # ── 3. ring_records compatibility table ───────────────────────────
     print("[4/6] Building ring_records compatibility table…")
@@ -875,7 +949,20 @@ def main() -> None:
         default=_DEFAULT_DB,
         help=f"Path for the output DuckDB file (default: {_DEFAULT_DB})",
     )
+    parser.add_argument(
+        "--from-existing",
+        action="store_true",
+        help="Do not read the .mdb (no Access driver needed): rebuild the lookup, "
+        "ring_records and precomputed tables from the native tables already in --db",
+    )
     args = parser.parse_args()
+
+    if args.from_existing:
+        if not args.db.exists():
+            print(f"ERROR: database not found: {args.db}", file=sys.stderr)
+            sys.exit(1)
+        convert(args.mdb, args.db, read_mdb=False)
+        return
 
     if not args.mdb.exists():
         print(f"ERROR: MDB file not found: {args.mdb}", file=sys.stderr)

@@ -1,0 +1,105 @@
+.header {
+  background: var(--color-ground);
+}
+
+.stripe {
+  display: flex;
+  height: 5px;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--color-ink);
+}
+
+.logo {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #c9d3c6;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.brandName {
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+
+.brandSub {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+.menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--min-touch-target);
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.link:hover {
+  background: var(--color-segmented-hover);
+  color: var(--color-ink);
+}
+
+.active,
+.active:hover {
+  background: var(--color-ink);
+  color: #fff;
+}
+
+/* On phones the menu scrolls sideways instead of wrapping into many rows. */
+@media (max-width: 640px) {
+  .menu {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: calc(100% + 2 * var(--layout-page-padding-x));
+    margin: 0 calc(-1 * var(--layout-page-padding-x));
+    padding: 0 var(--layout-page-padding-x) 4px;
+    scrollbar-width: none;
+  }
+
+  .menu::-webkit-scrollbar {
+    display: none;
+  }
+
+  .link {
+    flex: none;
+  }
+}

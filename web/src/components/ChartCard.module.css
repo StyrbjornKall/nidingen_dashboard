@@ -1,0 +1,187 @@
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  padding: 24px 26px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.headRight {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-tag-bg);
+  color: var(--color-tag-fg);
+}
+
+.subtitle {
+  margin-top: 6px;
+  max-width: 720px;
+  line-height: 1.5;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+/* Wide charts and tables scroll inside the card, not the page. Relative,
+   so absolutely positioned children (e.g. .visually-hidden text) are
+   clipped by this box instead of widening the page. */
+.body {
+  position: relative;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.footnote {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cached {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  background: #eff4ed;
+  border: 1px solid var(--color-line);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+}
+
+.sk {
+  background: linear-gradient(90deg, #e8ede5 0%, #f4f7f2 40%, #e8ede5 80%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+
+.skeletonBars {
+  height: 220px;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.skeletonRows {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 6px 0;
+}
+
+.state {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  background: var(--color-surface-tint);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.error {
+  background: #faefeb;
+}
+
+.message {
+  max-width: 300px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.button {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--min-touch-target);
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  font: 600 14px var(--font-sans);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}
+
+.solid {
+  background: var(--color-ink);
+  color: #fff;
+}
+
+.outline {
+  border: 1.5px solid var(--color-ink);
+  color: var(--color-ink);
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 18px 16px;
+    border-radius: var(--radius-card-small);
+  }
+}

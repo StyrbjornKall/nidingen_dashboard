@@ -39,6 +39,7 @@ uv sync
 # 2. Get the database. Either copy bird_ringing_0016.duckdb into data/, or build it:
 uv run python app/src/convert_mdb_to_duckdb.py              # data/RingDb0016.mdb → data/bird_ringing_0016.duckdb
 uv run python app/src/preprocess_data/fetch_smhi_weather.py # add SMHI weather (Nidingen A + Vinga A)
+uv run python app/src/build_aggregates.py                   # agg_* tables for the new dashboard
 
 # 3. Tell the app where the database is (.env in the repo root)
 echo DUCKDB_PATH=/absolute/path/to/data/bird_ringing_0016.duckdb >> .env
@@ -64,11 +65,17 @@ SMHI Open Data API ───────────────────┴�
   71190) and Vinga A (71380). It fills Nidingen's gaps in precipitation,
   pressure and visibility from Vinga and builds the `weather_daily` table.
 - **`rebuild_precomputed_tables.py`** refreshes only the small lookup tables.
+- **`build_aggregates.py`** builds the `agg_*` tables that the new
+  FastAPI/React dashboard reads (counts, phenology medians, trends,
+  morphometry, recoveries). Rules such as seasons, the partly staffed years
+  1991–2004 and the minimum sample come from `config/analysis.json`.
+  **Run it after every database rebuild and weather fetch.**
 - **`fetch_observation_data.py`** (optional) downloads Artportalen sightings
   into a separate `bird_observations.db`. The dashboard doesn't use it yet.
 
-To add a new season, get an updated `RingDb0016.mdb` from the station and
-re-run the converter.
+To add a new season, get an updated `RingDb0016.mdb` from the station,
+re-run the converter, the weather fetcher and `build_aggregates.py`, then
+run `uv run pytest`.
 
 ## Database overview
 
@@ -81,7 +88,7 @@ re-run the converter.
 | `fynd` | ~6 k | Recovery reports (Nidingen birds found elsewhere, foreign birds found at Nidingen) |
 | `frring` | 764 | Original ringing data for foreign-ringed birds caught at Nidingen |
 | `ring_records` | ~900 k | Analysis table: `ringon` + `kontr` + taxonomy, **plus a `TOTAL` copy of every row** |
-| `species_metadata`, `artkod_lookup` | 133 | Taxonomy (Artfakta + eBird) and species code → Swedish name |
+| `species_metadata`, `artkod_lookup` | 213, 216 | Taxonomy (Artfakta + eBird) and species code → Swedish name; the manual list in `data/metadata/RUBIN_code_mappning.csv` fills in missing names |
 | `signaturer`, `lokaler` | 367 / 5 | Ringer codes and location codes |
 | `weather_data`, `weather_data_vinga`, `weather_daily` | 303 k / 218 k / 16 k | SMHI hourly and daily weather |
 | `species_list`, `year_list`, `date_range_cache`, `rediscoveries_species_options` | small | Precomputed lookups for app start-up |
@@ -99,16 +106,21 @@ in [`.github/copilot-instructions.md`](.github/copilot-instructions.md).**
 ```text
 app/
   app.py                 Dash app (layout + callbacks)
+  api/                   FastAPI backend for the new React site (being built)
   Dockerfile, start-script.sh, requirements.txt
   assets/                CSS, images, logos
   src/
     convert_mdb_to_duckdb.py   Build the database from the Access file
+    build_aggregates.py        agg_* tables read by the new API
     db_manager.py              BirdRingingDB connection helper
     query_utils.py             SQL query builders used by the app
     data_processor.py          Polars helpers
     fetch_observation_data.py  Artportalen sightings → bird_observations.db
     preprocess_data/           Weather fetcher, lookup-table rebuild, legacy scripts
-  tests/                 Exploratory scripts + pytest suite for the observation fetcher
+  tests/                 pytest suites (aggregates, API, parity, fetcher) + exploratory scripts
+config/                  Analysis rules (seasons, gap years, periods) and EURING country names
+web/                     New React frontend (Vite + TypeScript), served by the API when built
+design/                  Approved design for the new site (reference only)
 data/                    Databases and raw/processed data (not in git)
 notebooks/               Jupyter exploration
 figures/                 Exported exploration plots and outreach screenshots
@@ -136,8 +148,17 @@ docker run -p 8000:8000 -v "$PWD/data:/home/appuser/data" nidingen-dashboard
   `.github/copilot-instructions.md`.
 - Open the database read-only while the app is running, because DuckDB
   allows only one writer.
-- Tests: `uv run pytest app/tests/test_fetch_observations.py`. The other
-  files in `app/tests/` are exploratory scripts.
+- Tests: `uv run pytest` runs the real suites (aggregates, API, parity with
+  the Dash queries, observation fetcher). The other files in `app/tests/`
+  are exploratory scripts.
+- The new backend runs with `uv run uvicorn app.api.main:app --reload --port 8000`;
+  its endpoints are documented at http://localhost:8000/api/docs. It reads
+  the `agg_*` tables, so run `build_aggregates.py` first.
+- The new frontend (Node 24): `npm --prefix web install`, then
+  `npm --prefix web run dev` (http://localhost:5173, with /api proxied to the
+  backend) or `npm --prefix web run build`, after which the backend serves
+  the whole site at http://localhost:8000. Tests: `npm --prefix web test`
+  and `npm --prefix web run e2e`.
 
 ## Technology
 

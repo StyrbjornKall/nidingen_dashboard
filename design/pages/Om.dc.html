@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Om webbplatsen — Nidingens Fågelstation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2F6B50}a:hover{color:#234F3C}
+.q{all:unset;box-sizing:border-box;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;width:100%;min-height:64px;padding:16px 4px;font:600 18px 'Hanken Grotesk',system-ui,sans-serif;color:#1D2923}
+.q:focus-visible{outline:2px solid #36775B;outline-offset:2px;border-radius:8px}
+.chev{transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.ans{animation:ans .35s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ans{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #E8E7E3; color: #1D2923; font-family: 'Hanken Grotesk', system-ui, sans-serif">
+  <dc-import name="Nav" active="Om" hint-size="100%,96px"></dc-import>
+
+  <header style="max-width: 1280px; margin: 0 auto; padding: 48px 32px 32px">
+    <h1 style="margin: 0; font-size: clamp(36px, 4.6vw, 54px); line-height: 1.02; letter-spacing: -0.03em; font-weight: 800">Om webbplatsen</h1>
+  </header>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 0 32px 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 40px; align-items: start">
+    <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 18px; font-size: 18px; line-height: 1.65; color: #2F3B34; max-width: 760px">
+      <p style="margin: 0; font-size: 22px; line-height: 1.5; color: #1D2923">Webbplatsen gör Nidingens Fågelstations ringmärkningsdata från 1980 och framåt tillgänglig för alla som är nyfikna på fåglarna som passerar ön.</p>
+      <p style="margin: 0">Materialet omfattar omkring 396 000 nyringmärkta fåglar, 54 000 kontroller på ön och 6 000 återfynd från hela världen, tillsammans med väderdata från SMHI. Siffrorna uppdateras när en ny säsong har förts in i stationens databas.</p>
+      <h2 style="margin: 16px 0 0; font-size: 26px; letter-spacing: -0.015em">Vem är sidan till för?</h2>
+      <p style="margin: 0">För fågelintresserade som vill se hur det går för sina favoritarter och för stationens egna ringmärkare som vill jämföra årets säsong med tidigare år.</p>
+    </div>
+    <aside style="background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+      <img src="/_blob/fb00db7bb89f48f4e80a38c753b00970" alt="Nidingens Fågelstations logotyp" width="72" height="72" style="width: 72px; height: 72px; border-radius: 50%">
+      <h2 style="margin: 0; font-size: 20px">Kontakt</h2>
+      <div style="display: flex; flex-direction: column; gap: 4px; font-size: 16px; line-height: 1.5; color: #1d2923"><a href="https://967a9fef-b021-43a1-924f-1b16fd5b52e9.frame.claudeusercontent.com/appifact/Om.dc.html#kontakt" style="color: rgb(35, 79, 60); text-decoration-line: none"><b>Denna websidan</b><br>Styrbjörn Käll<br></a><span style="font-weight: 600"><a href="https://967a9fef-b021-43a1-924f-1b16fd5b52e9.frame.claudeusercontent.com/appifact/Om.dc.html#kontakt" style="color: rgb(35, 79, 60); text-decoration-line: none; display: inline !important">skall@chalmers.se</a><br><br>Nidingens Fågelstation</span>
+        <span>Vänligen se&nbsp;https://nidingen.gof.nu/</span>
+      </div>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #53605A">Har du hittat en ringmärkt fågel? Rapportera den till Ringmärkningscentralen.</p>
+    </aside>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 24px 32px 40px">
+    <h2 style="margin: 0 0 20px; font-size: 28px; letter-spacing: -0.02em">Ordlista</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 14px">
+      <sc-for list="{{terms}}" as="t" hint-placeholder-count="6">
+        <div style="background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 16px; padding: 20px 22px; display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 18px; font-weight: 700">{{t.term}}</span>
+          <span style="font-size: 15.5px; line-height: 1.55; color: #3F4B44">{{t.text}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 24px 32px 96px">
+    <h2 style="margin: 0 0 12px; font-size: 28px; letter-spacing: -0.02em">Vanliga frågor</h2>
+    <div style="max-width: 860px; background: #FFFFFF; border: 1px solid #D5DDD2; border-radius: 20px; padding: 6px 24px">
+      <sc-for list="{{faq}}" as="f" hint-placeholder-count="6">
+        <div style="border-bottom: {{f.border}}">
+          <button type="button" class="q" aria-expanded="{{f.open}}" onClick="{{f.toggle}}">
+            <span>{{f.q}}</span>
+            <svg class="chev" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1D2923" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate({{f.rot}}deg); flex: none"><path d="M5 8l5 5 5-5"></path></svg>
+          </button>
+          <sc-if value="{{f.open}}" hint-placeholder-val="{{false}}">
+            <p class="ans" style="margin: 0; padding: 0 4px 20px; font-size: 16px; line-height: 1.6; color: #3F4B44; max-width: 720px">{{f.a}}</p>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <dc-import name="Footer" hint-size="100%,80px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { open: 0 };
+  }
+  renderVals() {
+    const faq = [
+      ['Hur jämför jag flera arter?', 'Använd artväljaren högst upp på sidorna Sammanfattning, Trender, Morfometri och Fenologi. Du kan välja upp till sex arter. Varje art får en egen färg som är densamma i alla diagram, och ditt val följer med när du byter sida. Du kan också klicka på en art i listorna för att lägga till eller ta bort den.'],
+      ['Var gäller filtren?', 'Raden som börjar med ”Visar” eller ”Jämför” gäller alla diagram på sidan. Återfynd, Väder och Flyttningskalendern på Fenologi har egna kontroller och påverkas inte av artväljaren, eftersom de bygger på andra data.'],
+      ['Vad betyder det skuggade bandet runt trendlinjen?', 'Det är ett 95 % konfidensintervall för linjen. Om hela bandet lutar åt samma håll är trenden tydlig. Om bandet rymmer både uppåt och nedåt kan vi inte säga säkert att något har förändrats.'],
+      ['Varför är 2026 inte med i trenderna?', 'Trenderna räknas på hela säsonger. Innevarande år jämförs i stället med tidigare år på sidan Fenologi, under ”Säsongen 2026”.'],
+      ['Fungerar sidan i mobilen?', 'Ja. Menyer och filter lägger sig på rad efter varandra och breda tabeller går att skrolla i sidled. Diagrammen läses av genom att trycka på dem.'],
+      ['Varifrån kommer väderdatan?', 'Från SMHI:s station Nidingen A. Där mätningar saknas fylls de i från Vinga A.']
+    ];
+    return {
+      terms: [
+        { term: 'Märkning', text: 'En fågel fångas, får en ring med unikt nummer runt benet, mäts och släpps igen.' },
+        { term: 'Kontroll', text: 'En redan ringmärkt fågel fångas på nytt här på Nidingen.' },
+        { term: 'Återfynd', text: 'En ringmärkt fågel hittas på en annan plats, eller en fågel märkt någon annanstans fångas här.' },
+        { term: 'Medianpassage', text: 'Dagen då hälften av säsongens fåglar av en art har passerat.' },
+        { term: 'Kön', text: 'Hane, hona eller okänd. Många arter går inte att könsbestämma i handen, så okänd är vanligt.' },
+        { term: 'Ålder (1K, 2K …)', text: 'Kalenderår. 1K är född i år, 2K föddes i fjol. +1K betyder minst 1K när exakt ålder är okänd.' }
+      ],
+      faq: faq.map((f, i) => ({
+        q: f[0], a: f[1], open: this.state.open === i, rot: this.state.open === i ? 180 : 0,
+        border: i === faq.length - 1 ? 'none' : '1px solid #E3E9DF',
+        toggle: () => this.setState({ open: this.state.open === i ? -1 : i })
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

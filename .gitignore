@@ -65,3 +65,6 @@ Thumbs.db
 # figures/*.png
 # figures/*.pdf
 # figures/*.svg
+
+# Playwright MCP screenshots and snapshots
+.playwright-mcp/

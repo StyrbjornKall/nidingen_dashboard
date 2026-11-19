@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Sidfot</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="background: #E8E7E3; font-family: 'Hanken Grotesk', system-ui, sans-serif; color: #53605A">
+  <footer style="border-top: 1px solid #D5DDD2">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 28px 32px; display: flex; flex-wrap: wrap; gap: 12px 32px; justify-content: space-between; font-size: 13.5px; line-height: 1.4; color: #53605A">
+      <span>Data: Nidingens Fågelstation / Ringmärkningscentralen · Väder: SMHI</span>
+      <span>Senast uppdaterad {{updated}}</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"updated":{"editor":"text","default":"18 nov 2026"},"$preview":{"width":1440,"height":80}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { updated: this.props.updated ?? '18 nov 2026' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Palettprov</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 1220px; box-sizing: border-box; padding: 52px 56px; background: {{c.ground}}; color: {{c.ink}}; font-family: 'Hanken Grotesk', system-ui, sans-serif; display: flex; flex-direction: column; gap: 24px">
+
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px">
+    <div>
+      <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: {{c.primaryText}}">Palettförslag {{num}}</div>
+      <h1 style="margin: 6px 0 0; font-size: 50px; line-height: 1; letter-spacing: -0.03em; font-weight: 800">{{name}}</h1>
+      <p style="margin: 10px 0 0; max-width: 720px; font-size: 17px; line-height: 1.5; color: {{c.muted}}">{{note}}</p>
+    </div>
+    <div style="display: flex; gap: 6px">
+      <sc-for list="{{series}}" as="s" hint-placeholder-count="6"><span style="width: 22px; height: 64px; border-radius: 6px; background: {{s.color}}"></span></sc-for>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px">
+    <sc-for list="{{swatches}}" as="s" hint-placeholder-count="6">
+      <div style="border-radius: 14px; overflow: hidden; background: {{c.surface}}; border: 1px solid {{c.line}}">
+        <div style="height: 86px; background: {{s.hex}}; box-shadow: inset 0 -1px 0 {{c.line}}"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: {{c.muted}}">{{s.role}}</span>
+          <span style="font-size: 14.5px; font-weight: 600">{{s.name}}</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: {{c.muted}}">{{s.hex}}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+    <span style="font-size: 14px; font-weight: 600; margin-right: 6px">Arter i jämförelse</span>
+    <sc-for list="{{series}}" as="s" hint-placeholder-count="6">
+      <span style="display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 14px; border-radius: 999px; background: {{c.surface}}; border: 1.5px solid {{s.color}}; font-size: 14px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{s.color}}"></span>{{s.sv}}</span>
+    </sc-for>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1.55fr 1fr; gap: 16px">
+    <div style="background: {{c.surface}}; border: 1px solid {{c.line}}; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid {{c.line}}">
+        <span style="display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px"><span style="width: 26px; height: 26px; border-radius: 50%; background: {{c.primary}}; box-shadow: inset 0 0 0 5px {{c.surface}}, 0 0 0 1.5px {{c.ink}}"></span>Nidingens Fågelstation</span>
+        <span style="display: flex; gap: 2px; font-size: 13px; font-weight: 500">
+          <span style="padding: 6px 11px; border-radius: 999px; color: {{c.muted}}">Hem</span>
+          <span style="padding: 6px 11px; border-radius: 999px; color: {{c.muted}}">Sammanfattning</span>
+          <span style="padding: 6px 11px; border-radius: 999px; background: {{c.ink}}; color: {{c.surface}}">Trender</span>
+          <span style="padding: 6px 11px; border-radius: 999px; color: {{c.muted}}">Fenologi</span>
+        </span>
+      </div>
+      <div style="padding: 16px 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+        <sc-for list="{{kpis}}" as="k" hint-placeholder-count="3">
+          <div style="padding: 12px 14px; border-radius: 12px; background: {{c.tintSoft}}">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 500; letter-spacing: -0.02em">{{k.v}}</div>
+            <div style="font-size: 12.5px; color: {{c.muted}}">{{k.l}}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="padding: 0 18px 16px; display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 15px; font-weight: 700">Antal ringmärkta per år</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: {{c.muted}}">Rödhake · höst</span></div>
+        <div style="position: relative; height: 150px">
+          <svg viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%">
+            <path d="{{chart.grid}}" stroke="{{c.line}}" stroke-width="1" vector-effect="non-scaling-stroke" fill="none"></path>
+            <path d="{{chart.bars}}" fill="{{c.primary}}" fill-opacity="0.85"></path>
+            <path d="{{chart.hot}}" fill="{{c.highlight}}"></path>
+            <path d="{{chart.band}}" fill="{{c.trend}}" fill-opacity="0.22"></path>
+            <path d="{{chart.line}}" fill="none" stroke="{{c.trend}}" stroke-width="2.6" stroke-linecap="round" vector-effect="non-scaling-stroke"></path>
+          </svg>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+          <span style="font-size: 12.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: {{c.upBg}}; color: {{c.upFg}}">Ökar</span>
+          <span style="font-size: 12.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: {{c.downBg}}; color: {{c.downFg}}">Minskar</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">+1,4 % per år</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: {{c.muted}}">95 % KI +0,6 till +2,2</span>
+          <span style="margin-left: auto; display: inline-flex; gap: 12px; font-size: 12px; color: {{c.muted}}">
+            <span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 10px; height: 10px; border-radius: 2px; background: {{c.primary}}"></span>År</span>
+            <span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 14px; height: 3px; border-radius: 2px; background: {{c.trend}}"></span>Trend</span>
+            <span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 10px; height: 10px; border-radius: 2px; background: {{c.highlight}}"></span>Vald</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: {{c.surface}}; border: 1px solid {{c.line}}; border-radius: 18px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 15px; font-weight: 700">Utveckling, index</span>
+      <div style="position: relative; height: 200px">
+        <svg viewBox="0 0 300 140" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%">
+          <path d="M0 70H300" stroke="{{c.muted}}" stroke-opacity="0.5" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"></path>
+          <path d="{{idx.a}}" fill="none" stroke="{{s1}}" stroke-width="2.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+          <path d="{{idx.b}}" fill="none" stroke="{{s2}}" stroke-width="2.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+          <path d="{{idx.c}}" fill="none" stroke="{{s3}}" stroke-width="2.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+          <path d="{{idx.d}}" fill="none" stroke="{{s4}}" stroke-width="2.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+        </svg>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; font-size: 13px">
+        <sc-for list="{{idxLegend}}" as="l" hint-placeholder-count="4"><span style="display: inline-flex; align-items: center; gap: 7px"><span style="width: 16px; height: 4px; border-radius: 2px; background: {{l.color}}"></span>{{l.sv}} <span style="font-family: 'IBM Plex Mono', monospace; color: {{c.muted}}">{{l.v}}</span></span></sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1.1fr 1fr 1.1fr; gap: 16px; flex: 1; min-height: 0">
+    <div style="background: {{c.surface}}; border: 1px solid {{c.line}}; border-radius: 18px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 15px; font-weight: 700">Flyttningskalendern</span>
+      <div style="display: flex; flex-direction: column; gap: 3px">
+        <sc-for list="{{heat}}" as="r" hint-placeholder-count="6">
+          <div style="display: grid; grid-template-columns: 92px 1fr; gap: 8px; align-items: center">
+            <span style="font-size: 12.5px">{{r.sv}}</span>
+            <div style="display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 2px">
+              <sc-for list="{{r.cells}}" as="h" hint-placeholder-count="24"><span style="height: 18px; border-radius: 2px; background: {{h.bg}}"></span></sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: {{c.muted}}">Få <span style="width: 120px; height: 9px; border-radius: 3px; background: linear-gradient(90deg, {{ramp.a}}, {{ramp.b}}, {{ramp.c}})"></span> Toppvecka</div>
+    </div>
+
+    <div style="background: {{c.surface}}; border: 1px solid {{c.line}}; border-radius: 18px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
+      <span style="font-size: 15px; font-weight: 700">Kontroller</span>
+      <div style="display: inline-flex; align-self: flex-start; gap: 2px; padding: 3px; border-radius: 999px; background: {{c.tintMid}}">
+        <span style="padding: 7px 13px; border-radius: 999px; font-size: 13px; font-weight: 500; color: {{c.muted}}">Vår</span>
+        <span style="padding: 7px 13px; border-radius: 999px; font-size: 13px; font-weight: 500; background: {{c.ink}}; color: {{c.surface}}">Höst</span>
+        <span style="padding: 7px 13px; border-radius: 999px; font-size: 13px; font-weight: 500; color: {{c.muted}}">Helår</span>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 18px; border-radius: 999px; background: {{c.primary}}; color: {{c.btnText}}; font-size: 14px; font-weight: 700">Utforska datan</span>
+        <span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 18px; border-radius: 999px; border: 1.5px solid {{c.ink}}; font-size: 14px; font-weight: 600">Visa alla</span>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+        <span style="font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px; background: {{c.hlBg}}; color: {{c.hlFg}}">Egna val</span>
+        <span style="font-size: 14px; font-weight: 600; color: {{c.primaryText}}; text-decoration: underline">Se alla 133 arter</span>
+      </div>
+    </div>
+
+    <div style="background: {{c.surface}}; border: 1px solid {{c.line}}; border-radius: 18px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 15px; font-weight: 700; margin-bottom: 4px">Kontrastkontroll (WCAG)</span>
+      <sc-for list="{{checks}}" as="k" hint-placeholder-count="7">
+        <div style="display: grid; grid-template-columns: 1fr auto 70px; gap: 10px; align-items: center; font-size: 13px; padding: 3px 0; border-top: 1px solid {{c.line}}">
+          <span>{{k.label}}</span>
+          <span style="font-family: 'IBM Plex Mono', monospace">{{k.ratio}}</span>
+          <span style="justify-self: end; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: {{k.bg}}; color: {{k.fg}}">{{k.verdict}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"num":{"editor":"text","default":"1"},"paletteName":{"editor":"text","default":"Kungsfiskare"},"note":{"editor":"text","default":"Från din bild: klar azur för data, saffran som markering, djup petrol för text och trendlinje, med ljung och aprikos som stöd. Den varmaste och mest färgstarka av förslagen."},"ground":{"editor":"color","default":"#F2EEF1"},"surface":{"editor":"color","default":"#FFFFFF"},"ink":{"editor":"color","default":"#173A33"},"muted":{"editor":"color","default":"#5E5462"},"line":{"editor":"color","default":"#E2D9DF"},"primary":{"editor":"color","default":"#177BAD"},"trend":{"editor":"color","default":"#234F45"},"highlight":{"editor":"color","default":"#F5A623"},"s1":{"editor":"color","default":"#177BAD"},"s2":{"editor":"color","default":"#C78018"},"s3":{"editor":"color","default":"#234F45"},"s4":{"editor":"color","default":"#9B7A91"},"s5":{"editor":"color","default":"#D37B4E"},"s6":{"editor":"color","default":"#509E91"},"names":{"editor":"text","default":"Ljungdimma,Djuphav,Azur,Petrol,Saffran,Ljung"},"$preview":{"width":1280,"height":1220}}'>
+class Component extends DCLogic {
+  rgb(h) { h = String(h || '#000000').replace('#', ''); if (h.length === 3) h = h.split('').map(x => x + x).join(''); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); }
+  hex(c) { return '#' + c.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('').toUpperCase(); }
+  mix(a, b, t) { const x = this.rgb(a), y = this.rgb(b); return this.hex(x.map((v, i) => v + (y[i] - v) * t)); }
+  lum(h) { return this.rgb(h).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0); }
+  cr(a, b) { const x = this.lum(a), y = this.lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+  readable(col, bg, target) {
+    // move a colour toward the ink side until it reaches the target contrast
+    const dark = this.lum(bg) > 0.4;
+    let c = col;
+    for (let i = 0; i < 20 && this.cr(c, bg) < target; i++) c = this.mix(c, dark ? '#000000' : '#FFFFFF', 0.12);
+    return c;
+  }
+  renderVals() {
+    const p = this.props;
+    const P = k => p[k] ?? ({ ground: '#F2EEF1', surface: '#FFFFFF', ink: '#173A33', muted: '#5E5462', line: '#E2D9DF', primary: '#177BAD', trend: '#234F45', highlight: '#F5A623', s1: '#177BAD', s2: '#C78018', s3: '#234F45', s4: '#9B7A91', s5: '#D37B4E', s6: '#509E91' })[k];
+    const ground = P('ground'), surface = P('surface'), ink = P('ink'), muted = P('muted'), line = P('line');
+    const primary = P('primary'), trend = P('trend'), highlight = P('highlight');
+    const S = ['s1', 's2', 's3', 's4', 's5', 's6'].map(P);
+    const darkTheme = this.lum(surface) < 0.2;
+    const btnText = this.cr('#FFFFFF', primary) >= this.cr(ink, primary) ? '#FFFFFF' : (darkTheme ? '#0B0E12' : ink);
+    const primaryText = this.readable(primary, surface, 4.5);
+    const c = {
+      ground: ground, surface: surface, ink: ink, muted: muted, line: line, primary: primary, trend: trend, highlight: highlight,
+      primaryText: primaryText, btnText: btnText,
+      tintSoft: this.mix(surface, primary, darkTheme ? 0.14 : 0.07), tintMid: this.mix(surface, ink, darkTheme ? 0.16 : 0.1),
+      upBg: this.mix(surface, primary, 0.16), upFg: this.readable(primary, this.mix(surface, primary, 0.16), 4.5),
+      downBg: this.mix(surface, S[4], 0.2), downFg: this.readable(S[4], this.mix(surface, S[4], 0.2), 4.5),
+      hlBg: this.mix(surface, highlight, darkTheme ? 0.3 : 0.38), hlFg: darkTheme ? ink : this.readable(this.mix(highlight, ink, 0.55), this.mix(surface, highlight, 0.38), 4.5)
+    };
+    const names = String(p.names ?? 'Ljungdimma,Djuphav,Azur,Petrol,Saffran,Ljung').split(',');
+    const swatches = [
+      ['Bakgrund', ground], ['Text', ink], ['Data', primary], ['Trendlinje', trend], ['Markering', highlight], ['Dämpad text', muted]
+    ].map((s, i) => ({ role: s[0], hex: String(s[1]).toUpperCase(), name: (names[i] || '').trim() }));
+    const spNames = ['Rödhake', 'Lövsångare', 'Kungsfågel', 'Ängspiplärka', 'Svarthätta', 'Blåmes'];
+    const series = S.map((col, i) => ({ color: col, sv: spNames[i] }));
+
+    // trend chart: 30 years, bars + OLS line + 95 % band
+    const n = 30, ys = [];
+    for (let i = 0; i < n; i++) ys.push(55 + 1.05 * i + 13 * Math.sin(i * 1.7) + 8 * Math.cos(i * 0.9));
+    const mx = (n - 1) / 2, my = ys.reduce((a, b) => a + b, 0) / n;
+    let sxx = 0, sxy = 0;
+    ys.forEach((y, i) => { sxx += (i - mx) * (i - mx); sxy += (i - mx) * (y - my); });
+    const b = sxy / sxx, a = my - b * mx;
+    let ss = 0;
+    ys.forEach((y, i) => { ss += Math.pow(y - a - b * i, 2); });
+    const s = Math.sqrt(ss / (n - 2));
+    const hi = 110, X = i => (i + 0.5) / n * 300, Y = v => 100 - v / hi * 96;
+    const bw = 300 / n * 0.66;
+    let bars = '', hot = '';
+    ys.forEach((v, i) => { const d = 'M' + (X(i) - bw / 2).toFixed(2) + ' ' + Y(v).toFixed(2) + 'h' + bw.toFixed(2) + 'V100h' + (-bw).toFixed(2) + 'Z'; if (i === 21) hot = d; else bars += d; });
+    const up = [], dn = [];
+    for (let k = 0; k <= 20; k++) { const i = (n - 1) * k / 20, yh = a + b * i, h = 2.05 * s * Math.sqrt(1 / n + (i - mx) * (i - mx) / sxx); up.push(X(i).toFixed(2) + ' ' + Y(yh + h).toFixed(2)); dn.push(X(i).toFixed(2) + ' ' + Y(yh - h).toFixed(2)); }
+    let grid = '';
+    [25, 50, 75, 100].forEach(v => { grid += 'M0 ' + Y(v).toFixed(1) + 'H300'; });
+    const chart = { bars: bars, hot: hot, grid: grid, band: 'M' + up.join(' L') + ' L' + dn.reverse().join(' L') + ' Z', line: 'M' + X(0).toFixed(2) + ' ' + Y(a).toFixed(2) + ' L' + X(n - 1).toFixed(2) + ' ' + Y(a + b * (n - 1)).toFixed(2) };
+
+    // index lines, log-ish around 100 at mid height
+    const mk = (slope, amp, ph) => {
+      const pts = [];
+      for (let i = 0; i < 30; i++) { const v = slope * (i - 14.5) + amp * Math.sin(i * 0.8 + ph); pts.push((i / 29 * 300).toFixed(1) + ' ' + (70 - v).toFixed(1)); }
+      return 'M' + pts.join(' L');
+    };
+    const idx = { a: mk(1.6, 6, 0), b: mk(-1.9, 7, 1.3), c: mk(0.3, 16, 2.1), d: mk(-0.6, 5, 0.6) };
+    const idxLegend = [['Rödhake', '+1,2 %/år'], ['Lövsångare', '−1,8 %/år'], ['Kungsfågel', '+0,4 %/år'], ['Ängspiplärka', '−1,1 %/år']].map((l, i) => ({ sv: l[0], v: l[1], color: S[i] }));
+
+    // heatmap with ramp surface -> primary -> ink-ish
+    const rampA = this.mix(surface, primary, 0.08), rampB = primary, rampC = darkTheme ? this.mix(primary, '#FFFFFF', 0.55) : this.mix(primary, ink, 0.6);
+    const ramp = t => t < 0.5 ? this.mix(rampA, rampB, t * 2) : this.mix(rampB, rampC, (t - 0.5) * 2);
+    const heat = [['Lövsångare', 7, 2.4], ['Ängspiplärka', 11, 2.8], ['Rödhake', 14, 2.2], ['Kungsfågel', 17, 2.5], ['Rödvingetrast', 19, 2], ['Snösparv', 21, 1.6]].map(r => ({
+      sv: r[0], cells: Array.from({ length: 24 }, (x, i) => ({ bg: ramp(Math.exp(-0.5 * Math.pow((i - r[1]) / r[2], 2))) }))
+    }));
+
+    const check = (label, fg, bg, need) => {
+      const r = this.cr(fg, bg), ok = r >= need;
+      return { label: label, ratio: r.toFixed(1).replace('.', ',') + ':1', verdict: ok ? 'Godkänd' : 'Under ' + need + ':1', bg: ok ? this.mix(surface, '#2E7D4F', darkTheme ? 0.35 : 0.16) : this.mix(surface, '#C0392B', darkTheme ? 0.35 : 0.16), fg: ok ? (darkTheme ? '#BFE8CD' : '#1E5C38') : (darkTheme ? '#F5C2BC' : '#8E2318') };
+    };
+    let worst = 0;
+    S.forEach((col, i) => { if (this.cr(col, surface) < this.cr(S[worst], surface)) worst = i; });
+    const checks = [
+      check('Text på bakgrund', ink, ground, 4.5),
+      check('Dämpad text på kort', muted, surface, 4.5),
+      check('Länkfärg på kort', primaryText, surface, 4.5),
+      check('Knapptext på knapp', btnText, primary, 4.5),
+      check('Data mot kort', primary, surface, 3),
+      check('Trendlinje mot kort', trend, surface, 3),
+      check('Svagaste art (' + spNames[worst] + ')', S[worst], surface, 3)
+    ];
+
+    return {
+      num: p.num ?? '1', name: p.paletteName ?? 'Kungsfiskare', note: p.note ?? '',
+      c: c, swatches: swatches, series: series, s1: S[0], s2: S[1], s3: S[2], s4: S[3],
+      kpis: [{ v: '~396 000', l: 'ringmärkta' }, { v: '~6 000', l: 'återfynd' }, { v: '133', l: 'arter' }],
+      chart: chart, idx: idx, idxLegend: idxLegend, heat: heat,
+      ramp: { a: rampA, b: rampB, c: rampC }, checks: checks
+    };
+  }
+}
+</script>
+</body>
+</html>

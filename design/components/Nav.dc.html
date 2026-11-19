@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Navigering</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="font-family: 'Hanken Grotesk', system-ui, sans-serif; color: #1D2923; background: #E8E7E3">
+  <div aria-hidden="true" style="display: flex; height: 5px"><span style="flex: 4; background: #C2CDBE"></span><span style="flex: 3; background: #36775B"></span><span style="flex: 2; background: #C2624C"></span><span style="flex: 1; background: #BFDC8E"></span></div>
+  <div style="max-width: 1280px; margin: 0 auto; padding: 14px 32px; display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center; justify-content: space-between">
+    <a href="Hem.dc.html" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: #1D2923; min-height: 48px">
+      <img src="/_blob/fb00db7bb89f48f4e80a38c753b00970" alt="" width="46" height="46" style="width: 46px; height: 46px; border-radius: 50%; box-shadow: 0 0 0 1px #C9D3C6">
+      <span style="display: flex; flex-direction: column; line-height: 1.15">
+        <span style="font-weight: 700; font-size: 17px; letter-spacing: -0.01em">Nidingens Fågelstation</span>
+        <span style="font-size: 12.5px; color: #53605A">Ringmärkningsdata sedan 1980</span>
+      </span>
+    </a>
+    <nav aria-label="Huvudmeny" style="display: flex; flex-wrap: wrap; gap: 2px">
+      <sc-for list="{{items}}" as="it" hint-placeholder-count="8">
+        <a href="{{it.href}}" aria-current="{{it.cur}}" style="padding: 0 14px; min-height: 44px; display: inline-flex; align-items: center; border-radius: 999px; text-decoration: none; font-size: 15px; font-weight: 500; background: {{it.bg}}; color: {{it.fg}}">{{it.label}}</a>
+      </sc-for>
+    </nav>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["Hem","Sammanfattning","Trender","Morfometri","Fenologi","Återfynd","Väder","Om"],"default":"Sammanfattning"},"$preview":{"width":1440,"height":96}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active ?? 'Sammanfattning';
+    const pages = [
+      ['Hem', 'Hem.dc.html'], ['Sammanfattning', 'Sammanfattning.dc.html'], ['Trender', 'Trender.dc.html'],
+      ['Morfometri', 'Morfometri.dc.html'], ['Fenologi', 'Fenologi.dc.html'], ['Återfynd', 'Aterfynd.dc.html'],
+      ['Väder', 'Vader.dc.html'], ['Om', 'Om.dc.html']
+    ];
+    return {
+      items: pages.map(p => ({
+        label: p[0], href: p[1],
+        cur: p[0] === active ? 'page' : 'false',
+        bg: p[0] === active ? '#1D2923' : 'transparent',
+        fg: p[0] === active ? '#FFFFFF' : '#3F4B44'
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>
