@@ -34,6 +34,9 @@ export const speciesPalette = ${JSON.stringify(tokens.species_palette)} as const
 
 export const heatRamp = ${JSON.stringify(tokens.heat_ramp)} as const;
 
+/** The design's four age colours, dark to light: stops of the ramp over raw age codes. */
+export const ageRamp = ${JSON.stringify(Object.values(tokens.age_colors))} as const;
+
 export const sexColors = ${JSON.stringify(tokens.sex_colors, null, 2)} as const;
 
 export const layout = ${JSON.stringify(tokens.layout, null, 2)} as const;

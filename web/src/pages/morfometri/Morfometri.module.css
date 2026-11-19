@@ -1,0 +1,422 @@
+/* --- Layout ----------------------------------------------------------- */
+
+.top {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.topWide {
+  min-width: 0;
+}
+
+@media (max-width: 980px) {
+  .top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* --- Bubble chart ----------------------------------------------------- */
+
+.bubbleBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bubblePlot {
+  position: relative;
+  width: 100%;
+}
+
+.bubbleSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.plotBg {
+  fill: var(--color-surface-tint);
+}
+
+.gridPath {
+  stroke: var(--color-grid);
+  stroke-width: 1;
+  fill: none;
+}
+
+.xTick,
+.yTick {
+  position: absolute;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.xTick {
+  transform: translateX(-50%);
+}
+
+.yTick {
+  left: 0;
+  text-align: right;
+  transform: translateY(-50%);
+}
+
+.xTitle,
+.yTitle {
+  position: absolute;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.xTitle {
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
+.yTitle {
+  left: 0;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  transform-origin: center;
+  margin-left: 7px;
+}
+
+.bubble {
+  all: unset;
+  position: absolute;
+  box-sizing: border-box;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  background: var(--color-chart-band-fill);
+  border: 1px solid color-mix(in srgb, var(--color-chart-mean) 60%, white);
+  transition: left 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.5s, background 0.25s;
+  animation: pop 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.bubble[data-on="true"] {
+  border: 2px solid var(--color-surface);
+}
+
+.bubble[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+.bubble:hover,
+.bubble:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-ink);
+  z-index: 5;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.bubbleLabel {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font-size: 13px;
+  font-weight: 700;
+  background: rgb(255 255 255 / 0.88);
+  padding: 0 5px;
+  border-radius: 5px;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: left 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.readout {
+  min-width: 220px;
+  min-height: 64px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--color-surface-tint);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+}
+
+.readoutName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.readoutName .dot,
+.readout .dot {
+  width: 10px;
+  height: 10px;
+}
+
+.sizeLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.sizeItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sizeCircle {
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-chart-mean);
+  flex: none;
+}
+
+.missing {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* --- Key figures ------------------------------------------------------ */
+
+.tiles {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--color-surface-tint);
+}
+
+.tileName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.tileGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.figLabel {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.figValue {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.figSub {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* --- Distributions, age and sex -------------------------------------- */
+
+.scroll {
+  overflow-x: auto;
+}
+
+.histGrid,
+.ageGrid {
+  min-width: 640px;
+  display: grid;
+  grid-template-columns: 150px repeat(2, minmax(0, 1fr));
+  gap: 14px 28px;
+  align-items: center;
+}
+
+.ageGrid {
+  gap: 12px 28px;
+}
+
+.colHead {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rowName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.hist {
+  position: relative;
+  height: 90px;
+  cursor: crosshair;
+}
+
+.histSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.medLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid var(--color-ink);
+  pointer-events: none;
+}
+
+.medLabel {
+  position: absolute;
+  top: -2px;
+  transform: translateX(6px);
+  font-size: 11.5px;
+  font-weight: 500;
+  background: rgb(255 255 255 / 0.85);
+  padding: 0 3px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.medLabelLeft {
+  transform: translateX(calc(-100% - 6px));
+}
+
+.histAxis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 3px;
+  border-top: 1px solid var(--color-line);
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.noMeasure {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--color-surface-tint);
+}
+
+.stack {
+  display: flex;
+  height: 30px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  box-sizing: border-box;
+  box-shadow: inset -1px 0 0 var(--color-surface);
+  transition: flex-grow 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.keyList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+}
+
+.keyList li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.keySwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  box-sizing: border-box;
+}
+
+.kind {
+  display: none;
+}
+
+/* Phones: the species name sits above its two charts so both fit the width. */
+@media (max-width: 640px) {
+  .histGrid,
+  .ageGrid {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px 14px;
+  }
+
+  .histGrid > span:first-child,
+  .ageGrid > span:empty {
+    display: none;
+  }
+
+  .histGrid .rowName,
+  .ageGrid .rowName {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+  }
+
+  .ageGrid .colHead {
+    display: none;
+  }
+
+  .ageGrid > div,
+  .ageGrid > .keyList {
+    grid-column: 1 / -1;
+  }
+
+  .kind {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+  }
+}

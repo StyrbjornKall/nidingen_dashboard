@@ -4,6 +4,7 @@
  * Days of year are on a non-leap calendar, as in the API.
  */
 import { monthName } from "../../lib/format";
+import { rampColor } from "../../lib/color";
 import { heatRamp } from "../../lib/tokens";
 
 /** Week 1 = 1–7 January; week 52 runs to 31 December (8 days). */
@@ -20,21 +21,8 @@ export function monthTicks(d0: number, d1: number): { doy: number; label: string
   return MONTH_START.flatMap((doy, i) => (doy >= d0 && doy < d1 - 4 ? [{ doy, label: monthName(i + 1) }] : []));
 }
 
-function hex(c: string): [number, number, number] {
-  const n = parseInt(c.slice(1), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-
 /** 0–1 on the three-stop heat ramp from tokens.json (design's `ramp`). */
-export function heatColor(t: number): string {
-  const stops = heatRamp.map(hex);
-  const x = Math.max(0, Math.min(1, t));
-  const s = x < 0.5 ? 0 : 1;
-  const u = x < 0.5 ? x * 2 : (x - 0.5) * 2;
-  const a = stops[s] ?? [0, 0, 0];
-  const b = stops[s + 1] ?? a;
-  return `rgb(${a.map((v, i) => Math.round(v + ((b[i] ?? v) - v) * u)).join(",")})`;
-}
+export const heatColor = (t: number): string => rampColor(heatRamp, t);
 
 /** Years offered by the migration calendar: newest first, gap years left out. */
 export function calendarYears(first: number, last: number, gap: { year_from: number; year_to: number }): number[] {

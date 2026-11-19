@@ -3,7 +3,7 @@ import { Layout } from "./components/Layout";
 import Aterfynd from "./pages/Aterfynd";
 import Fenologi from "./pages/fenologi/Fenologi";
 import Hem from "./pages/Hem";
-import Morfometri from "./pages/Morfometri";
+import Morfometri from "./pages/morfometri/Morfometri";
 import NotFound from "./pages/NotFound";
 import Om from "./pages/Om";
 import Sammanfattning from "./pages/sammanfattning/Sammanfattning";
