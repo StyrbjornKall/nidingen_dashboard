@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ageColors, ageSortKey, binAt, binLabel, bubbleRadius, logAxis, niceLogTicks, percentAlong, seasonPhrase, sizeLegendValues, sortAgeCodes, sortSexCodes } from "./morph";
+import { FULL_WIN, formatTicks, panWin, windowAxis, zoomLevel, zoomWin, ageColors, ageSortKey, binAt, binLabel, bubbleRadius, logAxis, niceLogTicks, percentAlong, seasonPhrase, sizeLegendValues, sortAgeCodes, sortSexCodes } from "./morph";
 
 describe("log axes", () => {
   it("picks at most eight ticks, the finest set that fits", () => {
@@ -80,5 +80,53 @@ describe("season phrase", () => {
     expect(seasonPhrase({ id: "var", months: [1, 2, 3, 4, 5, 6] }, name)).toBe("våren (januari–juni)");
     expect(seasonPhrase({ id: "host", months: [7, 8, 9, 10, 11, 12] }, name)).toBe("hösten (juli–december)");
     expect(seasonPhrase({ id: "helar", months: [1, 12] }, name)).toBe("hela året");
+  });
+});
+
+describe("zooming the bubble chart", () => {
+  it("keeps the point under the pointer where it is", () => {
+    const w = zoomWin(FULL_WIN, 2, 0.25, 0.75); // zoom in on the upper left quarter
+    expect(w.x1 - w.x0).toBeCloseTo(0.5);
+    // The anchor was at x = 0.25, y = 0.75 of the plot and stays at the same place in the window.
+    expect(w.x0 + 0.25 * 0.5).toBeCloseTo(0.25);
+    expect(w.y0 + 0.75 * 0.5).toBeCloseTo(0.75);
+    expect(zoomLevel(w)).toBeCloseTo(2);
+  });
+
+  it("stays inside the plot and within its limits", () => {
+    const corner = zoomWin(FULL_WIN, 4, 0, 0);
+    expect(corner).toEqual({ x0: 0, x1: 0.25, y0: 0, y1: 0.25 });
+    const far = zoomWin(FULL_WIN, 1e6);
+    expect(zoomLevel(far)).toBeCloseTo(60);
+    expect(zoomWin(far, 1 / 1e6)).toEqual(FULL_WIN); // zooming out ends at the whole plot
+    const edge = zoomWin(zoomWin(FULL_WIN, 4, 1, 1), 2, 1, 1);
+    expect(edge.x1).toBeCloseTo(1);
+    expect(edge.y1).toBeCloseTo(1);
+  });
+
+  it("pans in window widths and stops at the edges", () => {
+    const w = zoomWin(FULL_WIN, 4, 0.5, 0.5); // 0.375 .. 0.625
+    const moved = panWin(w, 1, 0);
+    expect(moved.x0).toBeCloseTo(0.625);
+    expect(panWin(w, 100, -100)).toEqual({ x0: 0.75, x1: 1, y0: 0, y1: 0.25 });
+    expect(panWin(FULL_WIN, 1, 1)).toEqual(FULL_WIN); // nothing to pan when the whole plot shows
+  });
+
+  it("re-fits the ticks to what is in view", () => {
+    const axis = logAxis(10, 1000, 0);
+    const half = windowAxis(axis, 0, 0.5); // 10 .. 100
+    expect(half.lo).toBeCloseTo(10);
+    expect(half.hi).toBeCloseTo(100);
+    expect(half.frac(Math.sqrt(10 * 100))).toBeCloseTo(0.5);
+    // Zoomed far in, the ticks are plain linear steps.
+    const tight = windowAxis(axis, 0.5, 0.52); // about 100 .. 109.6
+    expect(tight.ticks.length).toBeGreaterThanOrEqual(3);
+    expect(tight.ticks.every((t) => t >= tight.lo && t <= tight.hi)).toBe(true);
+  });
+
+  it("writes tick labels with the decimals they need", () => {
+    expect(formatTicks([5, 10, 20, 50])).toEqual(["5", "10", "20", "50"]);
+    expect(formatTicks([70, 70.5, 71])).toEqual(["70,0", "70,5", "71,0"]);
+    expect(formatTicks([0.25, 0.5])).toEqual(["0,25", "0,50"]);
   });
 });

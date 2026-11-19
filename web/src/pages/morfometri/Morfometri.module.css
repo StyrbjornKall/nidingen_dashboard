@@ -91,6 +91,28 @@
   margin-left: 7px;
 }
 
+/* The plot area: everything drawn in it is clipped to it, so a zoomed view never spills onto the axes. */
+.clip {
+  position: absolute;
+  overflow: hidden;
+  touch-action: pan-y;
+  cursor: default;
+  outline-offset: -2px;
+}
+
+.clip[data-zoomed="true"] {
+  cursor: grab;
+  touch-action: none;
+}
+
+.clip[data-dragging="true"] {
+  cursor: grabbing;
+}
+
+.clip:focus-visible {
+  outline: 2px solid var(--color-data);
+}
+
 .bubble {
   all: unset;
   position: absolute;
@@ -103,6 +125,17 @@
   border: 1px solid color-mix(in srgb, var(--color-chart-mean) 60%, white);
   transition: left 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.5s, background 0.25s;
   animation: pop 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+/* While the view moves, bubbles follow at once instead of gliding. */
+.clip[data-zoomed="true"] .bubble,
+.clip[data-zoomed="true"] .bubbleLabel {
+  transition: left 0.18s ease-out, top 0.18s ease-out, background 0.25s;
+}
+
+.clip[data-dragging="true"] .bubble,
+.clip[data-dragging="true"] .bubbleLabel {
+  transition: none;
 }
 
 .bubble[data-on="true"] {
@@ -419,4 +452,56 @@
     font-weight: 700;
     color: var(--color-text-muted);
   }
+}
+
+
+/* --- Zoom controls ---------------------------------------------------- */
+
+.zoomBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.zoomButton {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--min-touch-target);
+  min-height: var(--min-touch-target);
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  font: 600 14px var(--font-sans);
+  color: var(--color-ink);
+}
+
+.zoomButton:hover:not(:disabled) {
+  background: var(--color-surface-tint);
+}
+
+.zoomButton:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.zoomButton:focus-visible {
+  outline: 2px solid var(--color-data);
+  outline-offset: 2px;
+}
+
+.zoomLevel {
+  min-width: 3.2em;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.zoomHint {
+  font-size: 13px;
+  color: var(--color-text-muted);
 }

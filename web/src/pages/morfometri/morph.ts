@@ -2,6 +2,7 @@
  * Pure helpers for Morfometri: log axes derived from the data, bubble
  * sizes, the order and colours of raw age and sex codes, and bin labels.
  */
+import { scaleLinear } from "d3-scale";
 import { rampColor } from "../../lib/color";
 import { formatNumber } from "../../lib/format";
 
@@ -18,6 +19,8 @@ const MAX_TICKS = 8;
 
 /** 1-2-5 style ticks inside [lo, hi]: the finest set that gives at most 8. */
 export function niceLogTicks(lo: number, hi: number): number[] {
+  // Zoomed in far, the range is too narrow for 1-2-5 steps: plain linear ticks read better.
+  if (hi / lo < 3) return scaleLinear().domain([lo, hi]).ticks(6);
   const k0 = Math.floor(Math.log10(lo));
   const k1 = Math.ceil(Math.log10(hi));
   let best: number[] = [];
@@ -130,4 +133,61 @@ export function seasonPhrase(season: { id: string; months: number[] }, monthName
   if (season.id === "helar") return "hela året";
   const word = season.id === "var" ? "våren" : season.id === "host" ? "hösten" : season.id;
   return `${word} (${monthName(first)}–${monthName(last)})`;
+}
+
+
+/** Tick labels with just enough decimals to tell the ticks apart ("5", "10" but "70,5", "71"). */
+export function formatTicks(ticks: readonly number[]): string[] {
+  let d = 0;
+  while (d < 3 && ticks.some((t) => Math.abs(t * 10 ** d - Math.round(t * 10 ** d)) > 1e-6)) d++;
+  return ticks.map((t) => formatNumber(t, d));
+}
+
+/**
+ * The visible part of the plot as fractions of the full axes (0 = left or
+ * bottom, 1 = right or top). Zoom is linked: both axes always show the same
+ * share, so the shape of the cloud is kept.
+ */
+export interface Win {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+}
+
+export const FULL_WIN: Win = { x0: 0, x1: 1, y0: 0, y1: 1 };
+export const MAX_ZOOM = 60;
+
+/** How many times larger than the whole plot the current view is magnified. */
+export const zoomLevel = (w: Win) => 1 / (w.x1 - w.x0);
+
+/**
+ * Zoom by `factor` (> 1 in, < 1 out) keeping the point at (ax, ay), given as
+ * fractions of the *window* (ay from the bottom), where it is.
+ */
+export function zoomWin(w: Win, factor: number, ax = 0.5, ay = 0.5): Win {
+  const size = Math.min(1, Math.max(1 / MAX_ZOOM, (w.x1 - w.x0) / factor));
+  const px = w.x0 + ax * (w.x1 - w.x0);
+  const py = w.y0 + ay * (w.y1 - w.y0);
+  const x0 = Math.min(1 - size, Math.max(0, px - ax * size));
+  const y0 = Math.min(1 - size, Math.max(0, py - ay * size));
+  return { x0, x1: x0 + size, y0, y1: y0 + size };
+}
+
+/** Move the view by (dx, dy) window-widths (dy up), staying inside the plot. */
+export function panWin(w: Win, dx: number, dy: number): Win {
+  const size = w.x1 - w.x0;
+  const x0 = Math.min(1 - size, Math.max(0, w.x0 + dx * size));
+  const y0 = Math.min(1 - size, Math.max(0, w.y0 + dy * size));
+  return { x0, x1: x0 + size, y0, y1: y0 + size };
+}
+
+/** A log axis restricted to a range of fractions, so ticks and positions fit the zoomed view. */
+export function windowAxis(axis: LogAxis, f0: number, f1: number): LogAxis {
+  const a = Math.log(axis.lo);
+  const span = Math.log(axis.hi) - a;
+  const lo = Math.exp(a + f0 * span);
+  const hi = Math.exp(a + f1 * span);
+  const inner = Math.log(hi) - Math.log(lo);
+  return { lo, hi, ticks: niceLogTicks(lo, hi), frac: (v) => (Math.log(v) - Math.log(lo)) / inner };
 }
