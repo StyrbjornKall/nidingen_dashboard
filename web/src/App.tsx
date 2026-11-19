@@ -5,7 +5,7 @@ import Fenologi from "./pages/fenologi/Fenologi";
 import Hem from "./pages/hem/Hem";
 import Morfometri from "./pages/morfometri/Morfometri";
 import NotFound from "./pages/NotFound";
-import Om from "./pages/Om";
+import Om from "./pages/om/Om";
 import Sammanfattning from "./pages/sammanfattning/Sammanfattning";
 import Trender from "./pages/trender/Trender";
 import Vader from "./pages/vader/Vader";

@@ -44,9 +44,14 @@ export function formatTrend(n: number, signed = false): string {
   return signed && n > 0 ? `+${text}` : text;
 }
 
-/** 395777 -> "~396 000": rounded to thousands for headline figures; small numbers stay exact. */
+/** 395777 -> "396 000": rounded to thousands for running text; small numbers stay exact. */
+export function formatRounded(n: number): string {
+  return n < 1000 ? formatInt(n) : formatInt(Math.round(n / 1000) * 1000);
+}
+
+/** 395777 -> "~396 000": the same for headline figures. */
 export function formatApprox(n: number): string {
-  return n < 1000 ? formatInt(n) : `~${formatInt(Math.round(n / 1000) * 1000)}`;
+  return n < 1000 ? formatInt(n) : `~${formatRounded(n)}`;
 }
 
 /** 0.1234 -> "12,3 %". */
