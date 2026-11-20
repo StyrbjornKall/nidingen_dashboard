@@ -9,7 +9,7 @@ import { AgeSexCard } from "./AgeSexCard";
 import { BubbleCard } from "./BubbleCard";
 import { DistributionsCard } from "./DistributionsCard";
 import { KeyFiguresCard } from "./KeyFiguresCard";
-import styles from "./Morfometri.module.css";
+import styles from "./Biometri.module.css";
 import { seasonPhrase } from "./morph";
 
 const DEFAULTS = ["RÖHAK", "ÄNPIP", "SKPIP"];
@@ -19,12 +19,12 @@ const SEASONS = ["var", "host", "helar"] as const;
 type Details = Schemas["MorphDetails"];
 
 /**
- * Morfometri (HANDOFF.md §8): every species' mean weight against wing
+ * Biometri (HANDOFF.md §8): every species' mean weight against wing
  * length, then key figures, distributions, and age and sex for the
  * selected species. Descriptive statistics over all years, so there is
  * no period choice.
  */
-export default function Morfometri() {
+export default function Biometri() {
   const selection = usePageSelection({ defaults: DEFAULTS, fallback: FALLBACK, seasons: SEASONS, defaultSeason: "helar" });
   const { meta, species, season } = selection;
   const info = useMemo(() => new Map(meta?.species.map((s) => [s.code, s]) ?? []), [meta]);
@@ -39,6 +39,11 @@ export default function Morfometri() {
     { species: codes, season },
     { enabled: meta !== undefined && codes.length > 0, keepPrevious: true },
   );
+  const scatter = useApi<Schemas["MorphScatter"]>(
+    "/api/morphometrics/scatter",
+    { species: codes, season },
+    { enabled: meta !== undefined && codes.length > 0, keepPrevious: true },
+  );
   const noSpecies: CardQuery<Details> = { data: { season, species: [] }, isPending: false, isError: false, refetch: () => undefined };
   const detailQuery = codes.length > 0 ? detail : noSpecies;
 
@@ -48,7 +53,7 @@ export default function Morfometri() {
   return (
     <>
       <PageHeader
-        title="Morfometri"
+        title="Biometri"
         lead="Hur ser fåglarna ut när de fångas här? Vikt, vinglängd, ålder och kön för de arter du valt, mot alla andra arter."
       />
       <SelectionBar selection={selection} before="Jämför" after="fångade" showPeriod={false} />
@@ -76,7 +81,7 @@ export default function Morfometri() {
             </div>
           </Section>
           <Section>
-            <DistributionsCard query={detailQuery} colorOf={species.colorOf} nameOf={nameOf} season={phrase} />
+            <DistributionsCard query={detailQuery} scatter={codes.length > 0 ? scatter.data : undefined} colorOf={species.colorOf} nameOf={nameOf} season={phrase} />
           </Section>
           <Section last>
             <AgeSexCard query={detailQuery} colorOf={species.colorOf} nameOf={nameOf} season={phrase} />

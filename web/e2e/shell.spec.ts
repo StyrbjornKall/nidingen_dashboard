@@ -4,7 +4,7 @@ const ROUTES = [
   { path: "/", h1: "Nidingens Fågelstation", nav: "Hem", title: "Nidingens Fågelstation" },
   { path: "/sammanfattning", h1: "Sammanfattning", nav: "Sammanfattning", title: "Sammanfattning · Nidingens Fågelstation" },
   { path: "/trender", h1: "Trender", nav: "Trender", title: "Trender · Nidingens Fågelstation" },
-  { path: "/morfometri", h1: "Morfometri", nav: "Morfometri", title: "Morfometri · Nidingens Fågelstation" },
+  { path: "/biometri", h1: "Biometri", nav: "Biometri", title: "Biometri · Nidingens Fågelstation" },
   { path: "/fenologi", h1: "Fenologi", nav: "Fenologi", title: "Fenologi · Nidingens Fågelstation" },
   { path: "/aterfynd", h1: "Återfynd", nav: "Återfynd", title: "Återfynd · Nidingens Fågelstation" },
   { path: "/vader", h1: "Väder", nav: "Väder", title: "Väder · Nidingens Fågelstation" },

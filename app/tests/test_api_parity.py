@@ -56,8 +56,8 @@ def q(store, sql, params=None):
 def test_kpis_match_dash_summary_cards(client, store):
     # Same SQL as the Dash "summary-stats" callback over the full date range.
     ((ringon, kontr, fynd, species, min_year, max_year),) = q(store, """
-        SELECT (SELECT COUNT(*) FROM ringon), (SELECT COUNT(*) FROM kontr),
-               (SELECT COUNT(*) FROM fynd), (SELECT COUNT(DISTINCT species_code) FROM ringon),
+        SELECT (SELECT COUNT(*) FROM ringon WHERE species_code <> 'KASS'), (SELECT COUNT(*) FROM kontr),
+               (SELECT COUNT(*) FROM fynd), (SELECT COUNT(DISTINCT species_code) FROM ringon WHERE species_code <> 'KASS'),
                (SELECT MIN(EXTRACT(YEAR FROM date)) FROM ringon),
                (SELECT MAX(EXTRACT(YEAR FROM date)) FROM ringon)
     """)
@@ -78,10 +78,11 @@ def test_yearly_series_match_dash(client, store, code):
 
 
 def test_top_species_match_dash_bar(store):
-    # The Dash bar ranks species by all-time new ringings (ringon).
+    # The Dash bar ranks species by all-time new ringings (ringon); KASS (discarded rings) is not a species here.
     dash = q(store, """
         SELECT species_code, COUNT(*) AS total FROM ringon
-        WHERE species_code IS NOT NULL GROUP BY species_code ORDER BY total DESC, species_code LIMIT 100
+        WHERE species_code IS NOT NULL AND species_code <> 'KASS'
+            GROUP BY species_code ORDER BY total DESC, species_code LIMIT 100
     """)
     ours = sorted(((c, s["n_new_total"]) for c, s in store.species.items()
                    if c != "ALLA" and s["n_new_total"] > 0), key=lambda x: (-x[1], x[0]))[:100]

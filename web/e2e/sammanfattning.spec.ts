@@ -86,7 +86,7 @@ test("top species: top 100, selected first, click to compare", async ({ page }) 
   const rows = top(page).getByRole("listitem");
   await expect(rows).toHaveCount(100);
   await expect(rows.first()).toContainText("Rödhake");
-  await expect(top(page).getByText("Visar topp 100 av 210 arter.")).toBeVisible();
+  await expect(top(page).getByText("Visar topp 100 av 209 arter.")).toBeVisible();
 
   // Kungsfågel is 4th; selecting it moves it to the top and colours it.
   await top(page).getByRole("button", { name: /Kungsfågel/ }).click();
@@ -99,8 +99,8 @@ test("top species: top 100, selected first, click to compare", async ({ page }) 
   await top(page).getByRole("group", { name: "Visa som" }).getByRole("button", { name: "Andel av alla" }).click();
   await expect(rows.nth(1)).toContainText(/\d+,\d\s%$/);
 
-  await top(page).getByRole("button", { name: "Visa alla 210 arter" }).click();
-  await expect(rows).toHaveCount(210);
+  await top(page).getByRole("button", { name: "Visa alla 209 arter" }).click();
+  await expect(rows).toHaveCount(209);
 });
 
 test("a full comparison disables the other rows", async ({ page }) => {
@@ -116,6 +116,7 @@ test("the season-to-date chart is here and ignores the period", async ({ page, r
   await expect(std.getByRole("heading")).toHaveText(`Säsongen ${meta.current_year} mot alla tidigare år`);
   await expect(std.getByText(/ringmärkta \d{4}/)).toBeVisible();
   await expect(std.getByText(/Medel 1980–1990 samt 2005–2025/)).toBeVisible();
+  await expect(std.getByText("Ackumulerat antal")).toBeVisible();
 });
 
 test("a specific year can be picked from a dropdown", async ({ page, request }) => {

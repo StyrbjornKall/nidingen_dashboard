@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FULL_WIN, formatTicks, panWin, windowAxis, zoomLevel, zoomWin, ageColors, ageSortKey, binAt, binLabel, bubbleRadius, logAxis, niceLogTicks, percentAlong, seasonPhrase, sizeLegendValues, sortAgeCodes, sortSexCodes } from "./morph";
+import { fitBand, FULL_WIN, formatTicks, panWin, windowAxis, zoomLevel, zoomWin, ageColors, ageSortKey, binAt, binLabel, bubbleRadius, logAxis, niceLogTicks, percentAlong, seasonPhrase, sizeLegendValues, sortAgeCodes, sortSexCodes } from "./morph";
 
 describe("log axes", () => {
   it("picks at most eight ticks, the finest set that fits", () => {
@@ -128,5 +128,22 @@ describe("zooming the bubble chart", () => {
     expect(formatTicks([5, 10, 20, 50])).toEqual(["5", "10", "20", "50"]);
     expect(formatTicks([70, 70.5, 71])).toEqual(["70,0", "70,5", "71,0"]);
     expect(formatTicks([0.25, 0.5])).toEqual(["0,25", "0,50"]);
+  });
+});
+
+describe("fitBand", () => {
+  const fit = { n: 11, slope: 2, intercept: 1, x_mean: 5, sxx: 110, residual_se: 3, t_crit: 2.262 };
+  it("is narrowest at the mean of x and symmetric around the line", () => {
+    const band = fitBand(fit, 0, 10, 10);
+    const mid = band[5]!;
+    expect(mid.x).toBe(5);
+    expect(mid.y).toBeCloseTo(11);
+    // half width at x̄ = t · s / √n
+    expect(mid.hi - mid.y).toBeCloseTo((2.262 * 3) / Math.sqrt(11), 9);
+    expect(mid.y - mid.lo).toBeCloseTo(mid.hi - mid.y, 9);
+    expect(band[0]!.hi - band[0]!.lo).toBeGreaterThan(mid.hi - mid.lo);
+  });
+  it("uses the line y = intercept + slope · x", () => {
+    expect(fitBand(fit, 0, 10, 2).map((p) => p.y)).toEqual([1, 11, 21]);
   });
 });

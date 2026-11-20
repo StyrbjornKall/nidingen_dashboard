@@ -10,7 +10,7 @@ export const PAGES: readonly PageInfo[] = [
   { path: "/", label: "Hem", title: "Nidingens Fågelstation" },
   { path: "/sammanfattning", label: "Sammanfattning", title: "Sammanfattning" },
   { path: "/trender", label: "Trender", title: "Trender" },
-  { path: "/morfometri", label: "Morfometri", title: "Morfometri" },
+  { path: "/biometri", label: "Biometri", title: "Biometri" },
   { path: "/fenologi", label: "Fenologi", title: "Fenologi" },
   { path: "/aterfynd", label: "Återfynd", title: "Återfynd" },
   { path: "/vader", label: "Väder", title: "Väder" },

@@ -8,7 +8,7 @@ import styles from "./Hem.module.css";
 export const ENTRIES = [
   { path: "/sammanfattning", title: "Sammanfattning", icon: "M4 23V13M10 23V7M16 23v-8M22 23V4", text: "Nyckeltal, fångst över tid och vilka arter som ringmärks mest." },
   { path: "/trender", title: "Trender", icon: "M3 21l7-7 5 4 10-11M19 7h6v6", text: "Ökar eller minskar arterna? Antalet ringmärkta fåglar år för år, med osäkerhet." },
-  { path: "/morfometri", title: "Morfometri", icon: "M5 22h18M14 6v16M7 10h14M7 10l-3 7h6zM21 10l-3 7h6z", text: "Vikt, vinglängd, ålder och kön. Hur ser fåglarna ut när de fångas här?" },
+  { path: "/biometri", title: "Biometri", icon: "M5 22h18M14 6v16M7 10h14M7 10l-3 7h6zM21 10l-3 7h6z", text: "Vikt, vinglängd, ålder och kön. Hur ser fåglarna ut när de fångas här?" },
   { path: "/fenologi", title: "Fenologi", icon: "M4 7h20v17H4zM4 12h20M9 4v5M19 4v5", text: "När på året passerar arterna ön, vecka för vecka och dag för dag?" },
   { path: "/aterfynd", title: "Återfynd", icon: "M14 25s8-7.5 8-13a8 8 0 0 0-16 0c0 5.5 8 13 8 13zM14 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", text: "Var hittas Nidingens fåglar, och varifrån kommer de som fångas här?" },
   { path: "/vader", title: "Väder", icon: "M3 11h14a3 3 0 1 0-3-3M3 16h19a3 3 0 1 1-3 3M3 21h8", text: "Vind, temperatur och tryck från SMHI Nidingen A, bredvid fångsten." },

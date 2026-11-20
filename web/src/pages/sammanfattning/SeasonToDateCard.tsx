@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChartCard } from "../../components/ChartCard";
-import { chartStyles, Crosshair, PlotSvg, Scrubber, XLabels, YTicks } from "../../components/charts/Plot";
+import { chartStyles, Crosshair, PlotSvg, Scrubber, XLabels, YTicks, YTitle } from "../../components/charts/Plot";
 import { yAxis } from "../../components/charts/scale";
 import { useApi, type Meta, type Schemas } from "../../lib/api";
 import { formatDoy, formatInt } from "../../lib/format";
@@ -148,6 +148,7 @@ export function SeasonToDateCard({
             <div className={styles.stdPlot}>
               <div className={chartStyles.plot} style={{ height: 320 }}>
                 <YTicks ticks={y.ticks} top={y.top} format={formatInt} />
+                <YTitle>Ackumulerat antal</YTitle>
                 <PlotSvg width={W} height={H} animationKey={data.species}>
                   <path d={band} fill={color.chart_band_fill} />
                   {data.top && <path d={path(data.top.cumulative)} fill="none" stroke={color.chart_top_year} strokeWidth={2} strokeLinecap="round" vectorEffect="non-scaling-stroke" />}

@@ -35,7 +35,7 @@ test("every page has an entry card, and the buttons lead on", async ({ page }) =
   const cards = page.locator("a[class*=card]");
   await expect(cards).toHaveCount(7);
   const targets = await cards.evaluateAll((els) => els.map((e) => e.getAttribute("href")));
-  expect(targets).toEqual(["/sammanfattning", "/trender", "/morfometri", "/fenologi", "/aterfynd", "/vader", "/om"]);
+  expect(targets).toEqual(["/sammanfattning", "/trender", "/biometri", "/fenologi", "/aterfynd", "/vader", "/om"]);
   await page.getByRole("link", { name: "Utforska datan" }).click();
   await expect(page).toHaveURL(/\/sammanfattning$/);
   await page.goBack();

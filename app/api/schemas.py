@@ -261,6 +261,29 @@ class MorphDetails(BaseModel):
     species: list[MorphDetail]
 
 
+class ScatterFit(BaseModel):
+    n: int
+    slope: float
+    intercept: float
+    x_mean: float
+    sxx: float
+    residual_se: float
+    t_crit: float
+
+
+class ScatterSpecies(BaseModel):
+    species: str
+    n_total: int                  # birds with both weight and wing
+    n_shown: int
+    points: list[list[float]]     # [wing mm, weight g]
+    fit: Optional[ScatterFit]     # OLS of weight on wing over all n_total birds
+
+
+class MorphScatter(BaseModel):
+    season: str
+    species: list[ScatterSpecies]
+
+
 # -- phenology ---------------------------------------------------------------
 
 class WeekInfo(BaseModel):

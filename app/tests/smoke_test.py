@@ -23,7 +23,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-PAGES = ["/", "/sammanfattning", "/trender", "/morfometri", "/fenologi", "/aterfynd", "/vader", "/om", "/finns-inte"]
+PAGES = ["/", "/sammanfattning", "/trender", "/biometri", "/fenologi", "/aterfynd", "/vader", "/om", "/finns-inte"]
 
 # One request per endpoint, with parameters a visitor would send.
 SPECIES = "R%C3%96HAK,L%C3%96S%C3%85N"

@@ -199,6 +199,17 @@ def test_morph_detail(client):
     get(client, "/api/morphometrics/detail?species=ALLA", status=422)
 
 
+def test_morph_scatter(client):
+    m = get(client, "/api/morphometrics/scatter?species=DDD,AAA&season=helar")
+    ddd, aaa = m["species"]
+    assert ddd["n_total"] == 100 and ddd["n_shown"] == 100 and len(ddd["points"]) == 100
+    assert all(60 <= w <= 70 and 10 <= g <= 20 for w, g in ddd["points"])
+    assert ddd["fit"]["n"] == 100 and ddd["fit"]["t_crit"] == pytest.approx(1.9845, abs=1e-3)
+    assert aaa["points"] == [] and aaa["fit"] is None
+    assert get(client, "/api/morphometrics/scatter?species=DDD&season=helar") ["species"][0]["points"] == ddd["points"]
+    get(client, "/api/morphometrics/scatter?species=ALLA", status=422)
+
+
 # ---------------------------------------------------------------------------
 # Phenology
 # ---------------------------------------------------------------------------

@@ -7,7 +7,7 @@ const dists = (page: Page) => card(page, "Fördelningar");
 const ageSex = (page: Page) => card(page, "Ålder och kön");
 
 test("the page is in the planned order and starts with the design's three species", async ({ page }) => {
-  await page.goto("/morfometri");
+  await page.goto("/biometri");
   await expect(page.getByRole("heading", { level: 2 })).toHaveText(["Vikt mot vinglängd, alla arter", "Nyckeltal", "Fördelningar", "Ålder och kön"]);
   await expect(keys(page).getByText("Rödhake", { exact: true })).toBeVisible();
   await expect(keys(page).getByText("Ängspiplärka", { exact: true })).toBeVisible();
@@ -21,7 +21,7 @@ test("the page is in the planned order and starts with the design's three specie
 test("key figures agree with the API", async ({ page, request }) => {
   const api = await (await request.get("/api/morphometrics/detail?species=R%C3%96HAK&season=helar")).json();
   const w = api.species[0].weight;
-  await page.goto("/morfometri?arter=R%C3%96HAK");
+  await page.goto("/biometri?arter=R%C3%96HAK");
   const text = (n: number) => n.toFixed(1).replace(".", ",");
   await expect(keys(page).getByText(`${text(w.median)} g`)).toBeVisible();
   await expect(keys(page).getByText(`${text(w.q25)}–${text(w.q75)}`)).toBeVisible();
@@ -29,7 +29,7 @@ test("key figures agree with the API", async ({ page, request }) => {
 
 test("bubbles: one per species with enough birds, a click adds and removes a species", async ({ page, request }) => {
   const means = await (await request.get("/api/morphometrics/means?season=helar")).json();
-  await page.goto("/morfometri?arter=R%C3%96HAK");
+  await page.goto("/biometri?arter=R%C3%96HAK");
   await expect(bubbles(page).locator("button[aria-pressed]")).toHaveCount(means.rows.length);
   const tern = bubbles(page).getByRole("button", { name: "Taltrast, lägg till i jämförelsen" });
   await tern.click({ force: true });
@@ -41,7 +41,7 @@ test("bubbles: one per species with enough birds, a click adds and removes a spe
 
 test("bubbles: hovering one reads its means and count", async ({ page }) => {
   // In autumn Taltrast is not hidden behind its overlapping neighbour at the bubble's centre.
-  await page.goto("/morfometri?arter=R%C3%96HAK&sasong=host");
+  await page.goto("/biometri?arter=R%C3%96HAK&sasong=host");
   await bubbles(page).getByRole("button", { name: "Taltrast, lägg till i jämförelsen" }).hover({ force: true });
   await expect(bubbles(page).getByText(/ringmärkta sedan 1980$/).first()).toBeVisible();
   await expect(bubbles(page).locator("div[class*=readout]")).toContainText("Taltrast");
@@ -50,7 +50,7 @@ test("bubbles: hovering one reads its means and count", async ({ page }) => {
 
 test("distributions: hovering a bar reads its range and count", async ({ page }, info) => {
   test.skip(info.project.name === "mobile", "pointer hover");
-  await page.goto("/morfometri?arter=R%C3%96HAK");
+  await page.goto("/biometri?arter=R%C3%96HAK");
   const hist = dists(page).locator("[class*=hist]:has(svg)").first();
   await hist.scrollIntoViewIfNeeded();
   const box = (await hist.boundingBox())!;
@@ -61,7 +61,7 @@ test("distributions: hovering a bar reads its range and count", async ({ page },
 });
 
 test("age is shown as raw codes, and missing values as Okänd", async ({ page }) => {
-  await page.goto("/morfometri?arter=R%C3%96HAK&sasong=helar");
+  await page.goto("/biometri?arter=R%C3%96HAK&sasong=helar");
   const card_ = ageSex(page);
   await expect(card_.getByRole("img", { name: /^Rödhake, ålder: 10 \d+ %/ })).toBeVisible();
   await expect(card_.getByRole("img", { name: /^Rödhake, kön: .*Okänd \d+ %/ })).toBeVisible();
@@ -70,14 +70,14 @@ test("age is shown as raw codes, and missing values as Okänd", async ({ page })
 });
 
 test("'Alla arter' has no measures: the detail cards say so and the bubbles stay", async ({ page }) => {
-  await page.goto("/morfometri?arter=ALLA");
+  await page.goto("/biometri?arter=ALLA");
   await expect(keys(page).getByText(/Välj minst en art i artväljaren/)).toBeVisible();
   await expect(dists(page).getByText(/Välj minst en art i artväljaren/)).toBeVisible();
   await expect(bubbles(page).locator("button[aria-pressed]").first()).toBeVisible();
 });
 
 test("no sideways page scroll", async ({ page }) => {
-  await page.goto("/morfometri?arter=R%C3%96HAK,L%C3%96S%C3%85N,KUF%C3%85G,%C3%84NPIP,SKPIP,TATRA");
+  await page.goto("/biometri?arter=R%C3%96HAK,L%C3%96S%C3%85N,KUF%C3%85G,%C3%84NPIP,SKPIP,TATRA");
   await expect(ageSex(page).getByRole("img").first()).toBeVisible();
   const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(over).toBeLessThanOrEqual(0);
@@ -88,7 +88,7 @@ const level = (page: Page) => bubbles(page).locator("[class*=zoomLevel]");
 const inView = (page: Page) => bubbles(page).locator("button[aria-pressed]");
 
 test("the bubble chart zooms with the buttons, and 'Visa alla' goes back", async ({ page }) => {
-  await page.goto("/morfometri?arter=R%C3%96HAK");
+  await page.goto("/biometri?arter=R%C3%96HAK");
   await expect(inView(page).first()).toBeVisible();
   const all = await inView(page).count();
   const zoomIn = bubbles(page).getByRole("button", { name: "Zooma in" });
@@ -111,7 +111,7 @@ test("the bubble chart zooms with the buttons, and 'Visa alla' goes back", async
 });
 
 test("the bubble chart can be moved: drag and the arrow keys", async ({ page }, info) => {
-  await page.goto("/morfometri?arter=R%C3%96HAK");
+  await page.goto("/biometri?arter=R%C3%96HAK");
   const zoomIn = bubbles(page).getByRole("button", { name: "Zooma in" });
   for (let i = 0; i < 4; i++) await zoomIn.click();
   await page.waitForTimeout(300);
@@ -139,7 +139,7 @@ test("the bubble chart can be moved: drag and the arrow keys", async ({ page }, 
 
 test("a species hidden behind another can be reached by zooming in and selected", async ({ page }, info) => {
   test.skip(info.project.name === "mobile", "pointer wheel");
-  await page.goto("/morfometri?arter=R%C3%96HAK,%C3%84NPIP,SKPIP");
+  await page.goto("/biometri?arter=R%C3%96HAK,%C3%84NPIP,SKPIP");
   await page.waitForTimeout(1200); // the bubbles pop in
   // A grey bubble whose centre is covered by another bubble at full view.
   const hidden = await page.evaluate(() => {
@@ -178,4 +178,20 @@ test("a species hidden behind another can be reached by zooming in and selected"
   await expect(level(page)).not.toHaveText("1×");
   await target.click();
   await expect(keys(page).getByText(species, { exact: true })).toBeVisible();
+});
+
+test("each species gets a weight-vs-wing scatter with a trend line, capped at 5 000 points", async ({ page, request }) => {
+  await page.goto("/biometri?arter=R%C3%96HAK");
+  const api = await (await request.get("/api/morphometrics/scatter?species=R%C3%96HAK&season=helar")).json();
+  expect(api.species[0].n_shown).toBeLessThanOrEqual(5000);
+  expect(api.species[0].n_total).toBeGreaterThan(api.species[0].n_shown);
+  const scatter = dists(page).getByRole("img", { name: /Rödhake, vikt mot vinglängd/ });
+  await expect(scatter).toBeVisible();
+  await expect(dists(page).getByText(/5\s000 av .* fåglar visas/)).toBeVisible();
+});
+
+test("the old Morfometri address redirects and keeps the selection", async ({ page }) => {
+  await page.goto("/morfometri?arter=%C3%84NPIP");
+  await expect(page).toHaveURL(/\/biometri\?arter=/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Biometri");
 });

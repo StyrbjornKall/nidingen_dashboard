@@ -1,5 +1,5 @@
 /**
- * The shared selection used by Sammanfattning, Trender, Morfometri and
+ * The shared selection used by Sammanfattning, Trender, Biometri and
  * Fenologi: species (max 6, colours by order), period and season, all in
  * the URL. Each page passes its own defaults, as in the design.
  */

@@ -31,13 +31,13 @@ body{margin:0}
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["Hem","Sammanfattning","Trender","Morfometri","Fenologi","Återfynd","Väder","Om"],"default":"Sammanfattning"},"$preview":{"width":1440,"height":96}}'>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["Hem","Sammanfattning","Trender","Biometri","Fenologi","Återfynd","Väder","Om"],"default":"Sammanfattning"},"$preview":{"width":1440,"height":96}}'>
 class Component extends DCLogic {
   renderVals() {
     const active = this.props.active ?? 'Sammanfattning';
     const pages = [
       ['Hem', 'Hem.dc.html'], ['Sammanfattning', 'Sammanfattning.dc.html'], ['Trender', 'Trender.dc.html'],
-      ['Morfometri', 'Morfometri.dc.html'], ['Fenologi', 'Fenologi.dc.html'], ['Återfynd', 'Aterfynd.dc.html'],
+      ['Biometri', 'Biometri.dc.html'], ['Fenologi', 'Fenologi.dc.html'], ['Återfynd', 'Aterfynd.dc.html'],
       ['Väder', 'Vader.dc.html'], ['Om', 'Om.dc.html']
     ];
     return {

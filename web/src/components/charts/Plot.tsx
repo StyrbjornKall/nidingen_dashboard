@@ -7,6 +7,11 @@ import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, typ
 import { createPortal } from "react-dom";
 import styles from "./charts.module.css";
 
+/** A rotated y-axis title in the left gutter; the plot's `--chart-gutter` must leave room for it. */
+export function YTitle({ children }: { children: string }) {
+  return <span className={styles.yAxisTitle} aria-hidden="true">{children}</span>;
+}
+
 /** Width of an element, kept up to date (0 where ResizeObserver is missing). */
 export function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null);

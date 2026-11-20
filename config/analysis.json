@@ -38,7 +38,7 @@
   },
   "trend_excluded_years": {
     "from": 1991,
-    "to": 2004,
+    "to": 2003,
     "reason_sv": "Stationen var bara delvis bemannad dessa år.",
     "reason_en": "The station was only partly operating in these years.",
     "applies_to": [

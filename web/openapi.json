@@ -504,6 +504,62 @@
         }
       }
     },
+    "/api/morphometrics/scatter": {
+      "get": {
+        "summary": "Scatter",
+        "operationId": "scatter_api_morphometrics_scatter_get",
+        "parameters": [
+          {
+            "name": "species",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated codes (max 6, not ALLA)",
+              "title": "Species"
+            },
+            "description": "Comma-separated codes (max 6, not ALLA)"
+          },
+          {
+            "name": "season",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "var",
+                "host",
+                "helar"
+              ],
+              "type": "string",
+              "default": "host",
+              "title": "Season"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MorphScatter"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/phenology/calendar": {
       "get": {
         "summary": "Migration Calendar",
@@ -1701,6 +1757,27 @@
         ],
         "title": "MorphMeans"
       },
+      "MorphScatter": {
+        "properties": {
+          "season": {
+            "type": "string",
+            "title": "Season"
+          },
+          "species": {
+            "items": {
+              "$ref": "#/components/schemas/ScatterSpecies"
+            },
+            "type": "array",
+            "title": "Species"
+          }
+        },
+        "type": "object",
+        "required": [
+          "season",
+          "species"
+        ],
+        "title": "MorphScatter"
+      },
       "PeriodInfo": {
         "properties": {
           "id": {
@@ -2185,6 +2262,94 @@
           "species"
         ],
         "title": "Ridges"
+      },
+      "ScatterFit": {
+        "properties": {
+          "n": {
+            "type": "integer",
+            "title": "N"
+          },
+          "slope": {
+            "type": "number",
+            "title": "Slope"
+          },
+          "intercept": {
+            "type": "number",
+            "title": "Intercept"
+          },
+          "x_mean": {
+            "type": "number",
+            "title": "X Mean"
+          },
+          "sxx": {
+            "type": "number",
+            "title": "Sxx"
+          },
+          "residual_se": {
+            "type": "number",
+            "title": "Residual Se"
+          },
+          "t_crit": {
+            "type": "number",
+            "title": "T Crit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "n",
+          "slope",
+          "intercept",
+          "x_mean",
+          "sxx",
+          "residual_se",
+          "t_crit"
+        ],
+        "title": "ScatterFit"
+      },
+      "ScatterSpecies": {
+        "properties": {
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "n_total": {
+            "type": "integer",
+            "title": "N Total"
+          },
+          "n_shown": {
+            "type": "integer",
+            "title": "N Shown"
+          },
+          "points": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Points"
+          },
+          "fit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScatterFit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "species",
+          "n_total",
+          "n_shown",
+          "points",
+          "fit"
+        ],
+        "title": "ScatterSpecies"
       },
       "SeasonInfo": {
         "properties": {

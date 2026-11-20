@@ -34,7 +34,7 @@ log = logging.getLogger("nidingen.api")
 REPO = Path(__file__).resolve().parents[2]
 
 # Bump when response shapes change, so browsers drop cached responses.
-API_VERSION = "5"
+API_VERSION = "6"
 
 
 # Share of the mean annual catch a week needs to fall inside the station's

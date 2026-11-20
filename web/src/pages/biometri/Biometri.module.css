@@ -306,9 +306,15 @@
   min-width: 0;
 }
 
+.histGrid {
+  min-width: 860px;
+  grid-template-columns: 150px repeat(3, minmax(0, 1fr));
+  gap: 22px 24px;
+}
+
 .hist {
   position: relative;
-  height: 90px;
+  height: 130px;
   cursor: crosshair;
 }
 
@@ -431,8 +437,13 @@
     margin-top: 8px;
   }
 
-  .ageGrid .colHead {
+  .ageGrid .colHead,
+  .histGrid .colHead:nth-child(4) {
     display: none;
+  }
+
+  .histGrid .scatterWrap {
+    grid-column: 1 / -1;
   }
 
   .ageGrid > div,

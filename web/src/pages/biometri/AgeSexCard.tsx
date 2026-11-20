@@ -5,7 +5,7 @@ import { needsLightText } from "../../lib/color";
 import type { Schemas } from "../../lib/api";
 import { formatInt } from "../../lib/format";
 import { ageRamp, color, sexColors } from "../../lib/tokens";
-import styles from "./Morfometri.module.css";
+import styles from "./Biometri.module.css";
 import { ageColors, ageLabel, sexLabel, sharePercent, sortAgeCodes, sortSexCodes } from "./morph";
 
 type Category = Schemas["Category"];

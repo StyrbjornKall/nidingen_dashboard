@@ -6,7 +6,7 @@ These files are the approved visual and interaction design for the new dashboard
 
 | Folder | Content |
 | --- | --- |
-| `pages/` | One file per page: Hem, Sammanfattning, Trender, Morfometri, Fenologi, Återfynd, Väder, Om |
+| `pages/` | One file per page: Hem, Sammanfattning, Trender, Biometri, Fenologi, Återfynd, Väder, Om |
 | `components/` | Shared pieces: `Nav`, `Footer`, `Artvaljare` (species picker), `Tillstand` (loading, empty and error states). `Palett-Ejder` and `Palettprov` show the colour palette with its contrast checks. |
 | `assets/` | Hero photo and station logo. `coastlines-simplified-PLACEHOLDER.json` is a hand-drawn low-resolution coastline used only in the sketch. **Replace it with Natural Earth 1:110m land (TopoJSON)** in the real app. |
 | `tokens.json` | Colours, species palette, fonts, radii and layout values. |
@@ -44,7 +44,7 @@ Apply these when building each page. HANDOFF.md §2 and §2b hold the reasoning.
 - **Confidence intervals** use the exact t quantile (`df = n − 2`), computed in the API. The Fenologi table trend uses the selected period, not always 1980–2025.
 - **Season-to-date ±1 SD band** is the per-day standard deviation of the cumulative counts across years, not the sketch's scaled approximation.
 - **Period presets only** (`period_options`); there is no free year range. Sammanfattning's and Återfynd's presets also come from config.
-- **Morfometri bubble chart** axes are derived from the data, not fixed at 44–150 mm and 4–130 g. The "Ålder" bar shows the **raw age codes** (`10`, `2+`, `20`, `3+` …), not 1K / 2K / +1K / +2K; `age_colors` in `tokens.json` needs a ramp over the codes instead.
+- **Biometri bubble chart** axes are derived from the data, not fixed at 44–150 mm and 4–130 g. The "Ålder" bar shows the **raw age codes** (`10`, `2+`, `20`, `3+` …), not 1K / 2K / +1K / +2K; `age_colors` in `tokens.json` needs a ramp over the codes instead.
 - **Återfynd**: the period filters on find date; "medianavstånd" is the true median; tiles that ignore the direction filter say so; countries come from a EURING code lookup.
 - **Väder**: keeps the "Visa" variable chips and marks values gap-filled from Vinga A (precipitation, pressure, visibility).
 - **Daily weather covers 03:00–12:00 Swedish time only**, the hours when birds are caught, not the whole day. This applies to every weather value on the site (tracks, readout, wind rose, best days). Show the note from `/api/meta` (`weather_window.note`, from `config/analysis.json`) as a caption on Väder, and add it to Om:

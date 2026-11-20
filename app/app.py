@@ -193,7 +193,7 @@ app.layout = html.Div([
     dbc.Tabs([
         dbc.Tab(label="Hem",            tab_id="tab-home"),
         dbc.Tab(label="Sammanfattning", tab_id="tab-summary-timeseries"),
-        dbc.Tab(label="Morfometri",     tab_id="tab-morpho"),
+        dbc.Tab(label="Biometri",     tab_id="tab-morpho"),
         dbc.Tab(label="Fenologi",       tab_id="tab-phenology"),
         dbc.Tab(label="Värmekarta",     tab_id="tab-heatmap"),
         dbc.Tab(label="Väderanalys",    tab_id="tab-weather"),
@@ -333,7 +333,7 @@ app.layout = html.Div([
             ], fluid=True, className="py-4"),
         ], id="content-tab-summary-timeseries", style={"display": "none"}),
 
-        # ── Morfometri tab ────────────────────────────────────────────────
+        # ── Biometri tab ────────────────────────────────────────────────
         html.Div([
             dbc.Container([
                 html.Div([

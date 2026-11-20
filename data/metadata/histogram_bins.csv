@@ -1,0 +1,409 @@
+species,swedish_name,variable,n,min_gap,resolution,grid_share,lo,hi,n_steps,step_multiple,bin_width,n_bins
+ACARU,trastsångare,weight,3,2.0,0.1,1.0,23.5,30.0,66,1,0.1,66
+ACARU,trastsångare,wing,3,2.0,1.0,1.0,92.0,96.0,5,1,1.0,5
+ACCAU,stjärtmes (caudatus),weight,4,0.1,0.1,1.0,7.9,8.0,2,1,0.1,2
+ACCAU,stjärtmes (caudatus),wing,4,1.0,1.0,1.0,63.0,65.0,3,1,1.0,3
+ACEUR,stjärtmes (europaeus),weight,1,0.0,0.1,1.0,7.7,7.7,1,1,0.1,1
+ACEUR,stjärtmes (europaeus),wing,1,0.0,1.0,1.0,66.0,66.0,1,1,1.0,1
+ACFLA,gråsiska,weight,1368,0.1,0.1,1.0,9.6,16.7,72,2,0.2,36
+ACFLA,gråsiska,wing,1379,1.0,1.0,1.0,68.0,81.0,14,1,1.0,14
+ACSCI,rörsångare,weight,2405,0.1,0.1,1.0,9.6,15.1,56,1,0.1,56
+ACSCI,rörsångare,wing,2566,1.0,1.0,1.0,63.0,72.0,10,1,1.0,10
+AFCAB,brunsiska,weight,666,0.1,0.1,1.0,9.0,15.2,63,1,0.1,63
+AFCAB,brunsiska,wing,673,1.0,1.0,1.0,67.0,79.0,13,1,1.0,13
+AFEXI,gråsiska (exilipes),weight,5,0.5,0.1,1.0,11.7,15.4,38,1,0.1,38
+AFEXI,gråsiska (exilipes),wing,5,1.0,1.0,1.0,72.0,77.0,6,1,1.0,6
+AFMEA,vanlig gråsiska,weight,323,0.1,0.1,1.0,9.8,17.4,77,2,0.2,39
+AFMEA,vanlig gråsiska,wing,347,1.0,1.0,1.0,68.0,81.0,14,1,1.0,14
+ALKUN,alekung,weight,3,6.1,0.1,1.0,111.0,129.2,183,4,0.4,46
+ALKUN,alekung,wing,3,5.0,1.0,1.0,120.0,131.0,12,1,1.0,12
+ANACU,stjärtand,weight,1,0.0,0.1,1.0,760.0,760.0,1,1,0.1,1
+ANACU,stjärtand,wing,1,0.0,1.0,1.0,275.0,275.0,1,1,1.0,1
+ANPLA,gräsand,weight,12,2.0,0.1,1.0,672.0,1189.0,5171,104,10.4,50
+ANPLA,gräsand,wing,13,1.0,1.0,1.0,238.0,296.0,59,1,1.0,59
+ASOTU,hornuggla,weight,56,0.4,0.1,1.0,208.0,380.0,1721,35,3.5,50
+ASOTU,hornuggla,wing,58,1.0,1.0,1.0,275.0,342.0,68,2,2.0,34
+BASVA,backsvala,weight,15,0.1,0.1,1.0,12.1,15.0,30,1,0.1,30
+BASVA,backsvala,wing,15,1.0,1.0,1.0,103.0,113.0,11,1,1.0,11
+BEFIN,bergfink,weight,2994,0.1,0.1,1.0,17.6,28.9,114,2,0.2,57
+BEFIN,bergfink,wing,2993,1.0,1.0,1.0,82.0,98.0,17,1,1.0,17
+BELÄR,berglärka,weight,6,0.3,0.1,1.0,32.3,40.7,85,2,0.2,43
+BELÄR,berglärka,wing,6,1.0,1.0,1.0,101.0,115.0,15,1,1.0,15
+BJTRA,björktrast,weight,334,0.1,0.1,1.0,77.2,122.7,456,9,0.9,51
+BJTRA,björktrast,wing,336,1.0,1.0,1.0,136.0,160.0,25,1,1.0,25
+BLHAK,blåhake,weight,303,0.1,0.1,1.0,14.0,20.0,61,1,0.1,61
+BLHAK,blåhake,wing,316,1.0,1.0,1.0,67.0,81.0,15,1,1.0,15
+BLMES,blåmes,weight,6580,0.1,0.1,1.0,8.7,13.1,45,1,0.1,45
+BLMES,blåmes,wing,8222,1.0,1.0,1.0,62.0,71.0,10,1,1.0,10
+BOFIN,bofink,weight,9100,0.1,0.1,1.0,16.9,27.9,111,2,0.2,56
+BOFIN,bofink,wing,7973,1.0,1.0,1.0,80.0,96.0,17,1,1.0,17
+BRHAN,brushane,weight,174,0.1,0.1,1.0,79.0,230.0,1511,30,3.0,51
+BRHAN,brushane,wing,185,1.0,1.0,1.0,150.0,199.0,50,1,1.0,50
+BRKUN,brandkronad kungsfågel,weight,65,0.1,0.1,1.0,4.4,5.8,15,1,0.1,15
+BRKUN,brandkronad kungsfågel,wing,65,1.0,1.0,1.0,50.0,57.0,8,1,1.0,8
+BRTÖR,brun törnskata,weight,1,0.0,0.1,1.0,34.5,34.5,1,1,0.1,1
+BRTÖR,brun törnskata,wing,1,0.0,1.0,1.0,86.0,86.0,1,1,1.0,1
+BUSKV,buskskvätta,weight,1139,0.1,0.1,1.0,12.5,19.3,69,2,0.2,35
+BUSKV,buskskvätta,wing,1124,1.0,1.0,1.0,72.0,85.0,14,1,1.0,14
+BUSÅN,busksångare,weight,6,0.1,0.1,1.0,10.8,13.1,24,1,0.1,24
+BUSÅN,busksångare,wing,6,1.0,1.0,1.0,61.0,66.0,6,1,1.0,6
+BÄKOR,bändelkorsnäbb,weight,2,0.4,0.1,1.0,26.3,26.7,5,1,0.1,5
+BÄKOR,bändelkorsnäbb,wing,2,4.0,1.0,1.0,89.0,93.0,5,1,1.0,5
+CAMAR,skärsnäppa,weight,4352,0.1,0.1,1.0,54.9,101.0,462,9,0.9,52
+CAMAR,skärsnäppa,wing,4381,1.0,1.0,1.0,123.0,140.0,18,1,1.0,18
+CIÄRL,citronärla,weight,1,0.0,0.1,1.0,17.1,17.1,1,1,0.1,1
+CIÄRL,citronärla,wing,1,0.0,1.0,1.0,81.0,81.0,1,1,1.0,1
+CUCAX,obestämd rödstrupig sångare,weight,3,0.4,0.1,1.0,9.5,10.6,12,1,0.1,12
+CUCAX,obestämd rödstrupig sångare,wing,5,2.0,1.0,1.0,58.0,65.0,8,1,1.0,8
+CUIBE,rostsångare,weight,1,0.0,0.1,1.0,10.0,10.0,1,1,0.1,1
+CUIBE,rostsångare,wing,1,0.0,1.0,1.0,58.0,58.0,1,1,1.0,1
+DOHER,domherre,weight,606,0.1,0.1,1.0,21.9,37.2,154,3,0.3,52
+DOHER,domherre,wing,607,1.0,1.0,1.0,82.0,100.0,19,1,1.0,19
+DRSNÄ,drillsnäppa,weight,2117,0.1,0.1,1.0,37.0,75.6,387,8,0.8,49
+DRSNÄ,drillsnäppa,wing,2198,1.0,1.0,1.0,104.0,122.0,19,1,1.0,19
+DUTRA,dubbeltrast,weight,13,0.4,0.1,1.0,90.0,123.5,336,7,0.7,48
+DUTRA,dubbeltrast,wing,13,1.0,1.0,1.0,146.0,165.0,20,1,1.0,20
+DVSPA,dvärgsparv,weight,10,0.1,0.1,1.0,12.6,15.1,26,1,0.1,26
+DVSPA,dvärgsparv,wing,11,1.0,1.0,1.0,67.0,75.0,9,1,1.0,9
+EJDER,ejder,weight,132,0.5,0.5,0.9848,63.5,2490.0,4854,98,49.0,50
+EJDER,ejder,wing,38,1.0,1.0,1.0,31.0,311.0,281,6,6.0,47
+ENBEC,enkelbeckasin,weight,37,0.1,0.1,1.0,72.3,111.8,396,8,0.8,50
+ENBEC,enkelbeckasin,wing,38,1.0,1.0,1.0,130.0,144.0,15,1,1.0,15
+FIMÅS,fiskmås,weight,205,0.2,0.1,1.0,22.5,462.0,4396,88,8.8,50
+FIMÅS,fiskmås,wing,175,1.0,1.0,1.0,131.0,385.0,255,5,5.0,51
+FITÄR,fisktärna,weight,18,0.4,0.1,1.0,21.0,155.0,1341,27,2.7,50
+FITÄR,fisktärna,wing,20,1.0,1.0,1.0,130.0,298.0,169,3,3.0,57
+FJPIP,fjällpipare,weight,1,0.0,0.1,1.0,88.0,88.0,1,1,0.1,1
+FJPIP,fjällpipare,wing,1,0.0,1.0,1.0,157.0,157.0,1,1,1.0,1
+FLSÅN,flodsångare,weight,1,0.0,0.1,1.0,18.7,18.7,1,1,0.1,1
+FLSÅN,flodsångare,wing,1,0.0,1.0,1.0,76.0,76.0,1,1,1.0,1
+FOÄRL,forsärla,weight,9,0.1,0.1,1.0,13.5,19.0,56,1,0.1,56
+FOÄRL,forsärla,wing,9,1.0,1.0,1.0,80.0,89.0,10,1,1.0,10
+FÄSÅN,fältsångare,weight,4,0.3,0.1,1.0,9.1,10.1,11,1,0.1,11
+FÄSÅN,fältsångare,wing,4,1.0,1.0,1.0,56.0,57.0,2,1,1.0,2
+GLSNÄ,gluttsnäppa,weight,6,3.0,0.1,1.0,126.1,145.0,190,4,0.4,48
+GLSNÄ,gluttsnäppa,wing,8,1.0,1.0,1.0,185.0,197.0,13,1,1.0,13
+GRBEN,grönbena,weight,123,0.1,0.1,1.0,40.3,85.0,448,9,0.9,50
+GRBEN,grönbena,wing,122,1.0,1.0,1.0,112.0,140.0,29,1,1.0,29
+GRFIN,grönfink,weight,11047,0.1,0.1,1.0,24.0,34.8,109,2,0.2,55
+GRFIN,grönfink,wing,9879,1.0,1.0,1.0,84.0,95.0,12,1,1.0,12
+GRFLU,grå flugsnappare,weight,1158,0.1,0.1,1.0,12.1,18.2,62,1,0.1,62
+GRFLU,grå flugsnappare,wing,1156,1.0,1.0,1.0,84.0,95.0,12,1,1.0,12
+GRKRÅ,gråkråka,weight,3,80.0,0.1,1.0,185.0,380.0,1951,39,3.9,51
+GRSPA,gråsparv,weight,43,0.1,0.1,1.0,23.2,33.7,106,2,0.2,53
+GRSPA,gråsparv,wing,44,1.0,1.0,1.0,70.0,85.0,16,1,1.0,16
+GRTRU,gråtrut,weight,151,0.3,1.0,0.9801,385.0,1290.0,906,18,18.0,51
+GRTRU,gråtrut,wing,84,1.0,1.0,1.0,91.0,468.0,378,8,8.0,48
+GUHÄM,gulhämpling,weight,2,1.1,0.1,1.0,12.1,13.2,12,1,0.1,12
+GUHÄM,gulhämpling,wing,2,1.0,1.0,1.0,69.0,70.0,2,1,1.0,2
+GUSPA,gulsparv,weight,692,0.1,0.1,1.0,23.9,35.5,117,2,0.2,59
+GUSPA,gulsparv,wing,694,1.0,1.0,1.0,82.0,98.0,17,1,1.0,17
+GUÄRL,gulärla,weight,1496,0.1,0.1,1.0,13.3,19.8,66,1,0.1,66
+GUÄRL,gulärla,wing,1477,1.0,1.0,1.0,76.0,89.0,14,1,1.0,14
+GÄSMY,gärdsmyg,weight,11974,0.1,0.1,1.0,7.0,11.3,44,1,0.1,44
+GÄSMY,gärdsmyg,wing,11337,1.0,1.0,1.0,45.0,54.0,10,1,1.0,10
+GÖK,gök,weight,9,0.1,0.1,1.0,75.2,128.0,529,11,1.1,49
+GÖK,gök,wing,9,1.0,1.0,1.0,186.0,229.0,44,1,1.0,44
+GÖTYT,göktyta,weight,77,0.1,0.1,1.0,28.6,46.2,177,4,0.4,45
+GÖTYT,göktyta,wing,79,1.0,1.0,1.0,80.0,97.0,18,1,1.0,18
+HAFLU,halsbandsflugsnappare,weight,1,0.0,0.1,1.0,13.9,13.9,1,1,0.1,1
+HAFLU,halsbandsflugsnappare,wing,1,0.0,1.0,1.0,81.0,81.0,1,1,1.0,1
+HAOST,strandskata,weight,163,0.4,0.1,1.0,49.5,644.0,5946,119,11.9,50
+HAOST,strandskata,wing,144,1.0,1.0,1.0,157.0,277.0,121,3,3.0,41
+HATRU,havstrut,weight,5,50.0,0.1,1.0,1000.0,1550.0,5501,111,11.1,50
+HATRU,havstrut,wing,4,5.0,1.0,1.0,445.0,490.0,46,1,1.0,46
+HIICT,härmsångare,weight,1324,0.1,0.1,1.0,10.5,15.7,53,1,0.1,53
+HIICT,härmsångare,wing,1367,1.0,1.0,1.0,72.0,84.0,13,1,1.0,13
+HUSVA,hussvala,weight,813,0.1,0.1,1.0,14.3,26.4,122,3,0.3,41
+HUSVA,hussvala,wing,753,1.0,1.0,1.0,102.0,121.0,20,1,1.0,20
+HÄMPL,hämpling,weight,559,0.1,0.1,1.0,15.0,23.1,82,2,0.2,41
+HÄMPL,hämpling,wing,536,1.0,1.0,1.0,69.0,87.0,19,1,1.0,19
+HÖSÅN,höksångare,weight,28,0.1,0.1,1.0,17.0,28.2,113,2,0.2,57
+HÖSÅN,höksångare,wing,28,1.0,1.0,1.0,84.0,94.0,11,1,1.0,11
+IBGRA,iberisk gransångare,weight,1,0.0,0.1,1.0,9.3,9.3,1,1,0.1,1
+IBGRA,iberisk gransångare,wing,1,0.0,1.0,1.0,63.0,63.0,1,1,1.0,1
+IDCAL,stäppsångare,weight,1,0.0,0.1,1.0,9.6,9.6,1,1,0.1,1
+IDCAL,stäppsångare,wing,1,0.0,1.0,1.0,61.0,61.0,1,1,1.0,1
+IDPAL,eksångare,weight,1,0.0,0.1,1.0,12.2,12.2,1,1,0.1,1
+IDPAL,eksångare,wing,1,0.0,1.0,1.0,69.0,69.0,1,1,1.0,1
+IDRAM,saxaulsångare,weight,1,0.0,0.1,1.0,10.2,10.2,1,1,0.1,1
+IDRAM,saxaulsångare,wing,1,0.0,1.0,1.0,60.0,60.0,1,1,1.0,1
+JOUGG,jorduggla,weight,2,108.0,0.1,1.0,297.0,405.0,1081,22,2.2,50
+JOUGG,jorduggla,wing,2,2.0,1.0,1.0,320.0,322.0,3,1,1.0,3
+JÄSPA,järnsparv,weight,8453,0.1,0.1,1.0,14.7,23.9,93,2,0.2,47
+JÄSPA,järnsparv,wing,7908,1.0,1.0,1.0,66.0,76.0,11,1,1.0,11
+KAGÅS,kanadagås,weight,3,319.0,0.1,1.0,1127.0,1870.0,7431,149,14.9,50
+KAJA,kaja,weight,5,1.0,0.1,1.0,182.0,219.0,371,7,0.7,53
+KAJA,kaja,wing,5,5.0,1.0,1.0,220.0,230.0,11,1,1.0,11
+KETÄR,kentsk tärna,weight,5,4.0,0.1,1.0,205.9,279.0,732,15,1.5,49
+KETÄR,kentsk tärna,wing,5,1.0,1.0,1.0,300.0,318.0,19,1,1.0,19
+KOLÄR,korttålärka,wing,1,0.0,1.0,1.0,92.0,92.0,1,1,1.0,1
+KOSPA,kornsparv,weight,1,0.0,0.1,1.0,54.9,54.9,1,1,0.1,1
+KOSPA,kornsparv,wing,1,0.0,1.0,1.0,105.0,105.0,1,1,1.0,1
+KOTRA,koltrast,weight,6755,0.1,0.1,1.0,67.6,119.6,521,11,1.1,48
+KOTRA,koltrast,wing,6313,1.0,1.0,1.0,123.0,142.0,20,1,1.0,20
+KRICK,kricka,weight,2,27.7,0.1,1.0,256.0,283.7,278,6,0.6,47
+KRICK,kricka,wing,2,6.0,1.0,1.0,186.0,192.0,7,1,1.0,7
+KRÅNG,kärrsångare,weight,530,0.1,0.1,1.0,10.2,15.2,51,1,0.1,51
+KRÅNG,kärrsångare,wing,548,1.0,1.0,1.0,66.0,76.0,11,1,1.0,11
+KUFÅG,kungsfågel,weight,13257,0.1,0.1,1.0,4.4,6.4,21,1,0.1,21
+KUFÅG,kungsfågel,wing,10496,1.0,1.0,1.0,50.0,58.0,9,1,1.0,9
+KUPIP,kustpipare,weight,26,0.1,0.1,1.0,145.4,212.0,667,13,1.3,52
+KUPIP,kustpipare,wing,26,1.0,1.0,1.0,188.0,209.0,22,1,1.0,22
+KUSNÄ,kustsnäppa,weight,819,0.1,0.1,1.0,86.0,160.0,741,15,1.5,50
+KUSNÄ,kustsnäppa,wing,825,1.0,1.0,1.0,156.0,179.0,24,1,1.0,24
+KUSÅN,kungsfågelsångare,weight,9,0.1,0.1,1.0,4.7,6.7,21,1,0.1,21
+KUSÅN,kungsfågelsångare,wing,9,1.0,1.0,1.0,50.0,58.0,9,1,1.0,9
+KÄSNÄ,kärrsnäppa,weight,15487,0.1,0.1,1.0,35.4,71.0,357,7,0.7,51
+KÄSNÄ,kärrsnäppa,wing,15579,1.0,1.0,1.0,110.0,128.0,19,1,1.0,19
+LASPA,lappsparv,weight,20,0.1,0.1,1.0,20.2,31.5,114,2,0.2,57
+LASPA,lappsparv,wing,20,1.0,1.0,1.0,86.0,99.0,14,1,1.0,14
+LASVA,ladusvala,weight,509,0.1,0.1,1.0,14.9,23.6,88,2,0.2,44
+LASVA,ladusvala,wing,531,1.0,1.0,1.0,117.0,133.0,17,1,1.0,17
+LJPIP,ljungpipare,weight,67,0.1,0.1,1.0,43.0,199.0,1561,31,3.1,51
+LJPIP,ljungpipare,wing,70,1.0,1.0,1.0,160.0,196.0,37,1,1.0,37
+LONAE,gräshoppsångare,weight,58,0.1,0.1,1.0,9.7,18.0,84,2,0.2,42
+LONAE,gräshoppsångare,wing,59,1.0,1.0,1.0,61.0,70.0,10,1,1.0,10
+LSCYA,vitstjärnig blåhake,weight,3,0.1,0.1,1.0,14.7,16.5,19,1,0.1,19
+LSCYA,vitstjärnig blåhake,wing,3,1.0,1.0,1.0,72.0,76.0,5,1,1.0,5
+LSSVE,båhake (svecica),weight,4,0.8,0.1,1.0,13.8,17.3,36,1,0.1,36
+LSSVE,båhake (svecica),wing,4,1.0,1.0,1.0,71.0,76.0,6,1,1.0,6
+LUSÅN,lundsångare,weight,10,0.1,0.1,1.0,5.7,8.1,25,1,0.1,25
+LUSÅN,lundsångare,wing,10,1.0,1.0,1.0,58.0,65.0,8,1,1.0,8
+LYMIN,dvärgbeckasin,weight,3,5.0,0.1,1.0,41.0,53.0,121,3,0.3,41
+LYMIN,dvärgbeckasin,wing,3,1.0,1.0,1.0,111.0,118.0,8,1,1.0,8
+LÖSÅN,lövsångare,weight,44355,0.1,0.1,1.0,6.7,10.9,43,1,0.1,43
+LÖSÅN,lövsångare,wing,46125,1.0,1.0,1.0,61.0,74.0,14,1,1.0,14
+MAYAR,sädesärla (yarrellii),weight,2,5.2,0.1,1.0,20.4,25.6,53,1,0.1,53
+MAYAR,sädesärla (yarrellii),wing,2,2.0,1.0,1.0,86.0,88.0,3,1,1.0,3
+MEMEL,sångsparv,wing,1,0.0,1.0,1.0,65.0,65.0,1,1,1.0,1
+MFAVA,sydlig gulärla,weight,37,0.1,0.1,1.0,13.6,18.9,54,1,0.1,54
+MFAVA,sydlig gulärla,wing,37,1.0,1.0,1.0,78.0,90.0,13,1,1.0,13
+MFTHU,nordlig gulärla,weight,153,0.1,0.1,1.0,13.6,20.8,73,2,0.2,37
+MFTHU,nordlig gulärla,wing,152,1.0,1.0,1.0,79.0,89.0,11,1,1.0,11
+MIFLU,mindre flugsnappare,weight,86,0.1,0.1,1.0,8.2,11.0,29,1,0.1,29
+MIFLU,mindre flugsnappare,wing,85,1.0,1.0,1.0,64.0,72.0,9,1,1.0,9
+MIHAC,mindre hackspett,weight,1,0.0,0.1,1.0,22.0,22.0,1,1,0.1,1
+MIHAC,mindre hackspett,wing,1,0.0,1.0,1.0,97.0,97.0,1,1,1.0,1
+MIKOR,mindre korsnäbb,weight,28,0.1,0.1,1.0,31.4,50.2,189,4,0.4,48
+MIKOR,mindre korsnäbb,wing,29,1.0,1.0,1.0,93.0,103.0,11,1,1.0,11
+MISTR,mindre strandpipare,weight,3,2.1,0.1,1.0,28.3,40.0,118,2,0.2,59
+MISTR,mindre strandpipare,wing,3,1.0,1.0,1.0,116.0,118.0,3,1,1.0,3
+MOKUL,morkulla,weight,52,0.1,0.1,1.0,225.0,368.0,1431,29,2.9,50
+MOKUL,morkulla,wing,54,1.0,1.0,1.0,187.0,211.0,25,1,1.0,25
+MOSNÄ,mosnäppa,weight,15,0.2,0.1,1.0,16.3,26.3,101,2,0.2,51
+MOSNÄ,mosnäppa,wing,15,1.0,1.0,1.0,95.0,104.0,10,1,1.0,10
+MYSNÄ,myrsnäppa,weight,1,0.0,0.1,1.0,36.5,36.5,1,1,0.1,1
+MYSNÄ,myrsnäppa,wing,1,0.0,1.0,1.0,107.0,107.0,1,1,1.0,1
+MYSPO,myrspov,weight,140,0.1,0.1,1.0,157.6,382.0,2245,45,4.5,50
+MYSPO,myrspov,wing,144,1.0,1.0,1.0,188.0,242.0,55,1,1.0,55
+NASKÄ,nattskärra,weight,30,0.1,0.1,1.0,52.6,90.5,380,8,0.8,48
+NASKÄ,nattskärra,wing,31,1.0,1.0,1.0,122.0,208.0,87,2,2.0,44
+NOSÅN,nordsångare,weight,1,0.0,0.1,1.0,10.2,10.2,1,1,0.1,1
+NOSÅN,nordsångare,wing,1,0.0,1.0,1.0,71.0,71.0,1,1,1.0,1
+NYART,ny art som saknar kod (ange i textrad),weight,1,0.0,0.1,1.0,20.5,20.5,1,1,0.1,1
+NYART,ny art som saknar kod (ange i textrad),wing,1,0.0,1.0,1.0,72.0,72.0,1,1,1.0,1
+NÄGAL,näktergal,weight,34,0.1,0.1,1.0,20.2,27.9,78,2,0.2,39
+NÄGAL,näktergal,wing,35,1.0,1.0,1.0,84.0,94.0,11,1,1.0,11
+NÖSKR,nötskrika,weight,1,0.0,0.1,1.0,151.0,151.0,1,1,0.1,1
+NÖSKR,nötskrika,wing,1,0.0,1.0,1.0,192.0,192.0,1,1,1.0,1
+OEPLE,nunnestenskvätta,weight,1,0.0,0.1,1.0,24.4,24.4,1,1,0.1,1
+OEPLE,nunnestenskvätta,wing,1,0.0,1.0,1.0,94.0,94.0,1,1,1.0,1
+OOLEU,stenskvätta (leucorhoa),weight,7,0.1,0.1,1.0,23.5,36.5,131,3,0.3,44
+OOLEU,stenskvätta (leucorhoa),wing,7,1.0,1.0,1.0,102.0,108.0,7,1,1.0,7
+OOOEN,stenskvätta (oenanthe),weight,1,0.0,0.1,1.0,22.4,22.4,1,1,0.1,1
+OOOEN,stenskvätta (oenanthe),wing,1,0.0,1.0,1.0,96.0,96.0,1,1,1.0,1
+ORSPA,ortolansparv,weight,58,0.1,0.1,1.0,18.9,28.1,93,2,0.2,47
+ORSPA,ortolansparv,wing,58,1.0,1.0,1.0,80.0,92.0,13,1,1.0,13
+PCABI,nordlig gransångare,weight,39,0.1,0.1,1.0,7.0,10.3,34,1,0.1,34
+PCABI,nordlig gransångare,wing,39,1.0,1.0,1.0,58.0,72.0,15,1,1.0,15
+PCCOL,sydlig gransångare,weight,102,0.1,0.1,1.0,5.7,8.8,32,1,0.1,32
+PCCOL,sydlig gransångare,wing,104,1.0,1.0,1.0,54.0,68.0,15,1,1.0,15
+PCTRI,sibirisk gransångare,weight,27,0.1,0.1,1.0,6.1,10.0,40,1,0.1,40
+PCTRI,sibirisk gransångare,wing,27,1.0,1.0,1.0,54.0,66.0,13,1,1.0,13
+PHCAR,storskarv,wing,1,0.0,1.0,1.0,325.0,325.0,1,1,1.0,1
+PHCOL,gransångare,weight,11058,0.1,0.1,1.0,5.8,9.8,41,1,0.1,41
+PHCOL,gransångare,wing,11641,1.0,1.0,1.0,54.0,68.0,15,1,1.0,15
+PHHUM,bergtajgasångare,weight,1,0.0,0.1,1.0,6.5,6.5,1,1,0.1,1
+PHHUM,bergtajgasångare,wing,1,0.0,1.0,1.0,58.0,58.0,1,1,1.0,1
+PHSIB,grönsångare,weight,154,0.1,0.1,1.0,7.5,26.1,187,4,0.4,47
+PHSIB,grönsångare,wing,158,1.0,1.0,1.0,70.0,84.0,15,1,1.0,15
+PIFIN,pilfink,weight,1159,0.1,0.1,1.0,15.5,28.8,134,3,0.3,45
+PIFIN,pilfink,wing,1044,1.0,1.0,1.0,60.0,76.0,17,1,1.0,17
+POSÅN,polyglottsångare,weight,1,0.0,0.1,1.0,10.3,10.3,1,1,0.1,1
+POSÅN,polyglottsångare,wing,1,0.0,1.0,1.0,65.0,65.0,1,1,1.0,1
+PRGÅS,prutgås,weight,1,0.0,0.1,1.0,818.0,818.0,1,1,0.1,1
+PRGÅS,prutgås,wing,1,0.0,1.0,1.0,320.0,320.0,1,1,1.0,1
+PÄUGG,pärluggla,weight,1,0.0,0.1,1.0,112.2,112.2,1,1,0.1,1
+PÄUGG,pärluggla,wing,1,0.0,1.0,1.0,170.0,170.0,1,1,1.0,1
+RIDUV,ringduva,weight,21,1.0,0.1,1.0,422.0,772.0,3501,71,7.1,50
+RIDUV,ringduva,wing,23,1.0,1.0,1.0,238.0,271.0,34,1,1.0,34
+RITRA,ringtrast,weight,68,0.1,0.1,1.0,84.0,124.0,401,8,0.8,51
+RITRA,ringtrast,wing,70,1.0,1.0,1.0,136.0,152.0,17,1,1.0,17
+RKDUV,turkduva,weight,8,3.0,0.1,1.0,168.0,250.0,821,17,1.7,49
+RKDUV,turkduva,wing,11,1.0,1.0,1.0,170.0,188.0,19,1,1.0,19
+ROKAR,roskarl,weight,1557,0.1,0.1,1.0,78.1,153.0,750,15,1.5,50
+ROKAR,roskarl,wing,1570,1.0,1.0,1.0,144.0,167.0,24,1,1.0,24
+ROSEN,rosenfink,weight,136,0.1,0.1,1.0,17.0,28.2,113,2,0.2,57
+ROSEN,rosenfink,wing,137,1.0,1.0,1.0,79.0,90.0,12,1,1.0,12
+RTURD,turturduva,weight,2,4.5,0.1,1.0,120.0,124.5,46,1,0.1,46
+RTURD,turturduva,wing,2,14.0,1.0,1.0,169.0,183.0,15,1,1.0,15
+RÖBEN,rödbena,weight,1424,0.1,0.1,1.0,29.9,158.0,1282,26,2.6,50
+RÖBEN,rödbena,wing,1409,1.0,1.0,1.0,138.0,174.0,37,1,1.0,37
+RÖHAK,rödhake,weight,35013,0.1,0.1,1.0,12.9,19.5,67,2,0.2,34
+RÖHAK,rödhake,wing,34355,1.0,1.0,1.0,68.0,78.0,11,1,1.0,11
+RÖHÖN,rörhöna,weight,2,22.7,0.1,1.0,228.3,251.0,228,5,0.5,46
+RÖHÖN,rörhöna,wing,2,13.0,1.0,1.0,177.0,190.0,14,1,1.0,14
+RÖPIP,rödstrupig piplärka,weight,3,0.5,0.1,1.0,18.1,19.8,18,1,0.1,18
+RÖPIP,rödstrupig piplärka,wing,3,1.0,1.0,1.0,85.0,91.0,7,1,1.0,7
+RÖSTJ,rödstjärt,weight,5952,0.1,0.1,1.0,11.8,17.8,61,1,0.1,61
+RÖSTJ,rödstjärt,wing,5860,1.0,1.0,1.0,76.0,86.0,11,1,1.0,11
+RÖTRA,rödvingetrast,weight,993,0.1,0.1,1.0,47.2,76.0,289,6,0.6,49
+RÖTRA,rödvingetrast,wing,989,1.0,1.0,1.0,111.0,127.0,17,1,1.0,17
+SALÖP,sandlöpare,weight,83,0.1,0.1,1.0,38.4,79.8,415,8,0.8,52
+SALÖP,sandlöpare,wing,85,1.0,1.0,1.0,119.0,132.0,14,1,1.0,14
+SIGRI,sillgrissla,weight,2,90.0,0.1,1.0,790.0,880.0,901,18,1.8,51
+SIGRI,sillgrissla,wing,2,1.0,1.0,1.0,200.0,201.0,2,1,1.0,2
+SIPIP,sibirisk piplärka,weight,1,0.0,0.1,1.0,20.9,20.9,1,1,0.1,1
+SIPIP,sibirisk piplärka,wing,1,0.0,1.0,1.0,85.0,85.0,1,1,1.0,1
+SISVA,sidensvans,weight,28,0.1,0.1,1.0,45.0,59.5,146,3,0.3,49
+SISVA,sidensvans,wing,28,1.0,1.0,1.0,112.0,125.0,14,1,1.0,14
+SITRU,silltrut,weight,1971,0.2,1.0,0.9975,190.0,970.0,781,16,16.0,49
+SITRU,silltrut,wing,72,1.0,1.0,1.0,280.0,443.0,164,3,3.0,55
+SITÄR,silvertärna,weight,5,2.8,0.1,1.0,80.0,121.8,419,8,0.8,53
+SITÄR,silvertärna,wing,6,1.0,1.0,1.0,250.0,287.0,38,1,1.0,38
+SJORR,sjöorre,weight,2,285.0,0.1,1.0,700.0,985.0,2851,58,5.8,50
+SJORR,sjöorre,wing,1,0.0,1.0,1.0,223.0,223.0,1,1,1.0,1
+SKATA,skata,weight,1,0.0,0.1,1.0,223.0,223.0,1,1,0.1,1
+SKATA,skata,wing,1,0.0,1.0,1.0,201.0,201.0,1,1,1.0,1
+SKMES,skäggmes,weight,2,0.7,0.1,1.0,14.5,15.2,8,1,0.1,8
+SKMES,skäggmes,wing,2,0.0,1.0,1.0,62.0,62.0,1,1,1.0,1
+SKMÅS,skrattmås,weight,41,0.1,0.1,1.0,150.0,280.0,1301,26,2.6,51
+SKMÅS,skrattmås,wing,35,1.0,1.0,1.0,249.0,323.0,75,2,2.0,38
+SKPIP,skärpiplärka,weight,14448,0.1,0.1,1.0,12.5,28.2,158,3,0.3,53
+SKPIP,skärpiplärka,wing,12515,1.0,1.0,1.0,80.0,95.0,16,1,1.0,16
+SMSKR,småskrake,weight,26,1.0,0.1,1.0,671.5,1254.0,5826,117,11.7,50
+SMSKR,småskrake,wing,30,1.0,1.0,1.0,223.0,262.0,40,1,1.0,40
+SMSNÄ,småsnäppa,weight,216,0.1,0.1,1.0,18.5,35.0,166,3,0.3,56
+SMSNÄ,småsnäppa,wing,220,1.0,1.0,1.0,92.0,106.0,15,1,1.0,15
+SMSPO,småspov,weight,16,2.0,0.1,1.0,283.0,500.0,2171,44,4.4,50
+SMSPO,småspov,wing,21,1.0,1.0,1.0,232.0,490.0,259,5,5.0,52
+SMSUM,småfläckig sumphöna,weight,1,0.0,0.1,1.0,72.0,72.0,1,1,0.1,1
+SMSUM,småfläckig sumphöna,wing,1,0.0,1.0,1.0,124.0,124.0,1,1,1.0,1
+SMTÄR,småtärna,weight,3,1.4,0.1,1.0,52.8,62.2,95,2,0.2,48
+SMTÄR,småtärna,wing,3,5.0,1.0,1.0,176.0,188.0,13,1,1.0,13
+SNSPA,snösparv,weight,255,0.1,0.1,1.0,28.0,53.0,251,5,0.5,51
+SNSPA,snösparv,wing,259,1.0,1.0,1.0,101.0,117.0,17,1,1.0,17
+SOGYL,sommargylling,weight,1,0.0,0.1,1.0,67.4,67.4,1,1,0.1,1
+SOGYL,sommargylling,wing,1,0.0,1.0,1.0,152.0,152.0,1,1,1.0,1
+SPGÅS,spetsbergsgås,weight,1,0.0,0.1,1.0,1260.0,1260.0,1,1,0.1,1
+SPGÅS,spetsbergsgås,wing,1,0.0,1.0,1.0,415.0,415.0,1,1,1.0,1
+SPHÖK,sparvhök,weight,228,0.1,0.1,1.0,113.4,335.0,2217,45,4.5,50
+SPHÖK,sparvhök,wing,244,1.0,1.0,1.0,120.0,249.0,130,3,3.0,44
+SPSNÄ,spovsnäppa,weight,299,0.1,0.1,1.0,40.8,81.0,403,8,0.8,51
+SPSNÄ,spovsnäppa,wing,303,1.0,1.0,1.0,119.0,139.0,21,1,1.0,21
+SPSPI,grönsiska,weight,974,0.1,0.1,1.0,9.9,15.5,57,1,0.1,57
+SPSPI,grönsiska,wing,990,1.0,1.0,1.0,68.0,78.0,11,1,1.0,11
+STARE,stare,weight,10441,0.1,0.1,1.0,56.4,91.0,347,7,0.7,50
+STARE,stare,wing,8218,1.0,1.0,1.0,117.0,139.0,23,1,1.0,23
+STEGL,steglits,weight,102,0.1,0.1,1.0,14.2,21.4,73,2,0.2,37
+STEGL,steglits,wing,103,1.0,1.0,1.0,74.0,87.0,14,1,1.0,14
+STFAL,stenfalk,weight,47,0.4,0.1,1.0,116.0,237.0,1211,24,2.4,51
+STFAL,stenfalk,wing,51,1.0,1.0,1.0,189.0,231.0,43,1,1.0,43
+STFÅG,stormfågel,wing,1,0.0,1.0,1.0,329.0,329.0,1,1,1.0,1
+STHAC,större hackspett,weight,80,0.1,0.1,1.0,62.0,99.3,374,8,0.8,47
+STHAC,större hackspett,wing,89,1.0,1.0,1.0,129.0,148.0,20,1,1.0,20
+STKNÄ,stenknäck,weight,33,0.1,0.1,1.0,42.1,61.1,191,4,0.4,48
+STKNÄ,stenknäck,wing,32,1.0,1.0,1.0,97.0,115.0,19,1,1.0,19
+STLAB,storlabb,weight,3,62.0,0.1,1.0,1200.0,1385.0,1851,37,3.7,51
+STLAB,storlabb,wing,3,4.0,1.0,1.0,416.0,425.0,10,1,1.0,10
+STMES,stjärtmes,weight,264,0.1,0.1,1.0,7.0,9.2,23,1,0.1,23
+STMES,stjärtmes,wing,257,1.0,1.0,1.0,62.0,68.0,7,1,1.0,7
+STSKV,stenskvätta,weight,1470,0.1,0.1,1.0,18.5,29.9,115,2,0.2,58
+STSKV,stenskvätta,wing,1544,1.0,1.0,1.0,90.0,108.0,19,1,1.0,19
+STSPO,storspov,weight,1,0.0,0.1,1.0,480.0,480.0,1,1,0.1,1
+STSPO,storspov,wing,1,0.0,1.0,1.0,295.0,295.0,1,1,1.0,1
+STSTA,strömstare,weight,1,0.0,0.1,1.0,56.0,56.0,1,1,0.1,1
+STSTA,strömstare,wing,1,0.0,1.0,1.0,92.0,92.0,1,1,1.0,1
+STSTR,större strandpipare,weight,1770,0.1,0.1,1.0,7.8,75.0,673,14,1.4,49
+STSTR,större strandpipare,wing,1737,1.0,1.0,1.0,116.0,141.0,26,1,1.0,26
+STSVA,stormsvala,weight,5,0.4,0.1,1.0,23.9,29.1,53,1,0.1,53
+STSVA,stormsvala,wing,5,1.0,1.0,1.0,121.0,125.0,5,1,1.0,5
+SVBUS,svarthakad buskskvätta,weight,14,0.1,0.1,1.0,11.1,16.8,58,1,0.1,58
+SVBUS,svarthakad buskskvätta,wing,14,1.0,1.0,1.0,63.0,70.0,8,1,1.0,8
+SVFLU,svartvit flugsnappare,weight,1388,0.1,0.1,1.0,9.6,14.9,54,1,0.1,54
+SVFLU,svartvit flugsnappare,wing,1373,1.0,1.0,1.0,75.0,86.0,12,1,1.0,12
+SVHÄT,svarthätta,weight,3043,0.1,0.1,1.0,14.2,23.0,89,2,0.2,45
+SVHÄT,svarthätta,wing,3048,1.0,1.0,1.0,71.0,83.0,13,1,1.0,13
+SVMES,svartmes,weight,132,0.1,0.1,1.0,7.4,10.1,28,1,0.1,28
+SVMES,svartmes,wing,141,1.0,1.0,1.0,57.0,65.0,9,1,1.0,9
+SVRÖD,svart rödstjärt,weight,349,0.1,0.1,1.0,12.2,20.6,85,2,0.2,43
+SVRÖD,svart rödstjärt,wing,360,1.0,1.0,1.0,80.0,90.0,11,1,1.0,11
+SVSNÄ,svartsnäppa,weight,1,0.0,0.1,1.0,137.9,137.9,1,1,0.1,1
+SVSNÄ,svartsnäppa,wing,1,0.0,1.0,1.0,175.0,175.0,1,1,1.0,1
+SVSPA,svarthuvad sparv,weight,4,0.7,0.1,1.0,27.4,34.1,68,2,0.2,34
+SVSPA,svarthuvad sparv,wing,4,1.0,1.0,1.0,94.0,99.0,6,1,1.0,6
+SYBOR,trädgårdssångare,weight,4360,0.1,0.1,1.0,14.1,23.3,93,2,0.2,47
+SYBOR,trädgårdssångare,wing,4413,1.0,1.0,1.0,74.0,86.0,13,1,1.0,13
+SYNÄK,sydnäktergal,weight,4,0.3,0.1,1.0,18.9,21.1,23,1,0.1,23
+SYNÄK,sydnäktergal,wing,4,1.0,1.0,1.0,82.0,90.0,9,1,1.0,9
+SÄSPA,sävsparv,weight,5903,0.1,0.1,1.0,14.0,23.2,93,2,0.2,47
+SÄSPA,sävsparv,wing,5854,1.0,1.0,1.0,72.0,88.0,17,1,1.0,17
+SÄSÅN,sävsångare,weight,149,0.1,0.1,1.0,9.0,13.9,50,1,0.1,50
+SÄSÅN,sävsångare,wing,148,1.0,1.0,1.0,60.0,74.0,15,1,1.0,15
+SÄÄRL,sädesärla,weight,3892,0.1,0.1,1.0,16.1,25.3,93,2,0.2,47
+SÄÄRL,sädesärla,wing,3728,1.0,1.0,1.0,78.0,95.0,18,1,1.0,18
+SÅLÄR,sånglärka,weight,75,0.1,0.1,1.0,24.2,42.5,184,4,0.4,46
+SÅLÄR,sånglärka,wing,78,1.0,1.0,1.0,95.0,120.0,26,1,1.0,26
+TABLÅ,tajgablåstjärt,weight,3,0.4,0.1,1.0,11.0,12.3,14,1,0.1,14
+TABLÅ,tajgablåstjärt,wing,3,1.0,1.0,1.0,77.0,80.0,4,1,1.0,4
+TAOXE,talgoxe,weight,1990,0.1,0.1,1.0,13.9,20.4,66,1,0.1,66
+TAOXE,talgoxe,wing,1896,1.0,1.0,1.0,71.0,82.0,12,1,1.0,12
+TASÅN,tajgasångare,weight,18,0.1,0.1,1.0,5.3,6.9,17,1,0.1,17
+TASÅN,tajgasångare,wing,18,1.0,1.0,1.0,54.0,59.0,6,1,1.0,6
+TATAD,gravand,weight,8,13.0,0.1,1.0,165.0,1245.0,10801,217,21.7,50
+TATAD,gravand,wing,3,25.0,1.0,1.0,280.0,337.0,58,1,1.0,58
+TATRA,taltrast,weight,2453,0.1,0.1,1.0,54.8,84.0,293,6,0.6,49
+TATRA,taltrast,wing,2444,1.0,1.0,1.0,112.0,127.0,16,1,1.0,16
+TESNÄ,tereksnäppa,weight,1,0.0,0.1,1.0,69.0,69.0,1,1,0.1,1
+TESNÄ,tereksnäppa,wing,1,0.0,1.0,1.0,132.0,132.0,1,1,1.0,1
+TOFAL,tornfalk,weight,29,0.1,0.1,1.0,132.0,221.0,891,18,1.8,50
+TOFAL,tornfalk,wing,32,1.0,1.0,1.0,240.0,272.0,33,1,1.0,33
+TOGRI,tobisgrissla,weight,116,0.3,0.1,1.0,150.0,485.0,3351,68,6.8,50
+TOGRI,tobisgrissla,wing,107,1.0,1.0,1.0,137.0,174.0,38,1,1.0,38
+TOSEG,tornseglare,weight,8,0.2,0.1,1.0,24.0,40.3,164,3,0.3,55
+TOSEG,tornseglare,wing,8,1.0,1.0,1.0,160.0,183.0,24,1,1.0,24
+TOVIP,tofsvipa,weight,4,5.7,0.1,1.0,167.4,231.0,637,13,1.3,49
+TOVIP,tofsvipa,wing,4,2.0,1.0,1.0,218.0,234.0,17,1,1.0,17
+TRKRY,trädkrypare,weight,332,0.1,0.1,1.0,6.8,9.3,26,1,0.1,26
+TRKRY,trädkrypare,wing,329,1.0,1.0,1.0,59.0,68.0,10,1,1.0,10
+TRLÄR,trädlärka,weight,9,0.1,0.1,1.0,23.2,30.7,76,2,0.2,38
+TRLÄR,trädlärka,wing,9,1.0,1.0,1.0,92.0,102.0,11,1,1.0,11
+TRMÅS,tretåig mås,weight,25,1.0,0.1,1.0,170.0,424.0,2541,51,5.1,50
+TRMÅS,tretåig mås,wing,19,1.0,1.0,1.0,288.0,332.0,45,1,1.0,45
+TROCH,skogssnäppa,weight,14,0.1,0.1,1.0,45.3,80.0,348,7,0.7,50
+TROCH,skogssnäppa,wing,14,1.0,1.0,1.0,130.0,155.0,26,1,1.0,26
+TRPIP,trädpiplärka,weight,1341,0.1,0.1,1.0,16.7,26.6,100,2,0.2,50
+TRPIP,trädpiplärka,wing,1360,1.0,1.0,1.0,80.0,95.0,16,1,1.0,16
+TRTRÄ,trädgårdsträdkrypare,weight,1,0.0,0.1,1.0,8.5,8.5,1,1,0.1,1
+TRTRÄ,trädgårdsträdkrypare,wing,1,0.0,1.0,1.0,65.0,65.0,1,1,1.0,1
+TTROB,rödbena (robusta),weight,15,0.2,0.1,1.0,104.3,152.8,486,10,1.0,49
+TTROB,rödbena (robusta),wing,15,1.0,1.0,1.0,168.0,180.0,13,1,1.0,13
+TUSNÄ,tuvsnäppa,weight,1,0.0,0.1,1.0,82.0,82.0,1,1,0.1,1
+TUSNÄ,tuvsnäppa,wing,1,0.0,1.0,1.0,148.0,148.0,1,1,1.0,1
+TÖSKA,törnskata,weight,533,0.1,0.1,1.0,23.4,37.4,141,3,0.3,47
+TÖSKA,törnskata,wing,543,1.0,1.0,1.0,89.0,102.0,14,1,1.0,14
+TÖSÅN,törnsångare,weight,2119,0.1,0.1,1.0,11.5,18.3,69,2,0.2,35
+TÖSÅN,törnsångare,wing,2151,1.0,1.0,1.0,68.0,79.0,12,1,1.0,12
+VAFÅG,varfågel,weight,50,0.1,0.1,1.0,55.4,84.5,292,6,0.6,49
+VAFÅG,varfågel,wing,50,1.0,1.0,1.0,108.0,120.0,13,1,1.0,13
+VAPIP,vattenpiplärka,weight,1,0.0,0.1,1.0,24.3,24.3,1,1,0.1,1
+VAPIP,vattenpiplärka,wing,1,0.0,1.0,1.0,85.0,85.0,1,1,1.0,1
+VARAL,vattenrall,weight,202,0.1,0.1,1.0,25.4,170.0,1447,29,2.9,50
+VARAL,vattenrall,wing,112,1.0,1.0,1.0,105.0,131.0,27,1,1.0,27
+VIHÄM,vinterhämpling,weight,930,0.1,0.1,1.0,12.1,20.4,84,2,0.2,42
+VIHÄM,vinterhämpling,wing,930,1.0,1.0,1.0,73.0,84.0,12,1,1.0,12
+ÄNPIP,ängspiplärka,weight,20812,0.1,0.1,1.0,13.9,21.9,81,2,0.2,41
+ÄNPIP,ängspiplärka,wing,20394,1.0,1.0,1.0,75.0,88.0,14,1,1.0,14
+ÄRSÅN,ärtsångare,weight,3789,0.1,0.1,1.0,9.5,14.6,52,1,0.1,52
+ÄRSÅN,ärtsångare,wing,3841,1.0,1.0,1.0,62.0,72.0,11,1,1.0,11

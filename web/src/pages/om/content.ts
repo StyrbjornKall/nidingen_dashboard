@@ -91,7 +91,7 @@ export function faq(f: Facts): Qa[] {
       id: "jamfor",
       q: "Hur jämför jag flera arter?",
       a:
-        `Använd artväljaren högst upp på sidorna Sammanfattning, Trender, Morfometri och Fenologi. Du kan välja upp till ${f.maxCompare} arter. ` +
+        `Använd artväljaren högst upp på sidorna Sammanfattning, Trender, Biometri och Fenologi. Du kan välja upp till ${f.maxCompare} arter. ` +
         "Varje art får en egen färg som är densamma i alla diagram, och ditt val följer med när du byter sida. Du kan också klicka på en art i listorna " +
         "för att lägga till eller ta bort den.",
     },

@@ -101,7 +101,7 @@ def test_real_config_is_valid():
 def test_counts_reconcile_with_source(fx):
     mismatches = one(fx, """
         SELECT count(*) FROM (
-            SELECT species_code AS species, count(*) AS n FROM ringon GROUP BY 1
+            SELECT species_code AS species, count(*) AS n FROM ringon WHERE species_code <> 'KASS' GROUP BY 1
         ) src
         FULL JOIN (
             SELECT species, sum(n_new) AS n FROM agg_counts_year_season
@@ -111,7 +111,7 @@ def test_counts_reconcile_with_source(fx):
     """)[0]
     assert mismatches == 0
     assert one(fx, "SELECT sum(n_new), sum(n_recap) FROM agg_counts_day WHERE species = 'ALLA'") == (
-        one(fx, "SELECT count(*) FROM ringon")[0], one(fx, "SELECT count(*) FROM kontr")[0])
+        one(fx, "SELECT count(*) FROM ringon WHERE species_code <> 'KASS'")[0], one(fx, "SELECT count(*) FROM kontr")[0])
 
 
 def test_alla_equals_sum_of_species(fx):
@@ -245,8 +245,9 @@ def test_histograms(fx):
                            WHERE species='DDD' AND season='helar' AND variable='weight' ORDER BY bin""").fetchall()
     wing = fx.execute("""SELECT bin, bin_low, bin_high, n FROM agg_morph_hist
                          WHERE species='DDD' AND season='helar' AND variable='wing' ORDER BY bin""").fetchall()
-    # Weight spans ~99 steps of 0.1 g -> 50 equal bins.
+    # Weight spans ~100 steps of 0.1 g -> 50 bins, each exactly two steps (0.2 g) wide.
     assert len(weight) == 50
+    assert all(r[2] - r[1] == pytest.approx(0.2) for r in weight)
     assert all(a[2] == pytest.approx(b[1]) for a, b in zip(weight, weight[1:]))
     assert sum(r[3] for r in weight) <= 100
     # Wing spans 11 whole millimetres -> one bin per value, centred on it.
@@ -363,7 +364,9 @@ def real_config():
 
 
 def test_real_totals_match_source(real):
-    n_ringon, n_kontr = one(real, "SELECT (SELECT count(*) FROM ringon), (SELECT count(*) FROM kontr)")
+    skip = ", ".join(f"'{c}'" for c in ba.NON_SPECIES_CODES)
+    n_ringon, n_kontr = one(real, f"""SELECT (SELECT count(*) FROM ringon WHERE species_code NOT IN ({skip})),
+                                             (SELECT count(*) FROM kontr WHERE species_code NOT IN ({skip}))""")
     assert one(real, "SELECT n_new_total, n_recap_total FROM agg_species WHERE species='ALLA'") == (n_ringon, n_kontr)
     assert one(real, """SELECT sum(n_new), sum(n_recap) FROM agg_counts_year_season
                         WHERE species <> 'ALLA' AND season = 'helar'""") == (n_ringon, n_kontr)
@@ -372,7 +375,8 @@ def test_real_totals_match_source(real):
 
 def test_real_per_species_counts_match_ringon(real):
     mismatches = one(real, """
-        SELECT count(*) FROM (SELECT species_code AS species, count(*) n FROM ringon GROUP BY 1) src
+        SELECT count(*) FROM (SELECT species_code AS species, count(*) n FROM ringon
+                              WHERE species_code <> 'KASS' GROUP BY 1) src
         FULL JOIN (SELECT species, n_new_total AS n FROM agg_species
                    WHERE species <> 'ALLA' AND n_new_total > 0) agg USING (species)
         WHERE src.n IS DISTINCT FROM agg.n
@@ -431,3 +435,103 @@ def test_real_recoveries(real):
     assert got == {"out": n_out, "in": n_in}
     assert one(real, "SELECT count(*) - count(DISTINCT case_number) FROM agg_recoveries")[0] == 0
     assert one(real, "SELECT count(*) FROM agg_recoveries WHERE country IS NULL")[0] == 0
+
+
+def test_non_species_codes_are_left_out(fx):
+    assert one(fx, "SELECT count(*) FROM agg_species WHERE species = 'KASS'")[0] == 0
+    assert one(fx, "SELECT count(*) FROM agg_counts_day WHERE species = 'KASS'")[0] == 0
+    alla = one(fx, "SELECT n_new_total FROM agg_species WHERE species = 'ALLA'")[0]
+    real_birds = one(fx, "SELECT count(*) FROM ringon WHERE species_code <> 'KASS'")[0]
+    assert alla == real_birds
+
+
+def test_histogram_bins_are_whole_measurement_steps(fx):
+    # 100 weights, 0.1 g apart: bin width must be a multiple of 0.1 g, never 0.132-style.
+    widths = fx.execute("""SELECT DISTINCT round((bin_high - bin_low) / 0.1, 6) FROM agg_morph_hist
+                           WHERE variable = 'weight'""").fetchall()
+    assert all(float(w[0]).is_integer() for w in widths)
+
+
+def test_scatter_points_and_fit(fx):
+    pts = fx.execute("""SELECT wing, weight FROM agg_morph_points
+                        WHERE species='DDD' AND season='helar' ORDER BY rk""").fetchall()
+    assert len(pts) == 100
+    again = fx.execute("""SELECT wing, weight FROM agg_morph_points
+                          WHERE species='DDD' AND season='helar' ORDER BY rk""").fetchall()
+    assert pts == again
+    n, slope, intercept = one(fx, """SELECT n, slope, intercept FROM agg_morph_fit
+                                     WHERE species='DDD' AND season='helar'""")
+    xs = [60 + i % 11 for i in range(100)]
+    ys = [10.0 + i / 10 for i in range(100)]
+    xm, ym = sum(xs) / 100, sum(ys) / 100
+    sxx = sum((x - xm) ** 2 for x in xs)
+    expect = sum((x - xm) * (y - ym) for x, y in zip(xs, ys)) / sxx
+    assert n == 100 and slope == pytest.approx(expect) and intercept == pytest.approx(ym - expect * xm)
+
+
+def test_scatter_points_are_capped(fx, monkeypatch):
+    monkeypatch.setattr(ba, "MAX_SCATTER_POINTS", 10)
+    ba._build_morphometrics(fx, ba.load_config(REPO / "config"))
+    assert one(fx, "SELECT count(*) FROM agg_morph_points WHERE species='DDD' AND season='helar'")[0] == 10
+    # the fit still uses every bird
+    assert one(fx, "SELECT n FROM agg_morph_fit WHERE species='DDD' AND season='helar'")[0] == 100
+
+
+# ---------------------------------------------------------------------------
+# Histogram bin plan (resolution per species)
+# ---------------------------------------------------------------------------
+
+def test_choose_step_multiple_targets_about_fifty_bins():
+    assert ba.choose_step_multiple(20) == 1          # narrow range: one step per bin
+    assert ba.choose_step_multiple(66) == 1          # 66 vs 33 bins: 66 is closer to 50 by 16 vs 17
+    assert ba.choose_step_multiple(100) == 2         # 50 bins
+    assert ba.choose_step_multiple(120) == 2         # 60 vs 40 bins: tie -> finer
+    assert ba.choose_step_multiple(500) == 10        # 50 bins
+
+
+def test_analyse_values_finds_the_measurement_resolution():
+    # Weighed in whole grams only (units are 0.1 g): values 100, 110, ..., 590 g
+    whole = {v * 10: 5 for v in range(100, 160)}
+    r = ba.analyse_values("weight", whole)
+    assert r["resolution"] == 1.0 and r["min_gap"] == 1.0 and r["grid_share"] == 1.0
+    assert r["bin_width"] == r["step_multiple"] * 1.0
+    # 0.1 g species: every tenth present
+    tenths = {v: 5 for v in range(100, 200)}
+    r = ba.analyse_values("weight", tenths)
+    assert r["resolution"] == 0.1 and r["min_gap"] == 0.1
+    assert r["n_steps"] == r["n_bins"] * r["step_multiple"] or r["n_bins"] == -(-r["n_steps"] // r["step_multiple"])
+    # A few off-grid values (< 3 %) do not change the resolution
+    mixed = {v * 10: 100 for v in range(20, 80)}
+    mixed[123] = 2
+    assert ba.analyse_values("weight", mixed)["resolution"] == 1.0
+    # Too few birds: stay at the finest step
+    assert ba.analyse_values("weight", {100: 5, 200: 5})["resolution"] == 0.1
+    # Wing length every 2 mm
+    assert ba.analyse_values("wing", {w: 10 for w in range(60, 100, 2)})["resolution"] == 2.0
+
+
+def test_histogram_plan_csv_roundtrip_and_override(fx, tmp_path):
+    plan = ba.derive_hist_plan(fx)
+    ddd = next(r for r in plan if r["species"] == "DDD" and r["variable"] == "weight")
+    assert ddd["resolution"] == 0.1 and ddd["bin_width"] == 0.2 and ddd["n_bins"] == 50
+    assert not any(r["species"] == "KASS" for r in plan)
+    path = tmp_path / "bins.csv"
+    ba.write_hist_plan(path, plan)
+    back = ba.read_hist_plan(path)
+    assert [(r["species"], r["variable"], r["bin_width"]) for r in back] == \
+           [(r["species"], r["variable"], r["bin_width"]) for r in plan]
+    # a hand-edited bin width wins
+    for r in back:
+        if r["species"] == "DDD" and r["variable"] == "weight":
+            r["bin_width"] = 0.5
+    ba._build_morphometrics(fx, ba.load_config(REPO / "config"), back)
+    widths = fx.execute("""SELECT DISTINCT round(bin_high - bin_low, 6) FROM agg_morph_hist
+                           WHERE species='DDD' AND variable='weight'""").fetchall()
+    assert widths == [(0.5,)]
+    ba._build_morphometrics(fx, ba.load_config(REPO / "config"))   # restore for later tests
+
+
+def test_seasons_share_bin_edges(fx):
+    edges = fx.execute("""SELECT season, min(bin_low) FROM agg_morph_hist
+                          WHERE species='DDD' AND variable='weight' GROUP BY season""").fetchall()
+    assert len({round(e[1], 6) for e in edges}) == 1   # DDD is all autumn: same grid as helar

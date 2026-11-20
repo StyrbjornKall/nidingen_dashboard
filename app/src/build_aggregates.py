@@ -25,7 +25,7 @@ Tables written (see HANDOFF.md §4.2 and .github/copilot-instructions.md):
 - ``agg_phenology_species``  species × season × period: mean of yearly medians
 - ``agg_trend``              species × season × period: OLS slope with 95 % CI
 - ``agg_morph_species``      species × season: weight and wing summaries
-- ``agg_morph_hist``         species × season × variable × bin (50 bins)
+- ``agg_morph_hist``         species × season × variable × bin (about 50 bins)
 - ``agg_age_sex``            species × season × kind × raw category
 - ``agg_recoveries``         one row per recovery (outbound) or foreign bird (inbound)
 - ``agg_weather_daily``      one row per local date: SMHI weather, vector-mean
@@ -67,13 +67,30 @@ _DEFAULT_DB = _PROJECT_DIR / "data" / "bird_ringing_0016.duckdb"
 _DEFAULT_CONFIG_DIR = _PROJECT_DIR / "config"
 
 ALL_SPECIES = "ALLA"
+# Codes that are not birds: "kasserad ring" (discarded ring). Left out of every aggregate.
+NON_SPECIES_CODES = ("KASS",)
 WHOLE_YEAR = "helar"
 N_WEEKS = 52
 N_HIST_BINS = 50
-# Measurement resolution: weight is recorded to 0.1 g, wing to 1 mm.
-HIST_RESOLUTION = {"weight": 0.1, "wing": 1.0}
+# Histogram bins come from data/metadata/histogram_bins.csv, made by
+# app/src/preprocess_data/analyze_histogram_bins.py. Per species and variable
+# it records the measurement resolution (smallest step the recorded values lie
+# on) and a bin width that is a whole number of those steps, giving about
+# N_HIST_BINS bins. Smallest unit of each variable: weight 0.1 g, wing 1 mm.
+HIST_UNIT = {"weight": 0.1, "wing": 1.0}
+# Coarser steps a species may be recorded in, as multiples of HIST_UNIT.
+HIST_CANDIDATE_STEPS = {"weight": (1, 5, 10, 20, 50, 100), "wing": (1, 2, 5, 10)}
+HIST_GRID_SHARE = 0.97      # a step counts as the resolution when this share of values lies on it
+HIST_MIN_N_COARSE = 30      # with fewer birds, never conclude a coarser step than the finest
+DEFAULT_HIST_BINS_CSV = _PROJECT_DIR / "data" / "metadata" / "histogram_bins.csv"
+HIST_BINS_COLUMNS = [
+    "species", "swedish_name", "variable", "n", "min_gap", "resolution", "grid_share",
+    "lo", "hi", "n_steps", "step_multiple", "bin_width", "n_bins",
+]
 HIST_LOW_Q = 0.005
 HIST_HIGH_Q = 0.995
+# Weight vs wing scatter: at most this many points per species × season are stored.
+MAX_SCATTER_POINTS = 5000
 
 # Nidingen bounding box: recoveries inside it are local, not movements.
 NIDINGEN_BBOX = {"lat": (57.25, 57.35), "lon": (11.85, 11.95)}
@@ -94,6 +111,8 @@ AGG_TABLES = [
     "agg_trend",
     "agg_morph_species",
     "agg_morph_hist",
+    "agg_morph_points",
+    "agg_morph_fit",
     "agg_age_sex",
     "agg_recoveries",
     "agg_weather_daily",
@@ -240,13 +259,16 @@ def _build_helpers(con: duckdb.DuckDBPyConnection, config: dict[str, Any]) -> No
         [(p["id"], p["from"], p["to"]) for p in config["period_options"]],
     )
 
-    con.execute("""
+    excluded = ", ".join(f"'{c}'" for c in NON_SPECIES_CODES)
+    con.execute(f"""
         CREATE OR REPLACE TEMP TABLE _events AS
         SELECT species_code, date, 'new' AS kind FROM ringon
         WHERE NULLIF(trim(species_code), '') IS NOT NULL AND date IS NOT NULL
+          AND species_code NOT IN ({excluded})
         UNION ALL
         SELECT species_code, date, 'recap' AS kind FROM kontr
         WHERE NULLIF(trim(species_code), '') IS NOT NULL AND date IS NOT NULL
+          AND species_code NOT IN ({excluded})
     """)
 
 
@@ -498,15 +520,133 @@ def _build_trend(con, config) -> None:
         )
 
 
-def _build_morphometrics(con, config) -> None:
+# ---------------------------------------------------------------------------
+# Histogram plan: resolution and bin width per species × variable
+# ---------------------------------------------------------------------------
+
+def _quantile_disc(sorted_counts: list[tuple[int, int]], total: int, q: float) -> int:
+    """DuckDB's quantile_disc on (value, count) pairs sorted by value."""
+    need = max(1, math.ceil(q * total - 1e-9))
+    cum = 0
+    for v, n in sorted_counts:
+        cum += n
+        if cum >= need:
+            return v
+    return sorted_counts[-1][0]
+
+
+def choose_step_multiple(n_steps: int, target: int = N_HIST_BINS) -> int:
+    """Whole number of measurement steps per bin that gives a bin count closest to ``target``.
+
+    Ties go to the finer bin. A range of fewer steps than the target keeps one step per bin.
+    """
+    best_k, best_gap = 1, abs(n_steps - target)
+    for k in range(2, max(2, n_steps) + 1):
+        gap = abs(math.ceil(n_steps / k) - target)
+        if gap < best_gap:
+            best_k, best_gap = k, gap
+    return best_k
+
+
+def analyse_values(variable: str, counts: dict[int, int]) -> dict[str, Any] | None:
+    """Resolution and bin width for one species × variable.
+
+    ``counts`` maps a value, in units of ``HIST_UNIT[variable]``, to the number of birds.
+    The resolution is the coarsest candidate step that at least ``HIST_GRID_SHARE`` of the
+    birds lie on (a species weighed in whole grams, a wing measured to 2 mm, …). The range
+    is the 0.5–99.5 % quantiles, the same range the histogram shows.
+    """
+    total = sum(counts.values())
+    if total == 0:
+        return None
+    pairs = sorted(counts.items())
+    values = [v for v, _ in pairs]
+    min_gap = min((b - a for a, b in zip(values, values[1:])), default=0)
+
+    steps = HIST_CANDIDATE_STEPS[variable]
+    res, share = steps[0], 1.0
+    for st in steps:
+        on_grid = sum(n for v, n in pairs if v % st == 0) / total
+        if st == steps[0]:
+            share = on_grid
+        elif on_grid >= HIST_GRID_SHARE and total >= HIST_MIN_N_COARSE:
+            res, share = st, on_grid
+    lo = _quantile_disc(pairs, total, HIST_LOW_Q)
+    hi = _quantile_disc(pairs, total, HIST_HIGH_Q)
+    n_steps = int(round((hi - lo) / res)) + 1
+    k = choose_step_multiple(n_steps)
+    unit = HIST_UNIT[variable]
+    nd = 1 if variable == "weight" else 0
+    return {
+        "variable": variable, "n": total,
+        "min_gap": round(min_gap * unit, nd), "resolution": round(res * unit, nd),
+        "grid_share": round(share, 4),
+        "lo": round(lo * unit, nd), "hi": round(hi * unit, nd),
+        "n_steps": n_steps, "step_multiple": k,
+        "bin_width": round(k * res * unit, nd), "n_bins": math.ceil(n_steps / k),
+    }
+
+
+def derive_hist_plan(con) -> list[dict[str, Any]]:
+    """The plan for every species × variable in ``ringon`` (all years, whole year)."""
+    excluded = ", ".join(f"'{c}'" for c in NON_SPECIES_CODES)
+    rows = con.execute(f"""
+        SELECT species_code, 'weight' AS variable, CAST(round(weight * 10) AS BIGINT) AS v, count(*) AS n
+        FROM ringon WHERE weight IS NOT NULL AND date IS NOT NULL AND species_code NOT IN ({excluded})
+              AND NULLIF(trim(species_code), '') IS NOT NULL GROUP BY ALL
+        UNION ALL
+        SELECT species_code, 'wing', CAST(wing_length AS BIGINT), count(*)
+        FROM ringon WHERE wing_length IS NOT NULL AND date IS NOT NULL AND species_code NOT IN ({excluded})
+              AND NULLIF(trim(species_code), '') IS NOT NULL GROUP BY ALL
+    """).fetchall()
+    names = dict(con.execute("SELECT artkod, swedish_name FROM artkod_lookup").fetchall()) \
+        if _has_table(con, "artkod_lookup") else {}
+    grouped: dict[tuple[str, str], dict[int, int]] = {}
+    for species, variable, v, n in rows:
+        grouped.setdefault((species, variable), {})[v] = n
+    plan = []
+    for (species, variable), counts in sorted(grouped.items()):
+        row = analyse_values(variable, counts)
+        if row:
+            plan.append({"species": species, "swedish_name": names.get(species) or "", **row})
+    return plan
+
+
+def _has_table(con, name: str) -> bool:
+    return con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = ?", [name]).fetchone()[0] > 0
+
+
+def write_hist_plan(path: Path, plan: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=HIST_BINS_COLUMNS, lineterminator="\n")
+        w.writeheader()
+        w.writerows(plan)
+
+
+def read_hist_plan(path: Path) -> list[dict[str, Any]]:
+    """Rows of the metadata CSV. Only species, variable, resolution, lo and bin_width are used."""
+    out = []
+    with open(path, encoding="utf-8", newline="") as fh:
+        for r in csv.DictReader(fh):
+            out.append({**r, "resolution": float(r["resolution"]), "lo": float(r["lo"]),
+                        "bin_width": float(r["bin_width"])})
+    return out
+
+
+
+def _build_morphometrics(con, config, hist_plan: list[dict[str, Any]] | None = None) -> None:
     season = _season_sql(config, "month(date)")
+    excluded = ", ".join(f"'{c}'" for c in NON_SPECIES_CODES)
     con.execute(f"""
         CREATE OR REPLACE TEMP TABLE _birds AS
         SELECT species_code AS species, {season} AS season,
+               hash(ring_number, date) AS h,
                round(CAST(weight AS DOUBLE), 1) AS weight, CAST(wing_length AS DOUBLE) AS wing,
                NULLIF(trim(age_code), '') AS age_code, NULLIF(trim(sex), '') AS sex
         FROM ringon
         WHERE NULLIF(trim(species_code), '') IS NOT NULL AND date IS NOT NULL
+          AND species_code NOT IN ({excluded})
     """)
 
     con.execute(f"""
@@ -542,11 +682,20 @@ def _build_morphometrics(con, config) -> None:
         ORDER BY m.species, m.season
     """)
 
+    # The bin plan: derived from the data, then overridden row by row by the metadata
+    # CSV (so a hand-edited bin width wins, and a species missing from the CSV still works).
+    plan = {(r["species"], r["variable"]): r for r in derive_hist_plan(con)}
+    for r in hist_plan or []:
+        plan[(r["species"], r["variable"])] = r
+    con.execute("CREATE OR REPLACE TEMP TABLE _hist_plan "
+                "(species VARCHAR, variable VARCHAR, res DOUBLE, width DOUBLE, anchor DOUBLE)")
+    con.executemany("INSERT INTO _hist_plan VALUES (?, ?, ?, ?, ?)",
+                    [(sp, var, r["resolution"], r["bin_width"], r["lo"]) for (sp, var), r in plan.items()])
+
     # Histograms between the 0.5 % and 99.5 % quantiles (actual data values) of each
     # species × season × variable; values outside that range are dropped.
-    # 50 equal-width bins, unless the range spans fewer than 50 measurement
-    # steps (1 mm, 0.1 g): then one bin per possible value, so integer wing
-    # lengths don't leave empty bins between them.
+    # The bin width is a whole number of the species' measurement steps (see the
+    # bin plan above), so no bin holds more recorded values than its neighbours.
     con.execute(f"""
         CREATE OR REPLACE TABLE agg_morph_hist AS
         WITH long AS (
@@ -562,28 +711,25 @@ def _build_morphometrics(con, config) -> None:
         q AS (
             SELECT species, season, variable,
                    quantile_disc(v, {HIST_LOW_Q})  AS lo,
-                   quantile_disc(v, {HIST_HIGH_Q}) AS hi,
-                   CASE variable WHEN 'weight' THEN {HIST_RESOLUTION['weight']}
-                                 ELSE {HIST_RESOLUTION['wing']} END AS res
+                   quantile_disc(v, {HIST_HIGH_Q}) AS hi
             FROM long_all
             GROUP BY species, season, variable
         ),
-        bounds AS (
-            SELECT *,
-                   CAST(round((hi - lo) / res) AS INTEGER) + 1 < {N_HIST_BINS} AS per_value
-            FROM q
-        ),
         edges AS (
-            SELECT species, season, variable, lo, hi,
-                   CASE WHEN per_value THEN lo - res / 2 ELSE lo END AS start,
-                   CASE WHEN per_value THEN res ELSE (hi - lo) / {N_HIST_BINS} END AS width,
-                   CASE WHEN per_value THEN CAST(round((hi - lo) / res) AS INTEGER) + 1
-                        ELSE {N_HIST_BINS} END AS n_bins
-            FROM bounds
+            -- One bin grid per species × variable (anchored half a step below the whole-year
+            -- low end), so every season uses the same bin edges; a season shows the bins
+            -- between its own low and high end.
+            SELECT q.species, q.season, q.variable, q.lo, q.hi,
+                   p.anchor - p.res / 2 AS start,
+                   p.width,
+                   CAST(floor((q.lo - (p.anchor - p.res / 2)) / p.width) AS INTEGER) AS first_bin,
+                   CAST(floor((q.hi - (p.anchor - p.res / 2)) / p.width) AS INTEGER) AS last_bin
+            FROM q JOIN _hist_plan p USING (species, variable)
         ),
         binned AS (
             SELECT l.species, l.season, l.variable,
-                   least(greatest(CAST(floor((l.v - e.start) / e.width) AS INTEGER), 0), e.n_bins - 1) AS bin
+                   least(greatest(CAST(floor((l.v - e.start) / e.width) AS INTEGER) - e.first_bin, 0),
+                         e.last_bin - e.first_bin) AS bin
             FROM long_all l
             JOIN edges e USING (species, season, variable)
             WHERE l.v BETWEEN e.lo AND e.hi
@@ -594,18 +740,64 @@ def _build_morphometrics(con, config) -> None:
         ),
         grid AS (
             SELECT e.*, CAST(i AS INTEGER) AS bin
-            FROM edges e, range({N_HIST_BINS}) r(i)
-            WHERE i < e.n_bins
+            FROM edges e, range(512) r(i)
+            WHERE i <= e.last_bin - e.first_bin
         )
         SELECT
             g.species, g.season, g.variable, g.bin,
-            g.start + g.width * g.bin       AS bin_low,
-            g.start + g.width * (g.bin + 1) AS bin_high,
+            g.start + g.width * (g.first_bin + g.bin)     AS bin_low,
+            g.start + g.width * (g.first_bin + g.bin + 1) AS bin_high,
             CAST(coalesce(c.n, 0) AS INTEGER) AS n
         FROM grid g
         LEFT JOIN counts c USING (species, season, variable, bin)
         ORDER BY g.species, g.season, g.variable, g.bin
     """)
+
+    # Weight vs wing scatter. Points: a deterministic sample (ordered by a hash of
+    # the ring and date) of at most MAX_SCATTER_POINTS per species × season.
+    # Fit: OLS of weight on wing over *all* birds with both values, not the sample.
+    con.execute(f"""
+        CREATE OR REPLACE TEMP TABLE _pairs AS
+        SELECT species, season, h, wing, weight FROM _birds
+        WHERE weight IS NOT NULL AND wing IS NOT NULL
+        UNION ALL
+        SELECT species, '{WHOLE_YEAR}' AS season, h, wing, weight FROM _birds
+        WHERE weight IS NOT NULL AND wing IS NOT NULL
+    """)
+    con.execute(f"""
+        CREATE OR REPLACE TABLE agg_morph_points AS
+        SELECT species, season,
+               CAST(row_number() OVER (PARTITION BY species, season ORDER BY h, wing, weight) AS INTEGER) AS rk,
+               CAST(wing AS INTEGER) AS wing, weight
+        FROM _pairs
+        QUALIFY rk <= {MAX_SCATTER_POINTS}
+        ORDER BY species, season, rk
+    """)
+    con.execute("""
+        CREATE OR REPLACE TABLE agg_morph_fit (
+            species VARCHAR, season VARCHAR, n INTEGER,
+            slope DOUBLE, intercept DOUBLE, x_mean DOUBLE, sxx DOUBLE,
+            residual_se DOUBLE, t_crit DOUBLE)
+    """)
+    rows = []
+    cur_key, xs, ys = None, [], []
+
+    def flush():
+        fit = ols_with_ci(xs, ys) if cur_key else None
+        if fit:
+            rows.append((cur_key[0], cur_key[1], fit["n"], fit["slope"], fit["intercept"],
+                         fit["x_mean"], fit["sxx"], fit["residual_se"], fit["t_crit"]))
+
+    for species, season, wing, weight in con.execute(
+        "SELECT species, season, wing, weight FROM _pairs ORDER BY species, season"
+    ).fetchall():
+        if (species, season) != cur_key:
+            flush()
+            cur_key, xs, ys = (species, season), [], []
+        xs.append(wing)
+        ys.append(weight)
+    flush()
+    con.executemany("INSERT INTO agg_morph_fit VALUES (?,?,?,?,?,?,?,?,?)", rows)
 
     # Raw age codes and sex codes, never grouped. NULL = missing ('' or NULL).
     con.execute(f"""
@@ -848,8 +1040,12 @@ def build_all(
     con: duckdb.DuckDBPyConnection,
     config: dict[str, Any],
     countries: list[tuple[str, str]],
+    hist_plan: list[dict[str, Any]] | None = None,
 ) -> None:
-    """(Re)create every agg_* table in one transaction."""
+    """(Re)create every agg_* table in one transaction.
+
+    ``hist_plan`` = rows of ``data/metadata/histogram_bins.csv`` (see ``read_hist_plan``).
+    """
     validate_config(config)
     con.execute("BEGIN TRANSACTION")
     try:
@@ -860,7 +1056,7 @@ def build_all(
         _build_counts_week(con, config)
         _build_phenology(con, config)
         _build_trend(con, config)
-        _build_morphometrics(con, config)
+        _build_morphometrics(con, config, hist_plan)
         _build_recoveries(con, countries)
         _build_weather_daily(con, config)
         _build_info(con, config, countries)
@@ -893,6 +1089,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--db", type=Path, default=_DEFAULT_DB,
                         help=f"DuckDB database to update (default: {_DEFAULT_DB})")
+    parser.add_argument("--bins-csv", type=Path, default=DEFAULT_HIST_BINS_CSV,
+                        help=f"Histogram bin plan from analyze_histogram_bins.py (default: {DEFAULT_HIST_BINS_CSV}); "
+                             "species missing from it are derived from the data")
     parser.add_argument("--config-dir", type=Path, default=_DEFAULT_CONFIG_DIR,
                         help=f"Directory with analysis.json and euring_countries.csv (default: {_DEFAULT_CONFIG_DIR})")
     args = parser.parse_args()
@@ -902,10 +1101,17 @@ def main() -> None:
     config = load_config(args.config_dir)
     countries = load_countries(args.config_dir)
 
+    hist_plan = None
+    if args.bins_csv.exists():
+        hist_plan = read_hist_plan(args.bins_csv)
+        print(f"Histogram bins: {len(hist_plan)} rows from {args.bins_csv}")
+    else:
+        print(f"Histogram bins: {args.bins_csv} not found, deriving from the data "
+              "(run app/src/preprocess_data/analyze_histogram_bins.py to create it)")
     print(f"Building aggregates in {args.db}")
     con = duckdb.connect(str(args.db))
     try:
-        build_all(con, config, countries)
+        build_all(con, config, countries, hist_plan)
         con.execute("CHECKPOINT")
         report(con)
     finally:

@@ -1,4 +1,4 @@
-"""Morfometri: species means for the bubble chart, and per-species detail."""
+"""Biometri: species means for the bubble chart, and per-species detail."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import duckdb
 from fastapi import APIRouter, Depends, Query
 
 from ..params import SeasonOrYear, get_cursor, get_store, parse_species, rnd
-from ..schemas import MorphDetails, MorphMeans
+from ..schemas import MorphDetails, MorphMeans, MorphScatter
 from ..store import DataStore
 
 router = APIRouter(prefix="/morphometrics")
@@ -88,5 +88,37 @@ def detail(
             "wing": measure(code, "wing"),
             "age": _categories([(c, n) for sp, k, c, n in cats if sp == code and k == "age"]),
             "sex": _categories([(c, n) for sp, k, c, n in cats if sp == code and k == "sex"]),
+        })
+    return {"season": season, "species": out}
+
+
+@router.get("/scatter", response_model=MorphScatter)
+def scatter(
+    species: str = Query(..., description="Comma-separated codes (max 6, not ALLA)"),
+    season: SeasonOrYear = "host",
+    store: DataStore = Depends(get_store),
+    cur: duckdb.DuckDBPyConnection = Depends(get_cursor),
+) -> dict:
+    codes = parse_species(store, species, allow_all=False)
+    pts = cur.execute("""
+        SELECT species, wing, weight FROM agg_morph_points
+        WHERE list_contains(?, species) AND season = ? ORDER BY species, rk
+    """, [codes, season]).fetchall()
+    fits = {r[0]: r for r in cur.execute("""
+        SELECT species, n, slope, intercept, x_mean, sxx, residual_se, t_crit FROM agg_morph_fit
+        WHERE list_contains(?, species) AND season = ?
+    """, [codes, season]).fetchall()}
+    out = []
+    for code in codes:
+        mine = [[float(w), float(g)] for sp, w, g in pts if sp == code]
+        f = fits.get(code)
+        out.append({
+            "species": code,
+            "n_total": f[1] if f else len(mine),
+            "n_shown": len(mine),
+            "points": mine,
+            "fit": None if not f else {
+                "n": f[1], "slope": f[2], "intercept": f[3], "x_mean": f[4],
+                "sxx": f[5], "residual_se": f[6], "t_crit": f[7]},
         })
     return {"season": season, "species": out}

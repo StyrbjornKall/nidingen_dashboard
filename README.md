@@ -15,14 +15,14 @@ as a Docker container on SciLifeLab Serve. The user interface is in Swedish.
 |---|---|
 | **Hem** | Landing page |
 | **Sammanfattning** | Key figures, time series (day/week/month/year, bar or line) and the top 100 species of all time |
-| **Morfometri** | Weight, wing length, age and fat-score distributions, plus a bubble chart |
+| **Biometri** | Weight, wing length, age and fat-score distributions, plus a bubble chart |
 | **Fenologi** | Migration timing: weekly distribution, ridgeline and seasonal plots |
 | **Värmekarta** | Species × week heatmap for one year or the average over all years (top N species) |
 | **Väderanalys** | SMHI weather time series for Nidingen A, gap-filled from Vinga A |
 | **Återfynd** | World map of Nidingen birds found elsewhere and foreign-ringed birds caught at Nidingen |
 | **Om websidan** | About page and FAQ |
 
-The Sammanfattning, Morfometri, Fenologi and Värmekarta tabs share a filter
+The Sammanfattning, Biometri, Fenologi and Värmekarta tabs share a filter
 panel for species (including an aggregate `TOTAL`), time aggregation and
 date range.
 

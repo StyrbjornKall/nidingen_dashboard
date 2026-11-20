@@ -37,6 +37,16 @@
   border-top: 1.5px solid #9aa89f;
 }
 
+.yAxisTitle {
+  position: absolute;
+  top: 50%;
+  left: calc(-1 * var(--chart-gutter, 52px) + 9px);
+  transform: translate(-50%, -50%) rotate(-90deg);
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
 .tickLabel {
   position: absolute;
   left: calc(-1 * var(--chart-gutter, 52px));

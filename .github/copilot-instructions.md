@@ -58,6 +58,7 @@ ringing/
 │   │   └── preprocess_data/
 │   │       ├── fetch_smhi_weather.py         # SMHI → weather_data / weather_data_vinga / weather_daily
 │   │       ├── rebuild_precomputed_tables.py # Rebuild small lookup tables on an existing DB
+│       ├── analyze_histogram_bins.py     # Measurement resolution + bin width per species → data/metadata/histogram_bins.csv
 │   │       ├── preprocess_raw_data.py        # DEPRECATED: raw yearly .txt → processed CSV
 │   │       └── scrape_artfakta.py            # Selenium scraper for Artfakta RUBIN codes
 │   └── tests/                        # See §9: mostly exploratory scripts, not a clean suite
@@ -99,6 +100,7 @@ uv run python app/src/convert_mdb_to_duckdb.py           # drops and recreates a
 uv run python app/src/preprocess_data/fetch_smhi_weather.py   # downloads Nidingen A + Vinga A, gap-fills, builds weather_daily
 # optional, only if lookup tables are stale or missing:
 uv run python app/src/preprocess_data/rebuild_precomputed_tables.py
+uv run python app/src/preprocess_data/analyze_histogram_bins.py   # only when data changed: bin plan per species
 uv run python app/src/build_aggregates.py                # agg_* tables; run after every rebuild and weather fetch
 ```
 
@@ -317,8 +319,10 @@ from the hand-curated `data/metadata/RUBIN_code_mappning.csv` (columns
 case. The manual list only supplies what is missing. A code that already has
 a name keeps it, codes that do not occur in the data are not added, and its
 Latin name goes into `species_metadata` for names that are not there yet.
-Two codes in the data are still unnamed (`CUCAX`, 5 new ringings; `AVSKR`,
-5 recaptures) and get `swedish_name = NULL`. To name more codes, add rows to
+One code in the data is still unnamed (`AVSKR`, 5 recaptures) and gets
+`swedish_name = NULL`. `CUCAX` is "obestämd rödstrupig sångare" (5 new
+ringings). `KASS` ("kasserad ring") is not a bird and is left out of every
+`agg_*` table. To name more codes, add rows to
 the manual list and re-run the converter (`--from-existing`, below).
 
 #### `species_metadata` (213 rows, PK `swedish_name`)
@@ -372,7 +376,7 @@ as a species in the dropdown.
 | `foreign_bird`, `original_centre`, `original_ring` | VARCHAR | Only from `ringon` (NULL for `'R'`) |
 | `find_type`, `find_date_type`, `find_date_accuracy` | VARCHAR | Only from `kontr` (NULL for `'C'`) |
 | `distance_km`, `bearing_deg`, `days_since_ring`, `hours_since_ring`, `serial_number` | BIGINT | Only from `kontr` |
-| `swedish_name` | VARCHAR | Via `artkod_lookup`; `'Total'` for TOTAL rows; NULL for the 2 codes still unnamed (`CUCAX`, `AVSKR`) |
+| `swedish_name` | VARCHAR | Via `artkod_lookup`; `'Total'` for TOTAL rows; NULL for the code still unnamed (`AVSKR`) |
 | `scientific_name`, `taxon_id` | VARCHAR, DOUBLE | Via `species_metadata` |
 | `data_source` | VARCHAR | Always `'RingDb0016'` |
 | `created_at`, `updated_at` | TIMESTAMPTZ | Build time |
@@ -419,7 +423,7 @@ Conventions shared by all `agg_*` tables:
 
 | Table | Rows | Grain and key columns |
 |---|---:|---|
-| `agg_species` | 216 | One row per species code (incl. codes seen only as recaptures) + `ALLA`: `swedish_name` (NULL for `CUCAX` and `AVSKR`), `scientific_name`, `english_name`, `order_name`, `family_name`, `taxon_order`, `n_new_total`, `n_recap_total`, `n_new_var/host`, `share_var`, `single_season`, `single_season_season`, `first_date`, `last_date` |
+| `agg_species` | 216 | One row per species code (incl. codes seen only as recaptures) + `ALLA`: `swedish_name` (NULL for `AVSKR`), `scientific_name`, `english_name`, `order_name`, `family_name`, `taxon_order`, `n_new_total`, `n_recap_total`, `n_new_var/host`, `share_var`, `single_season`, `single_season_season`, `first_date`, `last_date` |
 | `agg_counts_day` | 85 k | species × date with any capture: `year, doy, month, week, season, n_new, n_recap, is_gap_year` |
 | `agg_counts_year_season` | 30 k | species × year × season (`var`/`host`/`helar`), **dense**: years with no birds are 0, from the first data year to the end of the longest period |
 | `agg_counts_week` | 32 k | species × year × week (sparse): `season, n` (new), `n_recap`, `is_gap_year` |
@@ -427,7 +431,9 @@ Conventions shared by all `agg_*` tables:
 | `agg_phenology_species` | 876 | species × season × `period_id`: `mean_median_doy`, `mean_q25_doy`, `mean_q75_doy` = mean of the yearly values over usable years (not gap, enough birds); `years_used` (0 → no median), `n_birds_used`, `single_season`. Single-season species only have their majority season |
 | `agg_trend` | 1.5 k | species × season × `period_id`: OLS of yearly `n_new` on year, gap years removed, zeros kept. `slope_per_year`, `ci_low`/`ci_high` (95 %, exact t, df = n − 2), `n_years`, `mean`, `intercept`, `slope_se`, `t_crit`, `residual_se`, `x_mean`, `sxx` (enough to draw the CI band of the line), `total`, `first_year`, `last_year`. Only species with ≥ 1 bird in the period |
 | `agg_morph_species` | 561 | species × season (`var`/`host`/`helar`), from `ringon`, all years: `n`, `weight_n/mean/q25/med/q75` (weight rounded to 0.1 g), `wing_n/mean/q25/med/q75`, `n_total_since_1980` |
-| `agg_morph_hist` | 28 k | species × season × `variable` (`weight`/`wing`) × `bin`: `bin_low`, `bin_high`, `n`. Range = 0.5–99.5 % quantiles (actual values); 50 equal bins, or one bin per measurement step (1 mm, 0.1 g) when the range has fewer than 50 steps. Zero bins included |
+| `agg_morph_hist` | 28 k | species × season × `variable` (`weight`/`wing`) × `bin`: `bin_low`, `bin_high`, `n`. Range = 0.5–99.5 % quantiles (actual values); about 50 bins, each a whole number of the species' measurement steps wide (plan: `data/metadata/histogram_bins.csv`, made by `preprocess_data/analyze_histogram_bins.py`; seasons share one grid). Zero bins included |
+| `agg_morph_points` | ≤ 240 k | species × season × `rk`: `wing`, `weight` — a deterministic sample (hash order) of at most 5 000 birds with both values per species × season |
+| `agg_morph_fit` | ≈ 600 | species × season: OLS of weight on wing over all birds with both values: `n, slope, intercept, x_mean, sxx, residual_se, t_crit` (exact t, df = n − 2) |
 | `agg_age_sex` | 3 k | species × season × `kind` (`age`/`sex`) × `category`: **raw** `age_code` / `sex` values, NULL = missing (`''` or NULL). Shown ungrouped |
 | `agg_recoveries` | 5 947 | `direction` `'out'`: one row per report of a Nidingen bird found outside the Nidingen box (join `fynd`→`ringon` on ring **and** centre, first ringing if a ring appears twice); point = find site. `'in'`: one row per foreign-ringed bird, at its first encounter in `fynd`; point = its ringing site (`frring`). Columns: `species, ring_number, case_number, ring_date, find_date, find_year, days, lat, lon, place, province_code, country_code, country, distance_km, bearing_deg, find_type` |
 | `euring_countries` | 48 | `code` (2-char EURING prefix of `province_code`) → `name_sv`, from `config/euring_countries.csv`. Historical codes (`SU`, `DD`, `CS`) and at-sea codes (`-B`, `-D`, `-H`) included; `+A` = Svalbard |
@@ -638,7 +644,7 @@ notebooks.
 |---|---|---|---|
 | Hem | `tab-home` | Hero image + title | — |
 | Sammanfattning | `tab-summary-timeseries` | `summary-stats` (cards), `time-series-plot` (+ `plot-type-toggle` bar/line), `species-total-bar` (top-100, **cached** via `@cache.memoize`) | shared filters |
-| Morfometri | `tab-morpho` | `morpho-bubble-chart`, `weight-distribution`, `wing-length-distribution`, `age-distribution`, `fat-score-distribution` | species, dates |
+| Biometri | `tab-morpho` | `morpho-bubble-chart`, `weight-distribution`, `wing-length-distribution`, `age-distribution`, `fat-score-distribution` | species, dates |
 | Fenologi | `tab-phenology` | `phenology-weekly-plot`, `phenology-ridgeline-plot`, `phenology-seasonal-plot` | species, dates |
 | Värmekarta | `tab-heatmap` | `weekly-heatmap` | `heatmap-year-dropdown`, `heatmap-top-n-dropdown` |
 | Väderanalys | `tab-weather` | `weather-timeseries-plot` | `weather-date-picker`, `weather-variable-checklist` |
@@ -691,7 +697,7 @@ the Dash app keeps running until phase 7.
   `Footer`, `SpeciesPicker`, `SegmentedControl`, `ChartCard` (loading,
   empty, error with retry, "Data från …"), `TrendBadge`, `Legend`,
   `PageFrame` (`PageHeader`, `StickyBar`, `Section`).
-- `src/pages/`: one file per page, or one folder once the page is built (`sammanfattning/`, `trender/`, `fenologi/`, `morfometri/`, `aterfynd/`, `vader/`, `hem/`, `om/`: page, cards, chart and pure helpers with tests); `registry.ts` holds paths and labels;
+- `src/pages/`: one file per page, or one folder once the page is built (`sammanfattning/`, `trender/`, `fenologi/`, `biometri/`, `aterfynd/`, `vader/`, `hem/`, `om/`: page, cards, chart and pure helpers with tests); `registry.ts` holds paths and labels;
   `shared/selection.tsx` holds the selection bar and per-page defaults.
 - Charts: React + SVG with `d3-scale`/`d3-shape` helpers (no Plotly). Shared pieces are in `src/components/charts/`: `Plot.tsx` (`YTicks`, `XLabels`, `GapBands`, `Crosshair`, `Scrubber` (pointer and keyboard reading as an ARIA slider), `PlotSvg`, `useWidth`; the y-label gutter is the CSS variable `--chart-gutter`) and `scale.ts` (`yAxis`, `maxValue`, `gapRuns`). `useApi(..., {keepPrevious: true})` keeps the last chart visible while new parameters load, and `ChartCard` shows its spinner meanwhile. `KeyFigures` is the tile row for key figures.
 - Styling: CSS modules plus CSS variables generated from

@@ -110,6 +110,9 @@ def populate(con: duckdb.DuckDBPyConnection) -> None:
         b.ring("DDD", d("1994-08-01"), 1, weight=10.0 + i / 10, wing=60 + i % 11,
                age=["10", "2+", ""][i % 3], sex=["M", "F", None][i % 3])
 
+    # KASS = "kasserad ring": not a bird, must stay out of every aggregate.
+    b.ring("KASS", d("1994-07-30"), 3)
+
     # Recaptures.
     con.executemany("INSERT INTO kontr VALUES (?, ?, ?)", [
         ("AAA", d("1985-04-21"), "R000001"),

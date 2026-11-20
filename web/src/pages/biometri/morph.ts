@@ -1,5 +1,5 @@
 /**
- * Pure helpers for Morfometri: log axes derived from the data, bubble
+ * Pure helpers for Biometri: log axes derived from the data, bubble
  * sizes, the order and colours of raw age and sex codes, and bin labels.
  */
 import { scaleLinear } from "d3-scale";
@@ -190,4 +190,30 @@ export function windowAxis(axis: LogAxis, f0: number, f1: number): LogAxis {
   const hi = Math.exp(a + f1 * span);
   const inner = Math.log(hi) - Math.log(lo);
   return { lo, hi, ticks: niceLogTicks(lo, hi), frac: (v) => (Math.log(v) - Math.log(lo)) / inner };
+}
+
+/** The inputs to a regression line's confidence band (all from the API). */
+export interface FitStats {
+  n: number;
+  slope: number;
+  intercept: number;
+  x_mean: number;
+  sxx: number;
+  residual_se: number;
+  t_crit: number;
+}
+
+/**
+ * The fitted line and its 95 % confidence band for the mean response:
+ * ŷ(x) ± t · s · √(1/n + (x − x̄)² / Sxx), with the exact t quantile for df = n − 2.
+ */
+export function fitBand(fit: FitStats, x0: number, x1: number, steps = 24): { x: number; y: number; lo: number; hi: number }[] {
+  const out: { x: number; y: number; lo: number; hi: number }[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const x = x0 + ((x1 - x0) * i) / steps;
+    const y = fit.intercept + fit.slope * x;
+    const half = fit.t_crit * fit.residual_se * Math.sqrt(1 / fit.n + (x - fit.x_mean) ** 2 / fit.sxx);
+    out.push({ x, y, lo: y - half, hi: y + half });
+  }
+  return out;
 }

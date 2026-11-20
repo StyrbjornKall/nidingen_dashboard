@@ -140,6 +140,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/morphometrics/scatter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Scatter */
+        get: operations["scatter_api_morphometrics_scatter_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/phenology/calendar": {
         parameters: {
             query?: never;
@@ -520,6 +537,13 @@ export interface components {
             /** Rows */
             rows: components["schemas"]["MorphMean"][];
         };
+        /** MorphScatter */
+        MorphScatter: {
+            /** Season */
+            season: string;
+            /** Species */
+            species: components["schemas"]["ScatterSpecies"][];
+        };
         /** PeriodInfo */
         PeriodInfo: {
             /** Id */
@@ -654,6 +678,35 @@ export interface components {
             };
             /** Species */
             species: components["schemas"]["RidgeSpecies"][];
+        };
+        /** ScatterFit */
+        ScatterFit: {
+            /** N */
+            n: number;
+            /** Slope */
+            slope: number;
+            /** Intercept */
+            intercept: number;
+            /** X Mean */
+            x_mean: number;
+            /** Sxx */
+            sxx: number;
+            /** Residual Se */
+            residual_se: number;
+            /** T Crit */
+            t_crit: number;
+        };
+        /** ScatterSpecies */
+        ScatterSpecies: {
+            /** Species */
+            species: string;
+            /** N Total */
+            n_total: number;
+            /** N Shown */
+            n_shown: number;
+            /** Points */
+            points: number[][];
+            fit: components["schemas"]["ScatterFit"] | null;
         };
         /** SeasonInfo */
         SeasonInfo: {
@@ -1254,6 +1307,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MorphDetails"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scatter_api_morphometrics_scatter_get: {
+        parameters: {
+            query: {
+                /** @description Comma-separated codes (max 6, not ALLA) */
+                species: string;
+                season?: "var" | "host" | "helar";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MorphScatter"];
                 };
             };
             /** @description Validation Error */

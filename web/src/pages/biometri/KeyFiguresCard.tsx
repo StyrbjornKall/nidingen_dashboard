@@ -2,7 +2,7 @@ import { ChartCard, type CardQuery } from "../../components/ChartCard";
 import type { Schemas } from "../../lib/api";
 import { formatInt, formatNumber } from "../../lib/format";
 import { color } from "../../lib/tokens";
-import styles from "./Morfometri.module.css";
+import styles from "./Biometri.module.css";
 
 type Measure = Schemas["Measure"];
 

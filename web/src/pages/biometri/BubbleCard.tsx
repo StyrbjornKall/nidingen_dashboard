@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as R
 import { ChartCard, type CardQuery } from "../../components/ChartCard";
 import type { Schemas } from "../../lib/api";
 import { formatInt, formatNumber } from "../../lib/format";
-import styles from "./Morfometri.module.css";
+import styles from "./Biometri.module.css";
 import {
   bubbleRadius, FULL_WIN, formatTicks, logAxis, panWin, sizeLegendValues, windowAxis, zoomLevel, zoomWin, type LogAxis, type Win,
 } from "./morph";
@@ -51,7 +51,7 @@ export function BubbleCard({
       subtitle={
         <>
           Varje bubbla är en arts medelvärde för fåglar som ringmärkts under {season}. Storleken visar hur många som ringmärkts sedan 1980
-          (logaritmisk skala). Grått = övriga arter. Klicka på en bubbla för att lägga till eller ta bort arten. Ligger bubblor över varandra kan du zooma in.
+          (tiologaritmisk skala, log₁₀). Grått = övriga arter. Klicka på en bubbla för att lägga till eller ta bort arten. Ligger bubblor över varandra kan du zooma in.
         </>
       }
       actions={<Readout hover={hover} fallback={query.data ? firstSelected(query.data.rows, selected, colorOf) : null} />}
@@ -60,7 +60,7 @@ export function BubbleCard({
       emptyMessage="Inga arter har tillräckligt många vägda och mätta fåglar under den här säsongen."
       footnote={
         query.data &&
-        `Arter med färre än ${query.data.min_n} vägda och mätta fåglar under säsongen saknas. Axlarna är logaritmiska och anpassade efter arterna i diagrammet.`
+        `Arter med färre än ${query.data.min_n} vägda och mätta fåglar under säsongen saknas. Axlarna är logaritmiska (tiologaritmen, log₁₀: lika långt mellan 1 och 10 som mellan 10 och 100) och anpassade efter arterna i diagrammet. Siffrorna på axlarna är de verkliga värdena.`
       }
     >
       {(data) => {
@@ -296,8 +296,8 @@ function BubblePlot({
             {yLabels[i]}
           </span>
         ))}
-        <span className={styles.xTitle} style={{ left: `${((g.x0 + g.x1) / 2 / g.w) * 100}%` }} aria-hidden="true">Vinglängd (mm, log-skala)</span>
-        <span className={styles.yTitle} style={{ top: `${((g.y0 + g.y1) / 2 / g.h) * 100}%` }} aria-hidden="true">Vikt (g, log-skala)</span>
+        <span className={styles.xTitle} style={{ left: `${((g.x0 + g.x1) / 2 / g.w) * 100}%` }} aria-hidden="true">Vinglängd (mm, log₁₀-skala)</span>
+        <span className={styles.yTitle} style={{ top: `${((g.y0 + g.y1) / 2 / g.h) * 100}%` }} aria-hidden="true">Vikt (g, log₁₀-skala)</span>
 
         <div
           ref={clip}
